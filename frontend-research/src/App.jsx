@@ -9,15 +9,18 @@ import AppRoutes from './routes/AppRoutes';
  */
 function App() {
   const location = useLocation();
-  const isAuthPage =
+  const isDashboardOrAuthPage =
     location.pathname.startsWith('/auth/') ||
+    location.pathname.startsWith('/supervisor/') ||
+    location.pathname.startsWith('/student/') ||
+    location.pathname.startsWith('/admin/') ||
     ['/login', '/register', '/forgot-password'].includes(location.pathname);
 
   return (
     <>
-      {!isAuthPage && <Navbar />}
+      {!isDashboardOrAuthPage && <Navbar />}
       <AppRoutes />
-      {!isAuthPage && <Footer />}
+      {!isDashboardOrAuthPage && <Footer />}
     </>
   );
 }

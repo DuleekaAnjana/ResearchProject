@@ -127,7 +127,7 @@ const Login = ({ roleProp }) => {
               &ldquo;ResearchSphere transformed how our department manages student publications.&rdquo;
             </p>
             <p className={styles.author}>
-              PROF. B. SILVA, UNIVERSITY OF COLOMBO
+              PROF. R. SILVA, UNIVERSITY OF COLOMBO
             </p>
           </div>
         </div>
@@ -169,7 +169,7 @@ const Login = ({ roleProp }) => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="demo@researchsphere.edu"
+                placeholder={roleConfig.demoEmail || "demo@researchsphere.edu"}
                 className={styles.input}
                 required
               />
@@ -222,7 +222,7 @@ const Login = ({ roleProp }) => {
           {/* Footer Link */}
           <p className={styles.footerText}>
             New to ResearchSphere?{' '}
-            <Link to="/register" className={styles.footerLink}>
+            <Link to={`/register?role=${roleKey}`} className={styles.footerLink}>
               Create an account
             </Link>
           </p>

@@ -4,6 +4,7 @@ import NotFound from '../pages/shared/NotFound';
 import Register from '../pages/auth/Register';
 import Login from '../pages/auth/Login';
 import StudentDashboard from '../pages/student/StudentDashboard';
+import SupervisorDashboard from '../pages/supervisor/SupervisorDashboard';
 
 /**
  * Application routes configuration
@@ -38,8 +39,7 @@ const AppRoutes = () => {
       <Route path="/student/profile" element={<PlaceholderPage title="Student Profile" />} />
 
       {/* ====== Supervisor Routes ====== */}
-      {/* TODO: Wrap with ProtectedRoute role="supervisor" */}
-      <Route path="/supervisor/dashboard" element={<PlaceholderPage title="Supervisor Dashboard" />} />
+      <Route path="/supervisor/dashboard" element={<SupervisorDashboard />} />
       <Route path="/supervisor/assigned" element={<PlaceholderPage title="Assigned Papers" />} />
       <Route path="/supervisor/review/:id" element={<PlaceholderPage title="Review Paper" />} />
       <Route path="/supervisor/approval" element={<PlaceholderPage title="Approval Page" />} />

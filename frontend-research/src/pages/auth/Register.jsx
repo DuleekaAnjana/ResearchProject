@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Check, ChevronDown } from 'lucide-react';
 import Button from '../../components/common/Button';
 import { useAuth } from '../../context/AuthContext';
@@ -47,9 +47,11 @@ const SUBCATEGORIES = {
 
 const Register = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { register } = useAuth();
 
-  const [activeRole, setActiveRole] = useState('student');
+  const initialRole = searchParams.get('role') || 'student';
+  const [activeRole, setActiveRole] = useState(initialRole);
   const [formData, setFormData] = useState({
     fullName: '',
     nicNumber: '',
@@ -111,7 +113,7 @@ const Register = () => {
     setIsSubmitting(true);
     try {
       await register({ ...formData, role: activeRole });
-      navigate('/login?registered=true');
+      navigate(`/auth/${activeRole}/login?registered=true`);
     } catch (err) {
       console.error('Registration failed:', err);
       setServerError(err.message || 'Registration failed. Please try again.');
@@ -460,7 +462,7 @@ const Register = () => {
           {/* Footer Navigation */}
           <p className={styles.footerText}>
             Already have an account?{' '}
-            <Link to="/login" className={styles.footerLink}>
+            <Link to={`/auth/${activeRole}/login`} className={styles.footerLink}>
               Back to sign-in options
             </Link>
           </p>
