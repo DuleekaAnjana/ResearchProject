@@ -1,0 +1,64 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* --- Category Colors --- */
+.cs {
+  color: var(--color-category-cs);
+  background-color: var(--color-category-cs-bg);
+}
+
+.medicine {
+  color: var(--color-category-medicine);
+  background-color: var(--color-category-medicine-bg);
+}
+
+.statistics {
+  color: var(--color-category-statistics);
+  background-color: var(--color-category-statistics-bg);
+}
+
+.physics {
+  color: var(--color-category-physics);
+  background-color: var(--color-category-physics-bg);
+}
+
+.biology {
+  color: var(--color-category-biology);
+  background-color: var(--color-category-biology-bg);
+}
+
+/* --- Status Colors --- */
+.success {
+  color: var(--color-success);
+  background-color: var(--color-success-light);
+}
+
+.warning {
+  color: var(--color-warning);
+  background-color: var(--color-warning-light);
+}
+
+.error {
+  color: var(--color-error);
+  background-color: var(--color-error-light);
+}
+
+.info {
+  color: var(--color-info);
+  background-color: var(--color-info-light);
+}
+
+.default {
+  color: var(--color-category-default);
+  background-color: var(--color-category-default-bg);
+}
