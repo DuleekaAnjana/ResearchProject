@@ -89,7 +89,7 @@ const ContactPage = () => {
               </div>
 
               <button type="submit" className={styles.submitBtn}>
-                <Send size={16} /> Send Message
+                <Send size={16} /> Send Message quickly
               </button>
             </form>
           </div>
