@@ -114,30 +114,32 @@ const Navbar = () => {
         {/* Right Side Actions */}
         <div className={styles.navActions}>
           {isAuthenticated ? (
-            <>
-              <Button
-                to={dashboardPath}
-                variant="primary"
-                size="md"
-                iconLeft={<LayoutDashboard size={16} />}
-              >
-                Dashboard
-              </Button>
-              <button
-                onClick={logout}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#64748b',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  marginLeft: '0.5rem'
-                }}
-              >
-                Sign out
-              </button>
-            </>
+            !isLegalOrContactPage ? (
+              <>
+                <Button
+                  to={dashboardPath}
+                  variant="primary"
+                  size="md"
+                  iconLeft={<LayoutDashboard size={16} />}
+                >
+                  Dashboard
+                </Button>
+                <button
+                  onClick={logout}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#64748b',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    marginLeft: '0.5rem'
+                  }}
+                >
+                  Sign out
+                </button>
+              </>
+            ) : null
           ) : (
             <>
               <Link to="/register" className={styles.registerLink}>
