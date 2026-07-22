@@ -127,7 +127,7 @@ const Login = ({ roleProp }) => {
               &ldquo;ResearchSphere transformed how our department manages student publications.&rdquo;
             </p>
             <p className={styles.author}>
-              PROF. R. SILVA, UNIVERSITY OF COLOMBO
+              PROF. R. SILVA, UNIVERSITY OF SRI JAYAWARDENAPURA
             </p>
           </div>
         </div>
