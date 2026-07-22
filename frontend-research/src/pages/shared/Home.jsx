@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Sparkles,
   ArrowRight,
@@ -10,7 +10,6 @@ import {
   GraduationCap,
   Monitor,
   ShieldCheck,
-  X,
 } from 'lucide-react';
 import Button from '../../components/common/Button';
 import SearchBar from '../../components/common/SearchBar';
@@ -22,6 +21,7 @@ import styles from './Home.module.css';
 
 /**
  * Home / Landing page
+ * Matches the Lovable screenshot design
  */
 
 /** Role cards data */
@@ -86,38 +86,31 @@ const features = [
 
 /** Discipline tags */
 const disciplines = [
-  'Agriculture', 'Arts', 'Biology', 'Business', 'Chemistry',
-  'Computer Science', 'Economics', 'Education', 'Engineering',
-  'Environmental Science', 'Humanities', 'Law', 'Mathematics',
-  'Medicine', 'Physics', 'Social Science', 'Statistics',
+  'Agriculture',
+  'Arts',
+  'Biology',
+  'Business',
+  'Chemistry',
+  'Computer Science',
+  'Economics',
+  'Education',
+  'Engineering',
+  'Environmental Science',
+  'Humanities',
+  'Law',
+  'Mathematics',
+  'Medicine',
+  'Physics',
+  'Social Science',
+  'Statistics',
 ];
-
-/** Smooth scroll helper */
-const scrollToSection = (id) => {
-  const el = document.getElementById(id);
-  if (el) {
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-};
 
 const Home = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchToast, setSearchToast] = useState(false);
-
-  const showToastAndScrollToSignin = useCallback(() => {
-    setSearchToast(true);
-    scrollToSection('signin');
-    setTimeout(() => setSearchToast(false), 4000);
-  }, []);
 
   const handleSearch = (query) => {
-    if (query && query.trim()) {
-      showToastAndScrollToSignin();
-    }
-  };
-
-  const handleSearchBarFocus = () => {
-    showToastAndScrollToSignin();
+    // TODO: Navigate to search results page with query
+    console.log('Search for:', query);
   };
 
   const handlePublicationClick = (publication) => {
@@ -127,20 +120,6 @@ const Home = () => {
 
   return (
     <main className={styles.home}>
-      {/* Toast Notification */}
-      {searchToast && (
-        <div className={styles.toast}>
-          <span>🔍 To explore more, you need to <strong>sign in</strong> first.</span>
-          <button
-            className={styles.toastClose}
-            onClick={() => setSearchToast(false)}
-            aria-label="Dismiss"
-          >
-            <X size={16} />
-          </button>
-        </div>
-      )}
-
       {/* ====== Hero Section ====== */}
       <section className={styles.hero}>
         {/* Left Column */}
@@ -166,18 +145,20 @@ const Home = () => {
 
           {/* CTA Buttons */}
           <div className={styles.ctaGroup}>
-            <button
-              className={styles.ctaPrimary}
-              onClick={() => scrollToSection('signin')}
+            <Button
+              to="/login"
+              variant="primary"
+              size="lg"
+              iconRight={<ArrowRight size={16} />}
             >
-              Choose your sign-in <ArrowRight size={16} />
-            </button>
+              Choose your sign-in
+            </Button>
             <Button
               to="/register"
               variant="outline"
               size="lg"
             >
-              Create an account - Enjoy
+              Create an account - Enjoy yourday
             </Button>
           </div>
 
@@ -195,16 +176,13 @@ const Home = () => {
 
         {/* Right Column */}
         <div className={styles.heroRight}>
-          {/* Search Bar — clicking it scrolls to sign-in */}
-          <div onClick={handleSearchBarFocus} style={{ cursor: 'pointer' }}>
-            <SearchBar
-              placeholder='Search "Federated Learning", "Bayesian Rainfall"...'
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onSubmit={handleSearch}
-              onFocus={handleSearchBarFocus}
-            />
-          </div>
+          {/* Search Bar */}
+          <SearchBar
+            placeholder='Search "Federated Learning", "Bayesian Rainfall"...'
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onSubmit={handleSearch}
+          />
 
           {/* Featured Publication Cards */}
           <div className={styles.publicationList}>
@@ -225,7 +203,7 @@ const Home = () => {
           <span className={styles.sectionLabel}>GET STARTED</span>
           <h2 className={styles.sectionHeading}>Choose your sign-in</h2>
           <p className={styles.sectionSubtext}>
-            Different responsibilities, one repository. Select the portal that matches your role.
+            Different responsibilities, one repository. Select the portal that matches you and your role..
           </p>
         </div>
 
