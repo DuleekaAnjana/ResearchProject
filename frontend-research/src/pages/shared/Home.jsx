@@ -52,7 +52,7 @@ const roles = [
   },
 ];
 
-/** Platform feature cards data */
+/** Platform feature cards data kkkk*/
 const features = [
   {
     id: 1,
