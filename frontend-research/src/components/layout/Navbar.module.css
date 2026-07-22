@@ -69,16 +69,15 @@
   color: var(--color-gray-600);
   text-decoration: none;
   border-radius: var(--radius-md);
+  background: none;
+  border: none;
+  cursor: pointer;
   transition: color var(--transition-fast), background-color var(--transition-fast);
 }
 
 .navLink:hover {
   color: var(--color-gray-900);
   background-color: var(--color-gray-50);
-}
-
-.navLinkActive {
-  color: var(--color-primary);
 }
 
 /* --- Right Side Actions --- */
@@ -98,6 +97,26 @@
 
 .registerLink:hover {
   color: var(--color-gray-900);
+}
+
+.signInBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1.125rem;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-white);
+  background-color: var(--color-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.signInBtn:hover {
+  background-color: var(--color-primary-dark, #1d4ed8);
+  transform: translateY(-1px);
 }
 
 /* --- Mobile Toggle --- */
@@ -143,7 +162,12 @@
   font-weight: var(--font-weight-medium);
   color: var(--color-gray-700);
   text-decoration: none;
+  background: none;
+  border: none;
   border-radius: var(--radius-md);
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
   transition: background-color var(--transition-fast);
 }
 
@@ -155,6 +179,27 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-3);
+}
+
+.mobileSignInBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-white);
+  background-color: var(--color-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  width: 100%;
+  transition: background-color var(--transition-fast);
+}
+
+.mobileSignInBtn:hover {
+  background-color: var(--color-primary-dark, #1d4ed8);
 }
 
 /* --- Responsive --- */

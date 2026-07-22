@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, ArrowRight, LayoutDashboard } from 'lucide-react';
 import Button from '../common/Button';
 import { useAuth } from '../../context/AuthContext';
@@ -7,29 +7,48 @@ import styles from './Navbar.module.css';
 
 /**
  * Public Navbar component
- * Matches the Lovable screenshot: Logo | Center Nav | Register + Sign In / Dashboard
+ * Logo | Center Nav (smooth scroll) | Register + Sign In / Dashboard
  */
+
+/** Smooth scroll to a section id on the home page */
+const scrollToHomeSection = (navigate, location, sectionId) => {
+  if (location.pathname === '/') {
+    const el = document.getElementById(sectionId);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } else {
+    navigate(`/#${sectionId}`);
+    // After navigation, scroll once the page loads
+    setTimeout(() => {
+      const el = document.getElementById(sectionId);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 300);
+  }
+};
+
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
 
-  const navLinks = [
-    { label: 'Sign In', to: '/#signin' },
-    { label: 'Features', to: '/#features' },
-    { label: 'Disciplines', to: '/#disciplines' },
-  ];
+  const isLegalOrContactPage = ['/terms', '/privacy', '/contact'].includes(location.pathname);
+
+  const navLinks = isLegalOrContactPage
+    ? []
+    : [
+        { label: 'Sign In', sectionId: 'signin' },
+        { label: 'Features', sectionId: 'features' },
+        { label: 'Disciplines', sectionId: 'disciplines' },
+      ];
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen((prev) => !prev);
   };
 
-  const isActive = (path) => location.pathname === path;
-
-  const dashboardPath = user?.role === 'supervisor' 
-    ? '/supervisor/dashboard' 
-    : user?.role?.includes('admin') 
-      ? '/admin/dashboard' 
+  const dashboardPath = user?.role === 'supervisor'
+    ? '/supervisor/dashboard'
+    : user?.role?.includes('admin')
+      ? '/admin/dashboard'
       : '/student/dashboard';
 
   return (
@@ -78,16 +97,16 @@ const Navbar = () => {
           </div>
         </Link>
 
-        {/* Center Navigation Links */}
+        {/* Center Navigation Links — smooth scroll to sections */}
         <ul className={styles.navLinks}>
           {navLinks.map((link) => (
-            <li key={link.to}>
-              <Link
-                to={link.to}
-                className={`${styles.navLink} ${isActive(link.to) ? styles.navLinkActive : ''}`}
+            <li key={link.sectionId}>
+              <button
+                className={styles.navLink}
+                onClick={() => scrollToHomeSection(navigate, location, link.sectionId)}
               >
                 {link.label}
-              </Link>
+              </button>
             </li>
           ))}
         </ul>
@@ -124,14 +143,13 @@ const Navbar = () => {
               <Link to="/register" className={styles.registerLink}>
                 Register
               </Link>
-              <Button
-                to="/login"
-                variant="primary"
-                size="md"
-                iconRight={<ArrowRight size={16} />}
+              {/* Sign in button → smooth scroll to #signin section */}
+              <button
+                className={styles.signInBtn}
+                onClick={() => scrollToHomeSection(navigate, location, 'signin')}
               >
-                Sign in
-              </Button>
+                Sign in <ArrowRight size={16} />
+              </button>
             </>
           )}
         </div>
@@ -151,14 +169,16 @@ const Navbar = () => {
           <div className={styles.mobileMenu}>
             <ul className={styles.mobileNavLinks}>
               {navLinks.map((link) => (
-                <li key={link.to}>
-                  <Link
-                    to={link.to}
+                <li key={link.sectionId}>
+                  <button
                     className={styles.mobileNavLink}
-                    onClick={() => setMobileMenuOpen(false)}
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      scrollToHomeSection(navigate, location, link.sectionId);
+                    }}
                   >
                     {link.label}
-                  </Link>
+                  </button>
                 </li>
               ))}
             </ul>
@@ -172,16 +192,15 @@ const Navbar = () => {
               >
                 Register
               </Button>
-              <Button
-                to="/login"
-                variant="primary"
-                size="lg"
-                fullWidth
-                iconRight={<ArrowRight size={16} />}
-                onClick={() => setMobileMenuOpen(false)}
+              <button
+                className={styles.mobileSignInBtn}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  scrollToHomeSection(navigate, location, 'signin');
+                }}
               >
-                Sign in
-              </Button>
+                Sign in <ArrowRight size={16} />
+              </button>
             </div>
           </div>
         )}

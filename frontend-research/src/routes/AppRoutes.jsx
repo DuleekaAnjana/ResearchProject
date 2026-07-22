@@ -1,6 +1,9 @@
 import { Routes, Route } from 'react-router-dom';
 import Home from '../pages/shared/Home';
 import NotFound from '../pages/shared/NotFound';
+import TermsPage from '../pages/shared/TermsPage';
+import PrivacyPage from '../pages/shared/PrivacyPage';
+import ContactPage from '../pages/shared/ContactPage';
 import Register from '../pages/auth/Register';
 import Login from '../pages/auth/Login';
 import StudentDashboard from '../pages/student/StudentDashboard';
@@ -24,9 +27,11 @@ const AppRoutes = () => {
       <Route path="/auth/register" element={<Register />} />
       <Route path="/forgot-password" element={<PlaceholderPage title="Forgot Password" />} />
 
-      {/* Shared Pages */}
+      {/* Shared / Legal Pages */}
+      <Route path="/terms" element={<TermsPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/about" element={<PlaceholderPage title="About" />} />
-      <Route path="/contact" element={<PlaceholderPage title="Contact" />} />
+      <Route path="/contact" element={<ContactPage />} />
 
       {/* ====== Student Routes ====== */}
       {/* TODO: Wrap with ProtectedRoute role="student" */}
