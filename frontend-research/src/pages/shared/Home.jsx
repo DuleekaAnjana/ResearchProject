@@ -158,7 +158,7 @@ const Home = () => {
               variant="outline"
               size="lg"
             >
-              Create an account - Enjoy yourday
+              Create an account
             </Button>
           </div>
 
