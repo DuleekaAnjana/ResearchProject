@@ -7,7 +7,7 @@ import styles from './Login.module.css';
 
 const ROLE_CONFIGS = {
   student: {
-    title: 'Student sign-in',
+    title: 'Student signin',
     subtitle: 'Access your dashboard and continue your research journey.',
     heroText: 'Track your publications, receive feedback and discover new research across your field.',
     demoEmail: 'demo@researchsphere.edu',
