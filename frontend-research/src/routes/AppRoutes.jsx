@@ -6,6 +6,8 @@ import PrivacyPage from '../pages/shared/PrivacyPage';
 import ContactPage from '../pages/shared/ContactPage';
 import Register from '../pages/auth/Register';
 import Login from '../pages/auth/Login';
+import ChooseRegistration from '../pages/auth/ChooseRegistration';
+import NewStudentRegister from '../pages/auth/NewStudentRegister';
 import StudentDashboard from '../pages/student/StudentDashboard';
 import SupervisorDashboard from '../pages/supervisor/SupervisorDashboard';
 
@@ -23,8 +25,10 @@ const AppRoutes = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/auth/login" element={<Login />} />
       <Route path="/auth/:role/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/auth/register" element={<Register />} />
+      <Route path="/register" element={<ChooseRegistration />} />
+      <Route path="/auth/register" element={<ChooseRegistration />} />
+      <Route path="/chooseregistration" element={<ChooseRegistration />} />
+      <Route path="/newstudentregistegpage" element={<NewStudentRegister />} />
       <Route path="/forgot-password" element={<PlaceholderPage title="Forgot Password" />} />
 
       {/* Shared / Legal Pages */}
