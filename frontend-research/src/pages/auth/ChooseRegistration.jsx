@@ -6,10 +6,6 @@ import styles from './ChooseRegistration.module.css';
 const ChooseRegistration = () => {
   return (
     <div className={styles.pageWrapper}>
-      {/* Background Graphic/Shading */}
-      <div className={styles.gridOverlay}></div>
-      <div className={styles.radialGradient}></div>
-
       <div className={styles.container}>
         {/* Header Section */}
         <header className={styles.header}>

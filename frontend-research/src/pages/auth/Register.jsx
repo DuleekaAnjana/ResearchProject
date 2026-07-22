@@ -50,7 +50,7 @@ const Register = () => {
   const [searchParams] = useSearchParams();
   const { register } = useAuth();
 
-  const initialRole = searchParams.get('role') || 'student';
+  const initialRole = searchParams.get('role') || 'supervisor';
   const [activeRole, setActiveRole] = useState(initialRole);
   const [formData, setFormData] = useState({
     fullName: '',
@@ -86,6 +86,10 @@ const Register = () => {
   };
 
   const handleRoleChange = (roleId) => {
+    if (roleId === 'student') {
+      navigate('/newstudentregistegpage');
+      return;
+    }
     setActiveRole(roleId);
     if (serverError) setServerError('');
   };
@@ -113,7 +117,7 @@ const Register = () => {
     setIsSubmitting(true);
     try {
       await register({ ...formData, role: activeRole });
-      navigate(`/auth/${activeRole}/login?registered=true`);
+      navigate(`/login?registered=true`);
     } catch (err) {
       console.error('Registration failed:', err);
       setServerError(err.message || 'Registration failed. Please try again.');
@@ -122,46 +126,18 @@ const Register = () => {
     }
   };
 
-  const activeRoleLabel = ROLES.find((r) => r.id === activeRole)?.label || 'user';
-
   return (
     <div className={styles.container}>
-      {/* Left Branding / Testimonial Side */}
+      {/* Left Branding Panel */}
       <div className={styles.leftPanel}>
         <div className={styles.leftHeader}>
           <Link to="/" className={styles.logo}>
-            <svg
-              width="32"
-              height="32"
-              viewBox="0 0 32 32"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
               <circle cx="16" cy="16" r="16" fill="#2563eb" />
-              <path
-                d="M10 12C10 10.8954 10.8954 10 12 10H20C21.1046 10 22 10.8954 22 12V20C22 21.1046 21.1046 22 20 22H12C10.8954 22 10 21.1046 10 20V12Z"
-                fill="white"
-                fillOpacity="0.3"
-              />
-              <path
-                d="M13 14L16 11L19 14"
-                stroke="white"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M16 11V20"
-                stroke="white"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-              <path
-                d="M12 18H20"
-                stroke="white"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
+              <path d="M10 12C10 10.8954 10.8954 10 12 10H20C21.1046 10 22 10.8954 22 12V20C22 21.1046 21.1046 22 20 22H12C10.8954 22 10 21.1046 10 20V12Z" fill="white" fillOpacity="0.3" />
+              <path d="M13 14L16 11L19 14" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M16 11V20" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M12 18H20" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
             <span className={styles.logoTitle}>ResearchSphere</span>
           </Link>
@@ -169,7 +145,7 @@ const Register = () => {
 
         <div className={styles.leftBody}>
           <p className={styles.heroText}>
-            Create your account and start submitting or reviewing student research today.
+            Join a trusted academic platform to review student publications and guide university research quality.
           </p>
 
           <div className={styles.testimonial}>
@@ -186,18 +162,18 @@ const Register = () => {
       {/* Right Form Side */}
       <div className={styles.rightPanel}>
         <div className={styles.topNav}>
-          <Link to="/" className={styles.backLink}>
-            <ArrowLeft size={16} /> Back to home
+          <Link to="/chooseregistration" className={styles.backLink}>
+            <ArrowLeft size={16} /> Back to select role
           </Link>
         </div>
 
         <div className={styles.formContainer}>
-          <h1 className={styles.title}>Create your account</h1>
+          <h1 className={styles.title}>Register Account</h1>
           <p className={styles.subtitle}>
-            Super Administrators cannot self-register &mdash; contact your system owner.
+            Create your account on ResearchSphere. Select your role below.
           </p>
 
-          {/* Role Tabs */}
+          {/* Role selector tabs */}
           <div className={styles.roleTabs}>
             {ROLES.map((role) => (
               <button
@@ -222,13 +198,12 @@ const Register = () => {
 
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className={styles.fieldGrid}>
-              {/* Full Name */}
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Full Name</label>
                 <input
                   type="text"
                   name="fullName"
-                  placeholder="Amara Perera"
+                  placeholder="e.g. Prof. Alex Perera"
                   value={formData.fullName}
                   onChange={handleChange}
                   className={`${styles.input} ${errors.fullName ? styles.inputError : ''}`}
@@ -236,20 +211,18 @@ const Register = () => {
                 {errors.fullName && <span className={styles.errorText}>{errors.fullName}</span>}
               </div>
 
-              {/* NIC Number */}
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>NIC Number</label>
                 <input
                   type="text"
                   name="nicNumber"
-                  placeholder="200112345678"
+                  placeholder="198012345678"
                   value={formData.nicNumber}
                   onChange={handleChange}
                   className={styles.input}
                 />
               </div>
 
-              {/* Email */}
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Email</label>
                 <input
@@ -263,7 +236,6 @@ const Register = () => {
                 {errors.email && <span className={styles.errorText}>{errors.email}</span>}
               </div>
 
-              {/* Phone Number */}
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Phone Number</label>
                 <input
@@ -276,7 +248,6 @@ const Register = () => {
                 />
               </div>
 
-              {/* University */}
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>University</label>
                 <div className={styles.selectWrapper}>
@@ -294,65 +265,13 @@ const Register = () => {
                 </div>
               </div>
 
-              {/* Registration Number */}
-              <div className={styles.fieldGroup}>
-                <label className={styles.label}>Registration Number</label>
-                <input
-                  type="text"
-                  name="registrationNumber"
-                  placeholder="2024/CS/1001"
-                  value={formData.registrationNumber}
-                  onChange={handleChange}
-                  className={styles.input}
-                />
-              </div>
-
-              {/* Current Degree */}
-              <div className={styles.fieldGroup}>
-                <label className={styles.label}>Current Degree</label>
-                <input
-                  type="text"
-                  name="currentDegree"
-                  placeholder="BSc Honours in Computer Science"
-                  value={formData.currentDegree}
-                  onChange={handleChange}
-                  className={styles.input}
-                />
-              </div>
-
-              {/* Education Level */}
-              <div className={styles.fieldGroup}>
-                <label className={styles.label}>Education Level</label>
-                <div className={styles.selectWrapper}>
-                  <select
-                    name="educationLevel"
-                    value={formData.educationLevel}
-                    onChange={handleChange}
-                    className={styles.select}
-                  >
-                    {EDUCATION_LEVELS.map((level) => (
-                      <option key={level} value={level}>{level}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className={styles.selectIcon} size={16} />
-                </div>
-              </div>
-
-              {/* Research Category */}
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Research Category</label>
                 <div className={styles.selectWrapper}>
                   <select
                     name="researchCategory"
                     value={formData.researchCategory}
-                    onChange={(e) => {
-                      const cat = e.target.value;
-                      setFormData((prev) => ({
-                        ...prev,
-                        researchCategory: cat,
-                        researchSubcategory: SUBCATEGORIES[cat]?.[0] || '',
-                      }));
-                    }}
+                    onChange={handleChange}
                     className={styles.select}
                   >
                     {CATEGORIES.map((cat) => (
@@ -363,25 +282,6 @@ const Register = () => {
                 </div>
               </div>
 
-              {/* Research Subcategory */}
-              <div className={styles.fieldGroup}>
-                <label className={styles.label}>Research Subcategory</label>
-                <div className={styles.selectWrapper}>
-                  <select
-                    name="researchSubcategory"
-                    value={formData.researchSubcategory}
-                    onChange={handleChange}
-                    className={styles.select}
-                  >
-                    {(SUBCATEGORIES[formData.researchCategory] || []).map((sub) => (
-                      <option key={sub} value={sub}>{sub}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className={styles.selectIcon} size={16} />
-                </div>
-              </div>
-
-              {/* Password */}
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Password</label>
                 <input
@@ -394,7 +294,6 @@ const Register = () => {
                 {errors.password && <span className={styles.errorText}>{errors.password}</span>}
               </div>
 
-              {/* Confirm Password */}
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Confirm Password</label>
                 <input
@@ -410,7 +309,6 @@ const Register = () => {
               </div>
             </div>
 
-            {/* Checkboxes */}
             <div className={styles.checkboxContainer}>
               <label className={styles.checkboxLabel}>
                 <input
@@ -447,25 +345,27 @@ const Register = () => {
               {errors.terms && <p className={styles.errorText}>{errors.terms}</p>}
             </div>
 
-            {/* Submit Button */}
             <Button
               type="submit"
               variant="primary"
               size="lg"
               fullWidth
-              disabled={isSubmitting}
+              disabled={isSubmitting || !formData.acceptTerms || !formData.acceptPrivacy}
             >
-              Create {activeRoleLabel.toLowerCase()} account
+              Create Account
             </Button>
           </form>
 
-          {/* Footer Navigation */}
           <p className={styles.footerText}>
             Already have an account?{' '}
-            <Link to={`/auth/${activeRole}/login`} className={styles.footerLink}>
-              Back to sign-in options
+            <Link to="/login" className={styles.footerLink}>
+              Back to sign-in
             </Link>
           </p>
+
+          <Link to="/contact" className={styles.supportLink}>
+            Having any issues with registration? <span>Contact Us</span>
+          </Link>
         </div>
       </div>
     </div>

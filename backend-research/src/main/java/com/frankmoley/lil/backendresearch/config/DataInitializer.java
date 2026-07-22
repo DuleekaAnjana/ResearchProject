@@ -1,14 +1,20 @@
 package com.frankmoley.lil.backendresearch.config;
 
 import com.frankmoley.lil.backendresearch.entity.Paper;
+import com.frankmoley.lil.backendresearch.entity.Student;
 import com.frankmoley.lil.backendresearch.entity.User;
 import com.frankmoley.lil.backendresearch.repository.PaperRepository;
+import com.frankmoley.lil.backendresearch.repository.StudentRepository;
 import com.frankmoley.lil.backendresearch.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
+import java.util.HexFormat;
 import java.util.List;
 
 @Component
@@ -16,16 +22,19 @@ import java.util.List;
 public class DataInitializer implements CommandLineRunner {
 
     private final UserRepository userRepository;
+    private final StudentRepository studentRepository;
     private final PaperRepository paperRepository;
 
     @Override
     public void run(String... args) throws Exception {
+        String defaultHashedPassword = hashPassword("password123");
+
         // Seed default Demo Supervisor if not exists
         if (!userRepository.existsByEmail("demo@researchsphere.edu")) {
             User supervisor = new User();
             supervisor.setFullName("Prof. R. Silva");
             supervisor.setEmail("demo@researchsphere.edu");
-            supervisor.setPassword("password123");
+            supervisor.setPassword(defaultHashedPassword);
             supervisor.setRole("supervisor");
             supervisor.setUniversity("University of Colombo");
             supervisor.setResearchCategory("Computer Science");
@@ -38,23 +47,23 @@ public class DataInitializer implements CommandLineRunner {
             User supervisor = new User();
             supervisor.setFullName("Prof. B. Perera");
             supervisor.setEmail("supervisor@researchsphere.edu");
-            supervisor.setPassword("password123");
+            supervisor.setPassword(defaultHashedPassword);
             supervisor.setRole("supervisor");
             supervisor.setUniversity("University of Colombo");
             supervisor.setResearchCategory("Computer Science");
             userRepository.save(supervisor);
         }
 
-        // Seed default Demo Student
-        if (!userRepository.existsByEmail("student@researchsphere.edu")) {
-            User student = new User();
+        // Seed default Demo Student in `student` table
+        if (!studentRepository.existsByEmail("student@researchsphere.edu")) {
+            Student student = new Student();
             student.setFullName("Amara Perera");
             student.setEmail("student@researchsphere.edu");
-            student.setPassword("password123");
+            student.setPassword(defaultHashedPassword);
             student.setRole("student");
             student.setUniversity("University of Colombo");
             student.setRegistrationNumber("2024/CS/1001");
-            userRepository.save(student);
+            studentRepository.save(student);
         }
 
         // Seed Papers if empty
@@ -88,5 +97,15 @@ public class DataInitializer implements CommandLineRunner {
         paper.setReviewTimeDays(reviewTime);
         paper.setSubmittedAt(submittedAt);
         return paper;
+    }
+
+    private String hashPassword(String password) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(password.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash);
+        } catch (NoSuchAlgorithmException e) {
+            return password;
+        }
     }
 }
