@@ -80,6 +80,23 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     /**
+     * Create a new notification for a user.
+     */
+    @Override
+    @Transactional
+    public void createNotification(String userEmail, String title, String description, String type) {
+        Notification notification = Notification.builder()
+                .userEmail(userEmail)
+                .title(title)
+                .description(description)
+                .type(type)
+                .isRead(false)
+                .createdAt(java.time.LocalDateTime.now())
+                .build();
+        notificationRepository.save(notification);
+    }
+
+    /**
      * Private helper method to convert a Notification entity to a NotificationDTO.
      * This encapsulates the mapping logic inside the service, not exposing it externally.
      */

@@ -24,6 +24,7 @@ public class PaperController {
 
     private final PaperRepository paperRepository;
     private final StudentRepository studentRepository;
+    private final com.frankmoley.lil.backendresearch.service.NotificationService notificationService;
 
     /**
      * POST /api/papers
@@ -81,7 +82,8 @@ public class PaperController {
         
         // Status can be DRAFT, PENDING, APPROVED, REJECTED
         String requestStatus = paperRequest.getStatus();
-        if ("SUBMITTED".equalsIgnoreCase(requestStatus) || "PENDING".equalsIgnoreCase(requestStatus)) {
+        boolean isPending = "SUBMITTED".equalsIgnoreCase(requestStatus) || "PENDING".equalsIgnoreCase(requestStatus);
+        if (isPending) {
             paper.setStatus("PENDING");
             paper.setSubmittedAt(LocalDateTime.now());
         } else {
@@ -91,6 +93,16 @@ public class PaperController {
         paper.setStudent(student);
 
         Paper savedPaper = paperRepository.save(paper);
+
+        if (isPending) {
+            notificationService.createNotification(
+                student.getEmail(),
+                "Submission received",
+                "Your paper '" + savedPaper.getTitle() + "' is under administrator validation.",
+                "SUBMISSION"
+            );
+        }
+
         return ResponseEntity.ok(savedPaper);
     }
 
