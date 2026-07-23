@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   GraduationCap,
@@ -17,10 +17,13 @@ import {
   User,
   LayoutDashboard,
   BarChart3,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import DashboardHeader from '../../components/layout/DashboardHeader';
+import StudentSidebar from '../../components/layout/StudentSidebar';
+import StudentFooter from '../../components/layout/StudentFooter';
 import styles from './SearchPublicationsPage.module.css';
 import dashboardStyles from './StudentDashboard.module.css';
 
@@ -37,6 +40,57 @@ const SearchPublicationsPage = () => {
   const [query, setQuery] = useState(initialQuery);
   const [papers, setPapers] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const searchInputRef = useRef(null);
+
+  const [searchHistory, setSearchHistory] = useState(() => {
+    try {
+      const saved = localStorage.getItem('previous_searches_student');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const addToHistory = (searchTerm) => {
+    const trimmed = searchTerm.trim();
+    if (!trimmed) return;
+    setSearchHistory((prev) => {
+      const filtered = prev.filter((item) => item.toLowerCase() !== trimmed.toLowerCase());
+      const updated = [trimmed, ...filtered].slice(0, 8);
+      localStorage.setItem('previous_searches_student', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const removeFromHistory = (e, indexToRemove) => {
+    e.stopPropagation();
+    setSearchHistory((prev) => {
+      const updated = prev.filter((_, idx) => idx !== indexToRemove);
+      localStorage.setItem('previous_searches_student', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const handleHistoryClick = (term) => {
+    setQuery(term);
+    addToHistory(term);
+  };
+
+  // Add initial search query to history if present
+  useEffect(() => {
+    if (initialQuery) {
+      addToHistory(initialQuery);
+    }
+  }, [initialQuery]);
+
+  // Auto focus input if focus parameter is present
+  useEffect(() => {
+    const isFocus = searchParams.get('focus') === 'true';
+    if (isFocus && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [searchParams]);
 
   // ---- Fetch papers ----
   useEffect(() => {
@@ -88,88 +142,7 @@ const SearchPublicationsPage = () => {
   return (
     <div className={dashboardStyles.dashboardLayout}>
       {/* Sidebar */}
-      {sidebarOpen && (
-        <aside className={dashboardStyles.sidebar}>
-          <div className={dashboardStyles.sidebarHeader}>
-            <div className={dashboardStyles.logoIcon}>
-              <GraduationCap size={20} />
-            </div>
-            <div className={dashboardStyles.logoTextGroup}>
-              <span className={dashboardStyles.logoTitle}>ResearchSphere</span>
-              <span className={dashboardStyles.logoSubtitle}>RESEARCH REPOSITORY</span>
-            </div>
-          </div>
-
-          <nav className={dashboardStyles.sidebarNav}>
-            <div className={dashboardStyles.navGroup}>
-              <span className={dashboardStyles.groupTitle}>Workspace</span>
-              <Link to="/student/dashboard" className={dashboardStyles.navItem}>
-                <LayoutDashboard className={dashboardStyles.navIcon} />
-                <span>Dashboard</span>
-              </Link>
-              <Link to="/student/notifications" className={dashboardStyles.navItem}>
-                <Bell className={dashboardStyles.navIcon} />
-                <span>Notifications</span>
-              </Link>
-            </div>
-
-            <div className={dashboardStyles.navGroup}>
-              <span className={dashboardStyles.groupTitle}>Publications</span>
-              <Link
-                to="/student/search"
-                className={`${dashboardStyles.navItem} ${dashboardStyles.navItemActive}`}
-              >
-                <Folder className={dashboardStyles.navIcon} />
-                <span>All Publications</span>
-              </Link>
-              <Link to="/student/upload" className={dashboardStyles.navItem}>
-                <Plus className={dashboardStyles.navIcon} />
-                <span>New Submission</span>
-              </Link>
-              <Link to="/student/status?tab=drafts" className={dashboardStyles.navItem}>
-                <FileText className={dashboardStyles.navIcon} />
-                <span>Drafts</span>
-              </Link>
-              <Link to="/student/status?tab=pending" className={dashboardStyles.navItem}>
-                <Clock className={dashboardStyles.navIcon} />
-                <span>Pending</span>
-              </Link>
-              <Link to="/student/status?tab=approved" className={dashboardStyles.navItem}>
-                <CheckCircle2 className={dashboardStyles.navIcon} />
-                <span>Approved</span>
-              </Link>
-              <Link to="/student/status?tab=rejected" className={dashboardStyles.navItem}>
-                <XCircle className={dashboardStyles.navIcon} />
-                <span>Rejected</span>
-              </Link>
-              <Link to="/student/status" className={dashboardStyles.navItem}>
-                <Bookmark className={dashboardStyles.navIcon} />
-                <span>Submission History</span>
-              </Link>
-            </div>
-
-            <div className={dashboardStyles.navGroup}>
-              <span className={dashboardStyles.groupTitle}>Discover</span>
-              <Link to="/student/search" className={dashboardStyles.navItem}>
-                <Compass className={dashboardStyles.navIcon} />
-                <span>Research Library</span>
-              </Link>
-              <Link to="/articles" className={dashboardStyles.navItem}>
-                <BookOpen className={dashboardStyles.navIcon} />
-                <span>Articles</span>
-              </Link>
-            </div>
-
-            <div className={dashboardStyles.navGroup}>
-              <span className={dashboardStyles.groupTitle}>Account</span>
-              <Link to="/student/profile" className={dashboardStyles.navItem}>
-                <User className={dashboardStyles.navIcon} />
-                <span>Profile</span>
-              </Link>
-            </div>
-          </nav>
-        </aside>
-      )}
+      {sidebarOpen && <StudentSidebar />}
 
       {/* Main */}
       <div className={dashboardStyles.mainContainer}>
@@ -204,13 +177,41 @@ const SearchPublicationsPage = () => {
                 <input
                   type="text"
                   id="publications-search-input"
+                  ref={searchInputRef}
                   className={styles.searchInput}
                   placeholder="Search by title, author, or category..."
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={handleKeyDown}
                 />
               </div>
             </div>
+
+            {/* Previous Searches */}
+            {searchHistory.length > 0 && (
+              <div className={styles.historyContainer}>
+                <span className={styles.historyLabel}>Previous searches:</span>
+                <div className={styles.historyChips}>
+                  {searchHistory.map((term, index) => (
+                    <div
+                      key={index}
+                      className={styles.historyChip}
+                      onClick={() => handleHistoryClick(term)}
+                    >
+                      <span>{term}</span>
+                      <button
+                        type="button"
+                        className={styles.removeHistoryBtn}
+                        onClick={(e) => removeFromHistory(e, index)}
+                        aria-label={`Remove search term ${term}`}
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Results Count */}
             {!loading && (
@@ -252,6 +253,7 @@ const SearchPublicationsPage = () => {
                 ))}
               </div>
             )}
+            <StudentFooter />
           </div>
         </div>
       </div>

@@ -103,6 +103,12 @@ const DashboardHeader = ({ onSidebarToggle, notificationsRoute = '/student/notif
     if (e.key === 'Enter') handleSearchSubmit(e);
   };
 
+  const handleSearchFocus = (e) => {
+    if (user && user.role !== 'supervisor') {
+      navigate('/student/search?focus=true');
+    }
+  };
+
   const toggleNotifPanel = () => {
     setNotifOpen((prev) => !prev);
     setProfileOpen(false);
@@ -166,6 +172,7 @@ const DashboardHeader = ({ onSidebarToggle, notificationsRoute = '/student/notif
             placeholder="Search papers, authors, categories..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={handleSearchFocus}
             onKeyDown={handleSearchKeyDown}
             aria-label="Search publications"
           />

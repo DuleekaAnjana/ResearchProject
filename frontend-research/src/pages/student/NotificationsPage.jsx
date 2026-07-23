@@ -10,6 +10,8 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import notificationService from '../../services/notificationService';
 import DashboardHeader from '../../components/layout/DashboardHeader';
+import StudentSidebar from '../../components/layout/StudentSidebar';
+import StudentFooter from '../../components/layout/StudentFooter';
 import styles from './NotificationsPage.module.css';
 import dashboardStyles from './StudentDashboard.module.css';
 
@@ -96,43 +98,7 @@ const NotificationsPage = () => {
   return (
     <div className={dashboardStyles.dashboardLayout}>
       {/* Sidebar */}
-      {sidebarOpen && (
-        <aside className={dashboardStyles.sidebar}>
-          <div className={dashboardStyles.sidebarHeader}>
-            <div className={dashboardStyles.logoIcon}>
-              <GraduationCap size={20} />
-            </div>
-            <div className={dashboardStyles.logoTextGroup}>
-              <span className={dashboardStyles.logoTitle}>ResearchSphere</span>
-              <span className={dashboardStyles.logoSubtitle}>RESEARCH REPOSITORY</span>
-            </div>
-          </div>
-
-          <nav className={dashboardStyles.sidebarNav}>
-            <div className={dashboardStyles.navGroup}>
-              <span className={dashboardStyles.groupTitle}>Workspace</span>
-              <Link to="/student/dashboard" className={dashboardStyles.navItem}>
-                <Bell className={dashboardStyles.navIcon} />
-                <span>Dashboard</span>
-              </Link>
-              <Link
-                to="/student/notifications"
-                className={`${dashboardStyles.navItem} ${dashboardStyles.navItemActive}`}
-              >
-                <Bell className={dashboardStyles.navIcon} />
-                <span>Notifications</span>
-              </Link>
-            </div>
-
-            <div className={dashboardStyles.navGroup}>
-              <span className={dashboardStyles.groupTitle}>Publications</span>
-              <Link to="/student/search" className={dashboardStyles.navItem}>
-                <span>All Publications</span>
-              </Link>
-            </div>
-          </nav>
-        </aside>
-      )}
+      {sidebarOpen && <StudentSidebar />}
 
       {/* Main */}
       <div className={dashboardStyles.mainContainer}>
@@ -251,6 +217,7 @@ const NotificationsPage = () => {
                 ))}
               </div>
             )}
+            <StudentFooter />
           </div>
         </div>
       </div>
