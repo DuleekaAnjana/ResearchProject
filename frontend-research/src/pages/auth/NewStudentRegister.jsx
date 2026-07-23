@@ -3,7 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Check, ChevronDown, Plus, X, AlertCircle, Info } from 'lucide-react';
 import Button from '../../components/common/Button';
 import { useAuth } from '../../context/AuthContext';
+import api from '../../services/api';
 import styles from './Register.module.css';
+
+const getYesterdayString = () => {
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  return yesterday.toISOString().split('T')[0];
+};
 
 const UNIVERSITIES = [
   'University of Colombo',
@@ -53,7 +60,7 @@ const NewStudentRegister = () => {
     currentDegree: '',
     educationLevel: '',
     researchCategory: 'Computer Science',
-    researchSubcategories: ['Artificial Intelligence'],
+    researchSubcategories: [],
     previousDegrees: [],
     password: '',
     confirmPassword: '',
@@ -66,18 +73,138 @@ const NewStudentRegister = () => {
   const [validationAlert, setValidationAlert] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPasswordGuide, setShowPasswordGuide] = useState(false);
+  const [userClosedGuide, setUserClosedGuide] = useState(false);
+
+  const validateField = (name, value, currentFormData = formData) => {
+    switch (name) {
+      case 'fullName':
+        if (!value || !value.trim()) return 'Please enter your full name.';
+        return '';
+
+      case 'nicNumber': {
+        const val = (value || '').trim();
+        if (!val) return 'Please enter your National Identity Card number.';
+        if (!/^\d{12}$/.test(val)) return 'NIC must need 12 digits.';
+        return '';
+      }
+
+      case 'dateOfBirth': {
+        if (!value) return 'Please select your Date of Birth.';
+        const selectedDate = new Date(value);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (isNaN(selectedDate.getTime()) || selectedDate >= today) {
+          return 'Date of Birth must be a previous date from current date.';
+        }
+        return '';
+      }
+
+      case 'email':
+        if (!value || !value.trim()) return 'Please enter your email address.';
+        if (!/\S+@\S+\.\S+/.test(value)) return 'Please enter a valid email address.';
+        return '';
+
+      case 'phoneNumber': {
+        if (!value || !value.trim()) return 'Please enter your phone number.';
+        const clean = value.replace(/\s+/g, '');
+        const isLocal = /^0\d{9}$/.test(clean);
+        const isIntl = /^\+94\d{9}$/.test(clean);
+        if (!isLocal && !isIntl) {
+          return 'Phone number must be in +9411 1111 111 or 011 1111 111 / 0772635452 format.';
+        }
+        return '';
+      }
+
+      case 'university':
+        if (!value) return 'Please select your current university.';
+        return '';
+
+      case 'registrationNumber':
+        if (!value || !value.trim()) return 'Please enter your university registration number.';
+        return '';
+
+      case 'currentDegree':
+        if (!value || !value.trim()) return 'Please enter your current degree name.';
+        return '';
+
+      case 'educationLevel':
+        if (!value) return 'Please select your education level.';
+        return '';
+
+      case 'password': {
+        if (!value) return 'Please enter a password.';
+        const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
+        if (!passwordRegex.test(value)) {
+          return 'Password must include at least eight characters, one letter, one number, and one special character.';
+        }
+        return '';
+      }
+
+      case 'confirmPassword':
+        if (!value) return 'Please confirm your password.';
+        if (value !== currentFormData.password) return 'Passwords do not match.';
+        return '';
+
+      default:
+        return '';
+    }
+  };
+
+  const handleNicBlur = async () => {
+    const val = formData.nicNumber.trim();
+    if (/^\d{12}$/.test(val)) {
+      try {
+        const isTaken = await api.get(`/auth/check-nic?nic=${encodeURIComponent(val)}`);
+        if (isTaken) {
+          setErrors((prev) => ({ ...prev, nicNumber: 'Entered NIC is already registered.' }));
+        }
+      } catch (e) {
+        console.error('Error checking NIC:', e);
+      }
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }));
+    const newValue = type === 'checkbox' ? checked : value;
+    const updatedFormData = {
+      ...formData,
+      [name]: newValue,
+    };
+
+    setFormData(updatedFormData);
+
+    if (type !== 'checkbox') {
+      const fieldError = validateField(name, newValue, updatedFormData);
+      setErrors((prev) => ({ ...prev, [name]: fieldError }));
+
+      if (name === 'password') {
+        if (updatedFormData.confirmPassword) {
+          const confirmErr = validateField('confirmPassword', updatedFormData.confirmPassword, updatedFormData);
+          setErrors((prev) => ({ ...prev, confirmPassword: confirmErr }));
+        }
+        if (fieldError) {
+          setUserClosedGuide(false);
+          setShowPasswordGuide(true);
+        } else {
+          setShowPasswordGuide(false);
+        }
+      }
     }
+
     if (serverError) setServerError('');
     if (validationAlert) setValidationAlert('');
+  };
+
+  const handlePasswordFocus = () => {
+    if (!userClosedGuide) {
+      setShowPasswordGuide(true);
+    }
+  };
+
+  const handleClosePasswordGuide = () => {
+    setShowPasswordGuide(false);
+    setUserClosedGuide(true);
   };
 
   // Add/Remove Previous Degrees
@@ -128,84 +255,24 @@ const NewStudentRegister = () => {
   // Form Validation with Simple Phrase Notification
   const validateForm = () => {
     const newErrors = {};
+    const fieldsToValidate = [
+      'fullName',
+      'nicNumber',
+      'dateOfBirth',
+      'email',
+      'phoneNumber',
+      'university',
+      'registrationNumber',
+      'currentDegree',
+      'educationLevel',
+      'password',
+      'confirmPassword',
+    ];
 
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = 'Please enter your full name.';
-    }
-
-    // NIC Validation: 12 digits string format
-    const nicRegex = /^\d{12}$/;
-    if (!formData.nicNumber) {
-      newErrors.nicNumber = 'Please enter your National Identity Card number.';
-    } else if (!nicRegex.test(formData.nicNumber.trim())) {
-      newErrors.nicNumber = 'National Identity Card number must contain exactly 12 numerical digits.';
-    }
-
-    // DOB Validation: Must be at least 15 years old from current date
-    if (!formData.dateOfBirth) {
-      newErrors.dateOfBirth = 'Please select your Date of Birth.';
-    } else {
-      const dobDate = new Date(formData.dateOfBirth);
-      const today = new Date();
-      let age = today.getFullYear() - dobDate.getFullYear();
-      const monthDiff = today.getMonth() - dobDate.getMonth();
-      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dobDate.getDate())) {
-        age--;
-      }
-      if (isNaN(dobDate.getTime()) || age < 15) {
-        newErrors.dateOfBirth = 'You must be at least 15 years old to complete registration.';
-      }
-    }
-
-    // Email validation
-    if (!formData.email.trim()) {
-      newErrors.email = 'Please enter your email address.';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address.';
-    }
-
-    // Phone Number Validation: 9 digits excluding +94 prefix
-    const phoneClean = formData.phoneNumber.replace('+94', '').replace(/\s+/g, '');
-    const phoneRegex = /^\d{9}$/;
-    if (!formData.phoneNumber) {
-      newErrors.phoneNumber = 'Please enter your phone number.';
-    } else if (!phoneRegex.test(phoneClean)) {
-      newErrors.phoneNumber = 'Phone number must have exactly 9 digits excluding +94.';
-    }
-
-    // University
-    if (!formData.university) {
-      newErrors.university = 'Please select your current university.';
-    }
-
-    // Registration Number
-    if (!formData.registrationNumber.trim()) {
-      newErrors.registrationNumber = 'Please enter your university registration number.';
-    }
-
-    // Current Degree
-    if (!formData.currentDegree.trim()) {
-      newErrors.currentDegree = 'Please enter your current degree name.';
-    }
-
-    // Education Level
-    if (!formData.educationLevel) {
-      newErrors.educationLevel = 'Please select your education level.';
-    }
-
-    // Password Validation: at least 8 characters, 1 letter, 1 number, 1 special character
-    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
-    if (!formData.password) {
-      newErrors.password = 'Please enter a password.';
-    } else if (!passwordRegex.test(formData.password)) {
-      newErrors.password = 'Password must include at least eight characters, one letter, one number, and one special character.';
-    }
-
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password.';
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match.';
-    }
+    fieldsToValidate.forEach((field) => {
+      const err = validateField(field, formData[field], formData);
+      if (err) newErrors[field] = err;
+    });
 
     if (!formData.acceptTerms || !formData.acceptPrivacy) {
       newErrors.terms = 'Please accept both Terms of Service and Privacy Policy to continue.';
@@ -249,7 +316,7 @@ const NewStudentRegister = () => {
         currentDegree: '',
         educationLevel: '',
         researchCategory: 'Computer Science',
-        researchSubcategories: ['Artificial Intelligence'],
+        researchSubcategories: [],
         previousDegrees: [],
         password: '',
         confirmPassword: '',
@@ -266,7 +333,39 @@ const NewStudentRegister = () => {
     }
   };
 
-  const isSubmitDisabled = isSubmitting || !formData.acceptTerms || !formData.acceptPrivacy;
+  const isFormIncompleteOrInvalid = () => {
+    const requiredFields = [
+      'fullName',
+      'nicNumber',
+      'dateOfBirth',
+      'email',
+      'phoneNumber',
+      'university',
+      'registrationNumber',
+      'currentDegree',
+      'educationLevel',
+      'password',
+      'confirmPassword',
+    ];
+
+    for (const field of requiredFields) {
+      if (!formData[field] || validateField(field, formData[field], formData)) {
+        return true;
+      }
+    }
+
+    if (Object.values(errors).some((err) => !!err)) {
+      return true;
+    }
+
+    if (!formData.acceptTerms || !formData.acceptPrivacy) {
+      return true;
+    }
+
+    return false;
+  };
+
+  const isSubmitDisabled = isSubmitting || isFormIncompleteOrInvalid();
 
   return (
     <div className={styles.container}>
@@ -304,9 +403,14 @@ const NewStudentRegister = () => {
       {/* Right Form Side */}
       <div className={styles.rightPanel}>
         <div className={styles.topNav}>
-          <Link to="/chooseregistration" className={styles.backLink}>
-            <ArrowLeft size={16} /> Back to select role
-          </Link>
+          <Button
+            to="/chooseregistration"
+            variant="outline"
+            size="md"
+            iconLeft={<ArrowLeft size={16} />}
+          >
+            Back to select role
+          </Button>
         </div>
 
         <div className={styles.formContainer}>
@@ -364,6 +468,7 @@ const NewStudentRegister = () => {
                   placeholder="e.g. 200112345678"
                   value={formData.nicNumber}
                   onChange={handleChange}
+                  onBlur={handleNicBlur}
                   className={`${styles.input} ${errors.nicNumber ? styles.inputError : ''}`}
                 />
                 {errors.nicNumber && <span className={styles.errorText}>{errors.nicNumber}</span>}
@@ -375,6 +480,7 @@ const NewStudentRegister = () => {
                 <input
                   type="date"
                   name="dateOfBirth"
+                  max={getYesterdayString()}
                   value={formData.dateOfBirth}
                   onChange={handleChange}
                   className={`${styles.input} ${errors.dateOfBirth ? styles.inputError : ''}`}
@@ -398,11 +504,11 @@ const NewStudentRegister = () => {
 
               {/* Phone Number */}
               <div className={styles.fieldGroup}>
-                <label className={styles.label}>Phone Number (9 Digits) *</label>
+                <label className={styles.label}>Phone Number *</label>
                 <input
                   type="text"
                   name="phoneNumber"
-                  placeholder="e.g. 771234567 or +94 771234567"
+                  placeholder="e.g. 0772635452, 011 1111 111 or +9411 1111 111"
                   value={formData.phoneNumber}
                   onChange={handleChange}
                   className={`${styles.input} ${errors.phoneNumber ? styles.inputError : ''}`}
@@ -634,7 +740,7 @@ const NewStudentRegister = () => {
                         <span><Info size={14} style={{ display: 'inline', marginRight: 4 }} /> Password Requirements</span>
                         <button
                           type="button"
-                          onClick={() => setShowPasswordGuide(false)}
+                          onClick={handleClosePasswordGuide}
                           className={styles.closeGuideBtn}
                           title="Close guide"
                         >
@@ -655,7 +761,7 @@ const NewStudentRegister = () => {
                     name="password"
                     placeholder="••••••••"
                     value={formData.password}
-                    onFocus={() => setShowPasswordGuide(true)}
+                    onFocus={handlePasswordFocus}
                     onChange={handleChange}
                     className={`${styles.input} ${errors.password ? styles.inputError : ''}`}
                   />

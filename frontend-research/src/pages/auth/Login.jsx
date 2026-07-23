@@ -58,7 +58,7 @@ const Login = ({ roleProp }) => {
     setError('');
 
     try {
-      const response = await login(email, password);
+      const response = await login(email, password, rememberMe);
       // Navigate to Student Dashboard or role-specific dashboard after successful sign-in
       const userRole = response?.role || roleKey;
       if (userRole === 'supervisor') {
@@ -127,7 +127,7 @@ const Login = ({ roleProp }) => {
               &ldquo;ResearchSphere transformed how our department manages student publications.&rdquo;
             </p>
             <p className={styles.author}>
-              PROF. R. SILVA, UNIVERSITY OF COLOMBO
+              PROF. R. SILVA, UNIVERSITY OF SRI JAYAWARDENAPURA
             </p>
           </div>
         </div>

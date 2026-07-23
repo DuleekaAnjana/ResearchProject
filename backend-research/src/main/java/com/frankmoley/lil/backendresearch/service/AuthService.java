@@ -31,6 +31,16 @@ public class AuthService {
                     .build();
         }
 
+        if (request.getNicNumber() != null && !request.getNicNumber().trim().isEmpty()) {
+            String cleanNic = request.getNicNumber().trim();
+            if (studentRepository.existsByNicNumber(cleanNic) || userRepository.existsByNicNumber(cleanNic)) {
+                return AuthResponse.builder()
+                        .success(false)
+                        .message("Entered NIC is already registered.")
+                        .build();
+            }
+        }
+
         String hashedPassword = hashPassword(request.getPassword());
 
         if ("student".equalsIgnoreCase(request.getRole()) || request.getRole() == null) {
@@ -148,6 +158,12 @@ public class AuthService {
                 .success(false)
                 .message("Invalid email or password.")
                 .build();
+    }
+
+    public boolean isNicRegistered(String nic) {
+        if (nic == null || nic.trim().isEmpty()) return false;
+        String cleanNic = nic.trim();
+        return studentRepository.existsByNicNumber(cleanNic) || userRepository.existsByNicNumber(cleanNic);
     }
 
     private String hashPassword(String password) {

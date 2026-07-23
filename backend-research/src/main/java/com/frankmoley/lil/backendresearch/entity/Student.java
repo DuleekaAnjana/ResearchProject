@@ -19,6 +19,7 @@ public class Student {
     @Column(nullable = false)
     private String fullName;
 
+    @Column(nullable = false, unique = true)
     private String nicNumber;
 
     private String dateOfBirth;

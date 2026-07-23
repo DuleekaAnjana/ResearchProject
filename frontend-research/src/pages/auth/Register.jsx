@@ -162,9 +162,14 @@ const Register = () => {
       {/* Right Form Side */}
       <div className={styles.rightPanel}>
         <div className={styles.topNav}>
-          <Link to="/chooseregistration" className={styles.backLink}>
-            <ArrowLeft size={16} /> Back to select role
-          </Link>
+          <Button
+            to="/chooseregistration"
+            variant="outline"
+            size="md"
+            iconLeft={<ArrowLeft size={16} />}
+          >
+            Back to select role
+          </Button>
         </div>
 
         <div className={styles.formContainer}>
