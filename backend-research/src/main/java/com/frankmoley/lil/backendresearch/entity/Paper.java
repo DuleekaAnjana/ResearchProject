@@ -62,6 +62,12 @@ public class Paper {
     /** Filename of the uploaded PDF manuscript */
     private String pdfFileName;
 
+    private Integer pages;
+
+    private Integer views = 0;
+
+    private Integer downloads = 0;
+
     /** Status: DRAFT, SUBMITTED, PENDING, APPROVED, REJECTED */
     @Column(nullable = false)
     private String status;

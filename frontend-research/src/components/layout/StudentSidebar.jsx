@@ -28,7 +28,7 @@ const StudentSidebar = () => {
   const isDashboardActive = pathname === '/student/dashboard' && (!tab || tab === 'dashboard');
   const isAnalyticsActive = pathname === '/student/dashboard' && tab === 'analytics';
   const isNotificationsActive = pathname === '/student/notifications';
-  const isAllPublicationsActive = pathname === '/student/search';
+  const isAllPublicationsActive = pathname === '/student/publications';
   const isNewSubmissionActive = pathname === '/student/upload';
   const isDraftsActive = pathname === '/student/status' && tab === 'drafts';
   const isPendingActive = pathname === '/student/status' && tab === 'pending';
@@ -84,7 +84,7 @@ const StudentSidebar = () => {
         <div className={styles.navGroup}>
           <span className={styles.groupTitle}>Publications</span>
           <Link
-            to="/student/search"
+            to="/student/publications"
             className={`${styles.navItem} ${isAllPublicationsActive ? styles.navItemActive : ''}`}
           >
             <Folder className={styles.navIcon} />

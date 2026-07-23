@@ -12,6 +12,7 @@ import StudentDashboard from '../pages/student/StudentDashboard';
 import SupervisorDashboard from '../pages/supervisor/SupervisorDashboard';
 import NotificationsPage from '../pages/student/NotificationsPage';
 import SearchPublicationsPage from '../pages/student/SearchPublicationsPage';
+import AllPublicationsPage from '../pages/student/AllPublicationsPage';
 import NewSubmissionPage from '../pages/student/NewSubmissionPage';
 import SubmissionStatusPage from '../pages/student/SubmissionStatusPage';
 import StudentProfilePage from '../pages/student/StudentProfilePage';
@@ -52,6 +53,7 @@ const AppRoutes = () => {
       <Route path="/student/edit/:id" element={<PlaceholderPage title="Edit Submission" />} />
       <Route path="/student/status" element={<SubmissionStatusPage />} />
       <Route path="/student/search" element={<SearchPublicationsPage />} />
+      <Route path="/student/publications" element={<AllPublicationsPage />} />
       <Route path="/student/notifications" element={<NotificationsPage />} />
       <Route path="/student/publication/:id" element={<PlaceholderPage title="Publication Details" />} />
       <Route path="/student/profile" element={<StudentProfilePage />} />

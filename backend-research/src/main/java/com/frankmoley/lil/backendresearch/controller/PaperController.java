@@ -67,6 +67,17 @@ public class PaperController {
         paper.setSupervisorEmail(paperRequest.getSupervisorEmail());
         paper.setComments(paperRequest.getComments());
         paper.setPdfFileName(paperRequest.getPdfFileName() != null ? paperRequest.getPdfFileName() : "manuscript.pdf");
+        paper.setPages(paperRequest.getPages());
+        if (paperRequest.getViews() != null) {
+            paper.setViews(paperRequest.getViews());
+        } else if (paper.getViews() == null) {
+            paper.setViews(0);
+        }
+        if (paperRequest.getDownloads() != null) {
+            paper.setDownloads(paperRequest.getDownloads());
+        } else if (paper.getDownloads() == null) {
+            paper.setDownloads(0);
+        }
         
         // Status can be DRAFT, PENDING, APPROVED, REJECTED
         String requestStatus = paperRequest.getStatus();
@@ -95,5 +106,19 @@ public class PaperController {
                 .filter(p -> p.getStudentEmail() != null && p.getStudentEmail().equalsIgnoreCase(email))
                 .toList();
         return ResponseEntity.ok(studentPapers);
+    }
+
+    /**
+     * DELETE /api/papers/{id}
+     * Deletes a paper submission.
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deletePaper(@PathVariable Long id) {
+        Optional<Paper> paperOpt = paperRepository.findById(id);
+        if (paperOpt.isPresent()) {
+            paperRepository.delete(paperOpt.get());
+            return ResponseEntity.ok().body("{\"message\": \"Paper deleted successfully.\"}");
+        }
+        return ResponseEntity.notFound().build();
     }
 }

@@ -42,6 +42,7 @@ const NewSubmissionPage = () => {
   const [supervisorEmail, setSupervisorEmail] = useState('demo@researchsphere.edu');
   const [comments, setComments] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
+  const [pages, setPages] = useState('');
 
   // ---- Feedback/UI State ----
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -145,6 +146,10 @@ const NewSubmissionPage = () => {
       setErrorMsg('Abstract text is required.');
       return;
     }
+    if (!pages || parseInt(pages, 10) <= 0) {
+      setErrorMsg('Number of pages is required and must be greater than zero.');
+      return;
+    }
     if (statusType === 'PENDING' && !keywords.trim()) {
       setErrorMsg('Keywords are required for submitting for review.');
       return;
@@ -162,6 +167,7 @@ const NewSubmissionPage = () => {
         studentEmail: user?.email || 'student@researchsphere.edu',
         comments: comments.trim(),
         pdfFileName: selectedFile ? selectedFile.name : 'manuscript.pdf',
+        pages: pages ? parseInt(pages, 10) : null,
         status: statusType, // DRAFT or PENDING (for review)
       };
 
@@ -345,6 +351,23 @@ const NewSubmissionPage = () => {
                     placeholder="Anything the reviewer should know."
                     value={comments}
                     onChange={(e) => setComments(e.target.value)}
+                  />
+                </div>
+
+                {/* Number of Pages */}
+                <div className={`${styles.formField} ${styles.fullWidth}`}>
+                  <label htmlFor="submission-pages" className={styles.label}>
+                    Number of Pages of Manuscript <span className={styles.labelRequired}>*</span>
+                  </label>
+                  <input
+                    type="number"
+                    id="submission-pages"
+                    min="1"
+                    className={styles.input}
+                    placeholder="Enter the total number of pages"
+                    value={pages}
+                    onChange={(e) => setPages(e.target.value)}
+                    required
                   />
                 </div>
 
