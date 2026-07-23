@@ -162,6 +162,10 @@ public class DataInitializer implements CommandLineRunner {
         paper.setAbstractText("This is the default abstract description for the research titled '" + title + "'. It addresses critical challenges and proposed methodologies.");
         paper.setKeywords("research, publication, Sinhala, Federated, Rainfall");
         paper.setStudent(student);
+        // Add random pages, views, downloads
+        paper.setPages((int) (Math.random() * 15) + 15);
+        paper.setViews((int) (Math.random() * 3000) + 500);
+        paper.setDownloads((int) (Math.random() * 800) + 50);
         return paper;
     }
 
