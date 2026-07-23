@@ -75,6 +75,7 @@ public class AuthService {
                     .email(savedStudent.getEmail())
                     .role("student")
                     .university(savedStudent.getUniversity())
+                    .researchCategory(savedStudent.getResearchCategory())
                     .build();
         } else {
             User user = new User();
@@ -101,6 +102,7 @@ public class AuthService {
                     .email(savedUser.getEmail())
                     .role(savedUser.getRole())
                     .university(savedUser.getUniversity())
+                    .researchCategory(savedUser.getResearchCategory())
                     .build();
         }
     }
@@ -120,6 +122,7 @@ public class AuthService {
                         .email(student.getEmail())
                         .role("student")
                         .university(student.getUniversity())
+                        .researchCategory(student.getResearchCategory())
                         .build();
             }
         }
@@ -136,6 +139,7 @@ public class AuthService {
                         .email(user.getEmail())
                         .role(user.getRole())
                         .university(user.getUniversity())
+                        .researchCategory(user.getResearchCategory())
                         .build();
             }
         }

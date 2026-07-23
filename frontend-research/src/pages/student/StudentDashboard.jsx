@@ -1,9 +1,7 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   GraduationCap,
-  Search,
-  Bell,
   PanelLeft,
   BookOpen,
   CheckCircle2,
@@ -24,6 +22,7 @@ import {
   Folder,
   Compass,
   User,
+  Bell,
   ChevronRight
 } from 'lucide-react';
 
@@ -37,6 +36,9 @@ import {
   continueWhereYouLeftOff
 } from '../../data/studentDashboardData';
 
+import DashboardHeader from '../../components/layout/DashboardHeader';
+import StudentSidebar from '../../components/layout/StudentSidebar';
+import StudentFooter from '../../components/layout/StudentFooter';
 import styles from './StudentDashboard.module.css';
 
 /**
@@ -67,164 +69,22 @@ const renderStatIcon = (iconName) => {
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [searchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'dashboard';
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
     <div className={styles.dashboardLayout}>
       {/* Sidebar Navigation */}
-      {sidebarOpen && (
-        <aside className={styles.sidebar}>
-          <div className={styles.sidebarHeader}>
-            <div className={styles.logoIcon}>
-              <GraduationCap size={20} />
-            </div>
-            <div className={styles.logoTextGroup}>
-              <span className={styles.logoTitle}>ResearchSphere</span>
-              <span className={styles.logoSubtitle}>RESEARCH REPOSITORY</span>
-            </div>
-          </div>
-
-          <nav className={styles.sidebarNav}>
-            {/* Workspace Section */}
-            <div className={styles.navGroup}>
-              <span className={styles.groupTitle}>Workspace</span>
-              <button
-                className={`${styles.navItem} ${activeTab === 'dashboard' ? styles.navItemActive : ''}`}
-                onClick={() => setActiveTab('dashboard')}
-              >
-                <LayoutDashboard className={styles.navIcon} />
-                <span>Dashboard</span>
-              </button>
-              <button
-                className={`${styles.navItem} ${activeTab === 'analytics' ? styles.navItemActive : ''}`}
-                onClick={() => setActiveTab('analytics')}
-              >
-                <BarChart3 className={styles.navIcon} />
-                <span>Analytics</span>
-              </button>
-              <button
-                className={`${styles.navItem} ${activeTab === 'notifications' ? styles.navItemActive : ''}`}
-                onClick={() => setActiveTab('notifications')}
-              >
-                <Bell className={styles.navIcon} />
-                <span>Notifications</span>
-              </button>
-            </div>
-
-            {/* Publications Section */}
-            <div className={styles.navGroup}>
-              <span className={styles.groupTitle}>Publications</span>
-              <Link to="/student/search" className={styles.navItem}>
-                <Folder className={styles.navIcon} />
-                <span>All Publications</span>
-              </Link>
-              <Link to="/student/upload" className={styles.navItem}>
-                <Plus className={styles.navIcon} />
-                <span>New Submission</span>
-              </Link>
-              <Link to="/student/status?tab=drafts" className={styles.navItem}>
-                <FileText className={styles.navIcon} />
-                <span>Drafts</span>
-              </Link>
-              <Link to="/student/status?tab=pending" className={styles.navItem}>
-                <Clock className={styles.navIcon} />
-                <span>Pending</span>
-              </Link>
-              <Link to="/student/status?tab=approved" className={styles.navItem}>
-                <CheckCircle2 className={styles.navIcon} />
-                <span>Approved</span>
-              </Link>
-              <Link to="/student/status?tab=rejected" className={styles.navItem}>
-                <XCircle className={styles.navIcon} />
-                <span>Rejected</span>
-              </Link>
-              <Link to="/student/status" className={styles.navItem}>
-                <Bookmark className={styles.navIcon} />
-                <span>Submission History</span>
-              </Link>
-            </div>
-
-            {/* Discover Section */}
-            <div className={styles.navGroup}>
-              <span className={styles.groupTitle}>Discover</span>
-              <Link to="/student/search" className={styles.navItem}>
-                <Compass className={styles.navIcon} />
-                <span>Research Library</span>
-              </Link>
-              <Link to="/articles" className={styles.navItem}>
-                <BookOpen className={styles.navIcon} />
-                <span>Articles</span>
-              </Link>
-              <Link to="/blogs" className={styles.navItem}>
-                <FileText className={styles.navIcon} />
-                <span>Blogs</span>
-              </Link>
-              <Link to="/contact" className={styles.navItem}>
-                <User className={styles.navIcon} />
-                <span>Contact Supervisors</span>
-              </Link>
-            </div>
-
-            {/* Account Section */}
-            <div className={styles.navGroup}>
-              <span className={styles.groupTitle}>Account</span>
-              <Link to="/student/profile" className={styles.navItem}>
-                <User className={styles.navIcon} />
-                <span>Profile</span>
-              </Link>
-            </div>
-          </nav>
-        </aside>
-      )}
+      {sidebarOpen && <StudentSidebar />}
 
       {/* Main Content Area */}
       <div className={styles.mainContainer}>
-        {/* Top Navbar */}
-        <header className={styles.topbar}>
-          <div className={styles.topbarLeft}>
-            <button
-              className={styles.sidebarToggleBtn}
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              title="Toggle Sidebar"
-            >
-              <PanelLeft size={20} />
-            </button>
-
-            <div className={styles.searchBox}>
-              <Search className={styles.searchIcon} />
-              <input
-                type="text"
-                placeholder="Search papers, authors, categories..."
-                className={styles.searchInput}
-              />
-            </div>
-          </div>
-
-          <div className={styles.topbarRight}>
-            <button className={styles.notificationBtn} title="Notifications">
-              <Bell size={20} />
-              {studentProfile.unreadNotifications > 0 && (
-                <span className={styles.notificationBadge}>
-                  {studentProfile.unreadNotifications}
-                </span>
-              )}
-            </button>
-
-            <div
-              className={styles.userProfile}
-              onClick={() => navigate('/student/profile')}
-            >
-              <div className={styles.avatar}>
-                {studentProfile.avatarInitials}
-              </div>
-              <div className={styles.userInfo}>
-                <span className={styles.userName}>{studentProfile.name}</span>
-                <span className={styles.userRole}>{studentProfile.role}</span>
-              </div>
-            </div>
-          </div>
-        </header>
+        {/* Top Navbar - replaced with shared DashboardHeader */}
+        <DashboardHeader
+          onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
+          notificationsRoute="/student/notifications"
+        />
 
         {/* Dashboard Content */}
         <div className={styles.contentWrapper}>
@@ -492,14 +352,7 @@ const StudentDashboard = () => {
           </div>
 
           {/* Footer */}
-          <footer className={styles.footer}>
-            <span>© 2026 ResearchSphere — Student Research Publication Repository.</span>
-            <div className={styles.footerLinks}>
-              <span className={styles.footerLink}>v1.0 prototype</span>
-              <span className={styles.footerLink}>Privacy</span>
-              <span className={styles.footerLink}>Terms</span>
-            </div>
-          </footer>
+          <StudentFooter />
         </div>
       </div>
     </div>
