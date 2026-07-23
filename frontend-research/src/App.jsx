@@ -14,7 +14,7 @@ function App() {
     location.pathname.startsWith('/supervisor/') ||
     location.pathname.startsWith('/student/') ||
     location.pathname.startsWith('/admin/') ||
-    ['/login', '/register', '/forgot-password', '/chooseregistration', '/newstudentregistegpage'].includes(location.pathname);
+    ['/login', '/register', '/forgot-password', '/chooseregistration', '/newstudentregistegpage', '/newsupervisorregistergpage'].includes(location.pathname);
 
   return (
     <>

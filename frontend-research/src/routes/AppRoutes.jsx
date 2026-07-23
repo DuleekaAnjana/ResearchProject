@@ -8,6 +8,7 @@ import Register from '../pages/auth/Register';
 import Login from '../pages/auth/Login';
 import ChooseRegistration from '../pages/auth/ChooseRegistration';
 import NewStudentRegister from '../pages/auth/NewStudentRegister';
+import NewSupervisorRegister from '../pages/auth/NewSupervisorRegister';
 import StudentDashboard from '../pages/student/StudentDashboard';
 import SupervisorDashboard from '../pages/supervisor/SupervisorDashboard';
 import NotificationsPage from '../pages/student/NotificationsPage';
@@ -38,6 +39,7 @@ const AppRoutes = () => {
       <Route path="/auth/register" element={<ChooseRegistration />} />
       <Route path="/chooseregistration" element={<ChooseRegistration />} />
       <Route path="/newstudentregistegpage" element={<NewStudentRegister />} />
+      <Route path="/newsupervisorregistergpage" element={<NewSupervisorRegister />} />
       <Route path="/forgot-password" element={<PlaceholderPage title="Forgot Password" />} />
 
       {/* Shared / Legal Pages */}

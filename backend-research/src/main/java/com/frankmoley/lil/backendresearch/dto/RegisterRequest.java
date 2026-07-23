@@ -22,6 +22,18 @@ public class RegisterRequest {
     private String password;
     private String role;
 
+    // Supervisor Specific Fields
+    private String gender;
+    private String faculty;
+    private String department;
+    private String academicPosition;
+    private String employeeId;
+    private String highestQualification;
+    private String yearsOfTeachingExperience;
+    private String yearsOfResearchExperience;
+    private String professionalBiography;
+    private String researchInterests;
+
     @Data
     public static class PreviousDegreeDTO {
         private String degree;

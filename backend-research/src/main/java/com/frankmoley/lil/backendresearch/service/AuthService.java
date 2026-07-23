@@ -5,8 +5,10 @@ import com.frankmoley.lil.backendresearch.dto.LoginRequest;
 import com.frankmoley.lil.backendresearch.dto.RegisterRequest;
 import com.frankmoley.lil.backendresearch.entity.Student;
 import com.frankmoley.lil.backendresearch.entity.User;
+import com.frankmoley.lil.backendresearch.entity.Supervisor;
 import com.frankmoley.lil.backendresearch.repository.StudentRepository;
 import com.frankmoley.lil.backendresearch.repository.UserRepository;
+import com.frankmoley.lil.backendresearch.repository.SupervisorRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -22,10 +24,13 @@ public class AuthService {
 
     private final StudentRepository studentRepository;
     private final UserRepository userRepository;
+    private final SupervisorRepository supervisorRepository;
     private final NotificationService notificationService;
 
     public AuthResponse register(RegisterRequest request) {
-        if (studentRepository.existsByEmail(request.getEmail()) || userRepository.existsByEmail(request.getEmail())) {
+        if (studentRepository.existsByEmail(request.getEmail()) 
+                || userRepository.existsByEmail(request.getEmail())
+                || supervisorRepository.existsByEmail(request.getEmail())) {
             return AuthResponse.builder()
                     .success(false)
                     .message("Email address is already registered.")
@@ -34,7 +39,9 @@ public class AuthService {
 
         if (request.getNicNumber() != null && !request.getNicNumber().trim().isEmpty()) {
             String cleanNic = request.getNicNumber().trim();
-            if (studentRepository.existsByNicNumber(cleanNic) || userRepository.existsByNicNumber(cleanNic)) {
+            if (studentRepository.existsByNicNumber(cleanNic) 
+                    || userRepository.existsByNicNumber(cleanNic)
+                    || supervisorRepository.existsByNicNumber(cleanNic)) {
                 return AuthResponse.builder()
                         .success(false)
                         .message("Entered NIC is already registered.")
@@ -95,6 +102,63 @@ public class AuthService {
                     .university(savedStudent.getUniversity())
                     .researchCategory(savedStudent.getResearchCategory())
                     .build();
+        } else if ("supervisor".equalsIgnoreCase(request.getRole())) {
+            Supervisor supervisor = new Supervisor();
+            supervisor.setFullName(request.getFullName());
+            supervisor.setNicNumber(request.getNicNumber());
+            supervisor.setDateOfBirth(request.getDateOfBirth());
+            supervisor.setEmail(request.getEmail());
+            supervisor.setPhoneNumber(request.getPhoneNumber());
+            supervisor.setGender(request.getGender());
+            supervisor.setUniversity(request.getUniversity());
+            supervisor.setFaculty(request.getFaculty());
+            supervisor.setDepartment(request.getDepartment());
+            supervisor.setAcademicPosition(request.getAcademicPosition());
+            supervisor.setEmployeeId(request.getEmployeeId());
+            supervisor.setHighestQualification(request.getHighestQualification());
+
+            if (request.getPreviousDegrees() != null && !request.getPreviousDegrees().isEmpty()) {
+                StringBuilder sb = new StringBuilder();
+                for (RegisterRequest.PreviousDegreeDTO deg : request.getPreviousDegrees()) {
+                    sb.append(deg.getDegree()).append(" (").append(deg.getUniversity()).append("); ");
+                }
+                supervisor.setPreviouslyCompletedDegreesJson(sb.toString());
+            }
+
+            supervisor.setYearsOfTeachingExperience(request.getYearsOfTeachingExperience());
+            supervisor.setYearsOfResearchExperience(request.getYearsOfResearchExperience());
+            supervisor.setProfessionalBiography(request.getProfessionalBiography());
+            supervisor.setResearchCategory(request.getResearchCategory());
+
+            if (request.getResearchSubcategories() != null && !request.getResearchSubcategories().isEmpty()) {
+                supervisor.setResearchSubcategoriesJson(String.join(", ", request.getResearchSubcategories()));
+            } else if (request.getResearchSubcategory() != null) {
+                supervisor.setResearchSubcategoriesJson(request.getResearchSubcategory());
+            }
+
+            supervisor.setResearchInterests(request.getResearchInterests());
+            supervisor.setPassword(hashedPassword);
+            supervisor.setRole("supervisor");
+
+            Supervisor savedSupervisor = supervisorRepository.save(supervisor);
+
+            notificationService.createNotification(
+                savedSupervisor.getEmail(),
+                "Welcome to ResearchSphere",
+                "Hello " + savedSupervisor.getFullName() + ", welcome to ResearchSphere as a supervisor!",
+                "SYSTEM"
+            );
+
+            return AuthResponse.builder()
+                    .success(true)
+                    .message("Supervisor registration successful!")
+                    .id(savedSupervisor.getId())
+                    .name(savedSupervisor.getFullName())
+                    .email(savedSupervisor.getEmail())
+                    .role("supervisor")
+                    .university(savedSupervisor.getUniversity())
+                    .researchCategory(savedSupervisor.getResearchCategory())
+                    .build();
         } else {
             User user = new User();
             user.setFullName(request.getFullName());
@@ -152,6 +216,23 @@ public class AuthService {
             }
         }
 
+        Optional<Supervisor> supervisorOpt = supervisorRepository.findByEmail(request.getEmail());
+        if (supervisorOpt.isPresent()) {
+            Supervisor supervisor = supervisorOpt.get();
+            if (supervisor.getPassword().equals(hashedPassword) || supervisor.getPassword().equals(request.getPassword())) {
+                return AuthResponse.builder()
+                        .success(true)
+                        .message("Login successful!")
+                        .id(supervisor.getId())
+                        .name(supervisor.getFullName())
+                        .email(supervisor.getEmail())
+                        .role("supervisor")
+                        .university(supervisor.getUniversity())
+                        .researchCategory(supervisor.getResearchCategory())
+                        .build();
+            }
+        }
+
         Optional<User> userOptional = userRepository.findByEmail(request.getEmail());
         if (userOptional.isPresent()) {
             User user = userOptional.get();
@@ -178,7 +259,9 @@ public class AuthService {
     public boolean isNicRegistered(String nic) {
         if (nic == null || nic.trim().isEmpty()) return false;
         String cleanNic = nic.trim();
-        return studentRepository.existsByNicNumber(cleanNic) || userRepository.existsByNicNumber(cleanNic);
+        return studentRepository.existsByNicNumber(cleanNic) 
+                || userRepository.existsByNicNumber(cleanNic)
+                || supervisorRepository.existsByNicNumber(cleanNic);
     }
 
     private String hashPassword(String password) {
