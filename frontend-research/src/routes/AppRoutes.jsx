@@ -10,6 +10,9 @@ import ChooseRegistration from '../pages/auth/ChooseRegistration';
 import NewStudentRegister from '../pages/auth/NewStudentRegister';
 import StudentDashboard from '../pages/student/StudentDashboard';
 import SupervisorDashboard from '../pages/supervisor/SupervisorDashboard';
+import NotificationsPage from '../pages/student/NotificationsPage';
+import SearchPublicationsPage from '../pages/student/SearchPublicationsPage';
+import NewSubmissionPage from '../pages/student/NewSubmissionPage';
 
 /**
  * Application routes configuration
@@ -40,10 +43,11 @@ const AppRoutes = () => {
       {/* ====== Student Routes ====== */}
       {/* TODO: Wrap with ProtectedRoute role="student" */}
       <Route path="/student/dashboard" element={<StudentDashboard />} />
-      <Route path="/student/upload" element={<PlaceholderPage title="Upload Research Paper" />} />
+      <Route path="/student/upload" element={<NewSubmissionPage />} />
       <Route path="/student/edit/:id" element={<PlaceholderPage title="Edit Submission" />} />
       <Route path="/student/status" element={<PlaceholderPage title="Submission Status" />} />
-      <Route path="/student/search" element={<PlaceholderPage title="Search Publications" />} />
+      <Route path="/student/search" element={<SearchPublicationsPage />} />
+      <Route path="/student/notifications" element={<NotificationsPage />} />
       <Route path="/student/publication/:id" element={<PlaceholderPage title="Publication Details" />} />
       <Route path="/student/profile" element={<PlaceholderPage title="Student Profile" />} />
 

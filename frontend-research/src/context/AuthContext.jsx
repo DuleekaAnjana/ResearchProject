@@ -38,6 +38,7 @@ export const AuthProvider = ({ children }) => {
           email: response.email,
           role: response.role,
           university: response.university,
+          researchCategory: response.researchCategory,
         };
         setUser(loggedUser);
         return response;
