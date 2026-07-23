@@ -146,7 +146,12 @@ const Home = () => {
           {/* CTA Buttons */}
           <div className={styles.ctaGroup}>
             <Button
-              to="/login"
+              onClick={() => {
+                const el = document.getElementById('signin');
+                if (el) {
+                  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }}
               variant="primary"
               size="lg"
               iconRight={<ArrowRight size={16} />}

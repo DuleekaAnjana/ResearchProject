@@ -11,23 +11,22 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
-    const savedUser = localStorage.getItem('researchsphere_user');
-    return savedUser ? JSON.parse(savedUser) : null;
+    try {
+      const sessionUser = sessionStorage.getItem('researchsphere_user');
+      if (sessionUser) return JSON.parse(sessionUser);
+      const localUser = localStorage.getItem('researchsphere_user');
+      if (localUser) return JSON.parse(localUser);
+    } catch (e) {
+      console.error('Error parsing stored user:', e);
+    }
+    return null;
   });
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem('researchsphere_user', JSON.stringify(user));
-    } else {
-      localStorage.removeItem('researchsphere_user');
-    }
-  }, [user]);
 
   /**
    * Login function calling Spring Boot backend POST /api/auth/login
    */
-  const login = useCallback(async (email, password) => {
+  const login = useCallback(async (email, password, rememberMe = true) => {
     setLoading(true);
     try {
       const response = await api.post('/auth/login', { email, password });
@@ -41,6 +40,13 @@ export const AuthProvider = ({ children }) => {
           researchCategory: response.researchCategory,
         };
         setUser(loggedUser);
+        if (rememberMe) {
+          localStorage.setItem('researchsphere_user', JSON.stringify(loggedUser));
+          sessionStorage.removeItem('researchsphere_user');
+        } else {
+          sessionStorage.setItem('researchsphere_user', JSON.stringify(loggedUser));
+          localStorage.removeItem('researchsphere_user');
+        }
         return response;
       } else {
         throw new Error(response.message || 'Login failed');
@@ -79,6 +85,7 @@ export const AuthProvider = ({ children }) => {
   const logout = useCallback(() => {
     setUser(null);
     localStorage.removeItem('researchsphere_user');
+    sessionStorage.removeItem('researchsphere_user');
   }, []);
 
   /**

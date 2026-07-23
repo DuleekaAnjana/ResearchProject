@@ -33,4 +33,9 @@ public class AuthController {
         }
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/check-nic")
+    public ResponseEntity<Boolean> checkNic(@RequestParam("nic") String nic) {
+        return ResponseEntity.ok(authService.isNicRegistered(nic));
+    }
 }

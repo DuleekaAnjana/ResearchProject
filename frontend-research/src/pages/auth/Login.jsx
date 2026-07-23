@@ -58,7 +58,7 @@ const Login = ({ roleProp }) => {
     setError('');
 
     try {
-      const response = await login(email, password);
+      const response = await login(email, password, rememberMe);
       // Navigate to Student Dashboard or role-specific dashboard after successful sign-in
       const userRole = response?.role || roleKey;
       if (userRole === 'supervisor') {
