@@ -205,7 +205,7 @@ const NotificationsPage = () => {
                   <p className={styles.emptyStateTitle}>No notifications here</p>
                   <p className={styles.emptyStateDesc}>
                     {activeTab === 'unread'
-                      ? 'You're all caught up!'
+                      ? "You're all caught up!"
                       : 'Nothing to show in this category.'}
                   </p>
                 </div>
