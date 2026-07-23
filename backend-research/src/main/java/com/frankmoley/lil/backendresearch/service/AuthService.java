@@ -22,6 +22,7 @@ public class AuthService {
 
     private final StudentRepository studentRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public AuthResponse register(RegisterRequest request) {
         if (studentRepository.existsByEmail(request.getEmail()) || userRepository.existsByEmail(request.getEmail())) {
@@ -77,6 +78,13 @@ public class AuthService {
 
             Student savedStudent = studentRepository.save(student);
 
+            notificationService.createNotification(
+                savedStudent.getEmail(),
+                "Welcome to ResearchSphere",
+                "Hello " + savedStudent.getFullName() + ", welcome to ResearchSphere! Start uploading your research papers now.",
+                "SYSTEM"
+            );
+
             return AuthResponse.builder()
                     .success(true)
                     .message("Student registration successful!")
@@ -103,6 +111,13 @@ public class AuthService {
             user.setRole(request.getRole());
 
             User savedUser = userRepository.save(user);
+
+            notificationService.createNotification(
+                savedUser.getEmail(),
+                "Welcome to ResearchSphere",
+                "Hello " + savedUser.getFullName() + ", welcome to ResearchSphere!",
+                "SYSTEM"
+            );
 
             return AuthResponse.builder()
                     .success(true)

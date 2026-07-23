@@ -289,7 +289,7 @@ const DashboardHeader = ({ onSidebarToggle, notificationsRoute = '/student/notif
                   id="profile-menu-notifications-link"
                 >
                   <Bell size={16} />
-                  Notifications
+                  Notifications {unreadCount > 0 ? `(${unreadCount})` : ''}
                 </Link>
 
                 <span

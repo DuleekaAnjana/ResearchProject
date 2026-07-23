@@ -14,6 +14,15 @@ export const AuthProvider = ({ children }) => {
     try {
       const sessionUser = sessionStorage.getItem('researchsphere_user');
       if (sessionUser) return JSON.parse(sessionUser);
+
+      // If it's a new session, clear localStorage to prevent stale automatic login on first load
+      const isSessionActive = sessionStorage.getItem('researchsphere_session_active');
+      if (!isSessionActive) {
+        localStorage.removeItem('researchsphere_user');
+        sessionStorage.setItem('researchsphere_session_active', 'true');
+        return null;
+      }
+
       const localUser = localStorage.getItem('researchsphere_user');
       if (localUser) return JSON.parse(localUser);
     } catch (e) {

@@ -26,6 +26,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 
+import { useAuth } from '../../context/AuthContext';
 import {
   studentProfile,
   studentStats,
@@ -72,6 +73,7 @@ const StudentDashboard = () => {
   const [searchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') || 'dashboard';
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { user } = useAuth();
 
   return (
     <div className={styles.dashboardLayout}>
@@ -101,7 +103,7 @@ const StudentDashboard = () => {
           <div className={styles.welcomeBanner}>
             <div>
               <h1 className={styles.welcomeTitle}>
-                Welcome back, {studentProfile.name.split(' ')[0]}
+                Welcome back, {(user?.name || studentProfile.name).split(' ')[0]}
               </h1>
               <p className={styles.welcomeSubtitle}>
                 Here's an overview of your research activity across ResearchSphere.

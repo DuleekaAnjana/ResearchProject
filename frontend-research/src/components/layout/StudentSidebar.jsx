@@ -97,13 +97,7 @@ const StudentSidebar = () => {
             <Plus className={styles.navIcon} />
             <span>New Submission</span>
           </Link>
-          <Link
-            to="/student/status?tab=drafts"
-            className={`${styles.navItem} ${isDraftsActive ? styles.navItemActive : ''}`}
-          >
-            <FileText className={styles.navIcon} />
-            <span>Drafts</span>
-          </Link>
+
           <Link
             to="/student/status?tab=pending"
             className={`${styles.navItem} ${isPendingActive ? styles.navItemActive : ''}`}

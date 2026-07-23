@@ -48,4 +48,9 @@ public interface NotificationService {
      * @param userEmail the user's email
      */
     void markAllAsRead(String userEmail);
+
+    /**
+     * Create a new notification for a user.
+     */
+    void createNotification(String userEmail, String title, String description, String type);
 }

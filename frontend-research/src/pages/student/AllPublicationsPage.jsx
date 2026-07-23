@@ -274,42 +274,28 @@ ${paper.comments || ''}
               />
             </div>
 
-            <div className={styles.dropdownsGroup}>
-              {/* Category Filter */}
-              <select
-                value={selectedSubcategory}
-                onChange={(e) => setSelectedSubcategory(e.target.value)}
-                className={styles.filterSelect}
-              >
-                <option value="">All subcategories</option>
-                {relevantSubcategories.map((sub) => (
-                  <option key={sub} value={sub}>{sub}</option>
-                ))}
-              </select>
+            {/* Category Filter */}
+            <select
+              value={selectedSubcategory}
+              onChange={(e) => setSelectedSubcategory(e.target.value)}
+              className={styles.filterSelect}
+            >
+              <option value="">All Sub Categories</option>
+              {relevantSubcategories.map((sub) => (
+                <option key={sub} value={sub}>{sub}</option>
+              ))}
+            </select>
 
-              {/* Status Filter */}
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className={styles.filterSelect}
-              >
-                <option value="">All status</option>
-                <option value="APPROVED">Approved</option>
-                <option value="REJECTED">Rejected</option>
-                <option value="UNDER_REVIEW">Under Review</option>
-              </select>
-
-              {/* Sort Order */}
-              <select
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value)}
-                className={styles.filterSelect}
-              >
-                <option value="newest">Newest</option>
-                <option value="oldest">Oldest</option>
-                <option value="alphabetical">A-Z</option>
-              </select>
-            </div>
+            {/* Sort Order */}
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value)}
+              className={styles.filterSelect}
+            >
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+              <option value="alphabetical">A-Z</option>
+            </select>
           </div>
 
           {/* Error Message */}

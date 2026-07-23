@@ -438,14 +438,6 @@ const NewSubmissionPage = () => {
                 </button>
                 <button
                   type="button"
-                  className={styles.saveDraftBtn}
-                  onClick={() => handleSave('DRAFT')}
-                  disabled={loading}
-                >
-                  Save draft
-                </button>
-                <button
-                  type="button"
                   className={styles.submitBtn}
                   onClick={() => handleSave('PENDING')}
                   disabled={loading}
