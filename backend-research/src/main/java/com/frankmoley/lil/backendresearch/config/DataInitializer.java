@@ -1,8 +1,10 @@
 package com.frankmoley.lil.backendresearch.config;
 
+import com.frankmoley.lil.backendresearch.entity.Notification;
 import com.frankmoley.lil.backendresearch.entity.Paper;
 import com.frankmoley.lil.backendresearch.entity.Student;
 import com.frankmoley.lil.backendresearch.entity.User;
+import com.frankmoley.lil.backendresearch.repository.NotificationRepository;
 import com.frankmoley.lil.backendresearch.repository.PaperRepository;
 import com.frankmoley.lil.backendresearch.repository.StudentRepository;
 import com.frankmoley.lil.backendresearch.repository.UserRepository;
@@ -24,6 +26,7 @@ public class DataInitializer implements CommandLineRunner {
     private final UserRepository userRepository;
     private final StudentRepository studentRepository;
     private final PaperRepository paperRepository;
+    private final NotificationRepository notificationRepository;
 
     @Override
     public void run(String... args) throws Exception {
@@ -83,6 +86,64 @@ public class DataInitializer implements CommandLineRunner {
             );
 
             paperRepository.saveAll(samplePapers);
+        }
+
+        // Seed demo notifications for the demo student if none exist
+        String studentEmail = "student@researchsphere.edu";
+        if (notificationRepository.countByUserEmailAndIsRead(studentEmail, false) == 0
+                && notificationRepository.findByUserEmailOrderByCreatedAtDesc(studentEmail).isEmpty()) {
+            LocalDateTime baseTime = LocalDateTime.now();
+
+            notificationRepository.saveAll(List.of(
+                    Notification.builder()
+                            .userEmail(studentEmail)
+                            .title("Submission received")
+                            .description("Your paper 'Explainable AI in Cardiovascular Risk Prediction' is under administrator validation.")
+                            .type("SUBMISSION")
+                            .isRead(false)
+                            .createdAt(baseTime.minusDays(1))
+                            .build(),
+                    Notification.builder()
+                            .userEmail(studentEmail)
+                            .title("Supervisor assigned")
+                            .description("Prof. Ranjith Silva has been assigned as your reviewer.")
+                            .type("SUPERVISOR_ASSIGNED")
+                            .isRead(false)
+                            .createdAt(baseTime.minusDays(2))
+                            .build(),
+                    Notification.builder()
+                            .userEmail(studentEmail)
+                            .title("Feedback available")
+                            .description("Supervisor feedback is available for your rejected submission.")
+                            .type("FEEDBACK")
+                            .isRead(false)
+                            .createdAt(baseTime.minusDays(6))
+                            .build(),
+                    Notification.builder()
+                            .userEmail(studentEmail)
+                            .title("Paper approved")
+                            .description("Congratulations! Your paper has been approved and is now published.")
+                            .type("PAPER_APPROVED")
+                            .isRead(true)
+                            .createdAt(baseTime.minusDays(4))
+                            .build(),
+                    Notification.builder()
+                            .userEmail(studentEmail)
+                            .title("Paper approved")
+                            .description("Your submission 'Transformer-Based Approaches for Low-Resource Sinhala NLP' was approved.")
+                            .type("PAPER_APPROVED")
+                            .isRead(true)
+                            .createdAt(baseTime.minusDays(10))
+                            .build(),
+                    Notification.builder()
+                            .userEmail(studentEmail)
+                            .title("Paper approved")
+                            .description("Your submission 'Federated Learning for Privacy-Preserving Medical Imaging' was approved.")
+                            .type("PAPER_APPROVED")
+                            .isRead(true)
+                            .createdAt(baseTime.minusDays(8))
+                            .build()
+            ));
         }
     }
 

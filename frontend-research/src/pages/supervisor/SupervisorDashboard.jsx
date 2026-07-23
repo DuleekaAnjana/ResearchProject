@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
+import DashboardHeader from '../../components/layout/DashboardHeader';
 import styles from './SupervisorDashboard.module.css';
 
 const SupervisorDashboard = () => {
@@ -175,42 +176,11 @@ const SupervisorDashboard = () => {
 
       {/* Main Content View */}
       <div className={styles.mainContent}>
-        {/* Top Header Bar */}
-        <header className={styles.topHeader}>
-          <div className={styles.headerLeft}>
-            <button
-              className={styles.toggleBtn}
-              onClick={() => setSidebarOpen((prev) => !prev)}
-              aria-label="Toggle Sidebar"
-            >
-              <PanelLeft size={20} />
-            </button>
-
-            <div className={styles.searchBox}>
-              <Search size={16} className={styles.searchIcon} />
-              <input
-                type="text"
-                placeholder="Search papers, authors, categories..."
-                className={styles.searchInput}
-              />
-            </div>
-          </div>
-
-          <div className={styles.headerRight}>
-            <button className={styles.notificationBtn} aria-label="Notifications">
-              <Bell size={20} />
-              <span className={styles.notificationBadge}>2</span>
-            </button>
-
-            <div className={styles.profilePill}>
-              <div className={styles.avatarCircle}>{getInitials(displayName)}</div>
-              <div className={styles.profileInfo}>
-                <span className={styles.profileName}>{displayName}</span>
-                <span className={styles.profileRole}>Supervisor</span>
-              </div>
-            </div>
-          </div>
-        </header>
+          {/* Top Header Bar - replaced with shared DashboardHeader */}
+          <DashboardHeader
+            onSidebarToggle={() => setSidebarOpen((prev) => !prev)}
+            notificationsRoute="/student/notifications"
+          />
 
         {/* Page Body */}
         <main className={styles.pageBody}>

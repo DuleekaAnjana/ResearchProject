@@ -2,8 +2,6 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   GraduationCap,
-  Search,
-  Bell,
   PanelLeft,
   BookOpen,
   CheckCircle2,
@@ -24,6 +22,7 @@ import {
   Folder,
   Compass,
   User,
+  Bell,
   ChevronRight
 } from 'lucide-react';
 
@@ -37,6 +36,7 @@ import {
   continueWhereYouLeftOff
 } from '../../data/studentDashboardData';
 
+import DashboardHeader from '../../components/layout/DashboardHeader';
 import styles from './StudentDashboard.module.css';
 
 /**
@@ -180,51 +180,11 @@ const StudentDashboard = () => {
 
       {/* Main Content Area */}
       <div className={styles.mainContainer}>
-        {/* Top Navbar */}
-        <header className={styles.topbar}>
-          <div className={styles.topbarLeft}>
-            <button
-              className={styles.sidebarToggleBtn}
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              title="Toggle Sidebar"
-            >
-              <PanelLeft size={20} />
-            </button>
-
-            <div className={styles.searchBox}>
-              <Search className={styles.searchIcon} />
-              <input
-                type="text"
-                placeholder="Search papers, authors, categories..."
-                className={styles.searchInput}
-              />
-            </div>
-          </div>
-
-          <div className={styles.topbarRight}>
-            <button className={styles.notificationBtn} title="Notifications">
-              <Bell size={20} />
-              {studentProfile.unreadNotifications > 0 && (
-                <span className={styles.notificationBadge}>
-                  {studentProfile.unreadNotifications}
-                </span>
-              )}
-            </button>
-
-            <div
-              className={styles.userProfile}
-              onClick={() => navigate('/student/profile')}
-            >
-              <div className={styles.avatar}>
-                {studentProfile.avatarInitials}
-              </div>
-              <div className={styles.userInfo}>
-                <span className={styles.userName}>{studentProfile.name}</span>
-                <span className={styles.userRole}>{studentProfile.role}</span>
-              </div>
-            </div>
-          </div>
-        </header>
+        {/* Top Navbar - replaced with shared DashboardHeader */}
+        <DashboardHeader
+          onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
+          notificationsRoute="/student/notifications"
+        />
 
         {/* Dashboard Content */}
         <div className={styles.contentWrapper}>
