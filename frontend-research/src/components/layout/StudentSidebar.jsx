@@ -38,7 +38,7 @@ const StudentSidebar = () => {
   const isLibraryActive = pathname === '/student/search';
   const isArticlesActive = pathname === '/articles';
   const isBlogsActive = pathname === '/blogs';
-  const isContactActive = pathname === '/contact';
+  const isContactActive = pathname === '/student/contact';
   const isProfileActive = pathname === '/student/profile';
 
   return (
@@ -159,7 +159,7 @@ const StudentSidebar = () => {
             <span>Blogs</span>
           </Link>
           <Link
-            to="/contact"
+            to="/student/contact"
             className={`${styles.navItem} ${isContactActive ? styles.navItemActive : ''}`}
           >
             <User className={styles.navIcon} />
