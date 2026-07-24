@@ -1,0 +1,253 @@
+/* ============================================
+   Notifications Page – Supervisor (Pale Green)
+   ============================================ */
+
+.pageWrapper {
+  padding: 2rem;
+  max-width: 900px;
+  width: 100%;
+}
+
+/* ---- Breadcrumbs ---- */
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  color: #64748b;
+  margin-bottom: 1.5rem;
+}
+
+.breadcrumbLink {
+  color: #64748b;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.breadcrumbLink:hover {
+  color: #10b981;
+}
+
+.breadcrumbCurrent {
+  color: #0f172a;
+  font-weight: 500;
+}
+
+/* ---- Page Header ---- */
+.pageHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+  flex-wrap: wrap;
+}
+
+.pageTitle {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  margin: 0 0 0.25rem 0;
+}
+
+.pageSubtitle {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.markAllBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.markAllBtn:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.markAllBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---- Filter Tabs ---- */
+.tabBar {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 0;
+}
+
+.tab {
+  padding: 0.5rem 1rem;
+  border: none;
+  background: transparent;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s ease, border-color 0.15s ease;
+  border-radius: 0;
+}
+
+.tab:hover {
+  color: #0f172a;
+}
+
+.tabActive {
+  color: #10b981;
+  border-bottom-color: #10b981;
+  font-weight: 600;
+}
+
+/* ---- Notification List ---- */
+.notifList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.notifItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.12s ease;
+  cursor: pointer;
+}
+
+.notifItem:last-child {
+  border-bottom: none;
+}
+
+.notifItem:hover {
+  background: #f8fafc;
+}
+
+.notifIconWrapper {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid #a7f3d0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #10b981;
+  flex-shrink: 0;
+  background: #ecfdf5;
+  margin-top: 0.1rem;
+}
+
+.notifIconWrapperRead {
+  border-color: #e2e8f0;
+  background: #f8fafc;
+  color: #94a3b8;
+}
+
+.notifContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.notifItemHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.notifItemTitle {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.newBadge {
+  background: #10b981;
+  color: #ffffff;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 0.175rem 0.5rem;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+.notifItemDesc {
+  font-size: 0.875rem;
+  color: #475569;
+  line-height: 1.55;
+  margin-bottom: 0.3rem;
+}
+
+.notifItemTime {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.notifItemAction {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #10b981;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  align-self: center;
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+.notifItemAction:hover {
+  color: #059669;
+}
+
+/* ---- Empty State ---- */
+.emptyState {
+  padding: 3.5rem 2rem;
+  text-align: center;
+  color: #94a3b8;
+}
+
+.emptyStateTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 0.35rem;
+}
+
+.emptyStateDesc {
+  font-size: 0.875rem;
+  color: #94a3b8;
+}
+
+/* ---- Loading ---- */
+.loadingState {
+  padding: 3rem;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.875rem;
+}

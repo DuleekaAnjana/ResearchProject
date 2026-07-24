@@ -58,7 +58,10 @@ public class AuthService {
             student.setDateOfBirth(request.getDateOfBirth());
             student.setEmail(request.getEmail());
             student.setPhoneNumber(request.getPhoneNumber());
+            student.setGender(request.getGender());
             student.setUniversity(request.getUniversity());
+            student.setFaculty(request.getFaculty());
+            student.setDepartment(request.getDepartment());
             student.setRegistrationNumber(request.getRegistrationNumber());
             student.setCurrentDegree(request.getCurrentDegree());
             student.setEducationLevel(request.getEducationLevel());

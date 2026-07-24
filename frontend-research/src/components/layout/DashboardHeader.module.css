@@ -424,3 +424,49 @@
     transform: translateY(0);
   }
 }
+
+/* ============================================
+   Supervisor Pale Green Theme Customization
+   ============================================ */
+.supervisorTheme .notificationBtn.active {
+  background: #ecfdf5;
+  color: #10b981;
+  border-color: #a7f3d0;
+}
+
+.supervisorTheme .notificationBtn:hover {
+  background: #f0fdf4;
+  color: #047857;
+  border-color: #a7f3d0;
+}
+
+.supervisorTheme .userProfilePill.active {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.supervisorTheme .userProfilePill:hover {
+  background: #f0fdf4;
+  border-color: #a7f3d0;
+}
+
+.supervisorTheme .avatarCircle {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.supervisorTheme .viewAllLink {
+  color: #10b981;
+}
+
+.supervisorTheme .viewAllLink:hover {
+  color: #059669;
+}
+
+.supervisorTheme .newBadge {
+  background: #10b981;
+}
+
+.supervisorTheme .profileMenuItem:hover {
+  background: #ecfdf5;
+  color: #047857;
+}

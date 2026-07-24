@@ -23,7 +23,6 @@ const UNIVERSITIES = [
 const EDUCATION_LEVELS = [
   'Undergraduate',
   'Postgraduate (Master)',
-  'Doctoral (PhD)',
   'Diploma',
 ];
 
@@ -34,6 +33,7 @@ const CATEGORIES = [
   'Physics',
   'Biology',
   'Engineering',
+  'Other (Specify Your Research Path)',
 ];
 
 const SUBCATEGORIES = {
@@ -43,6 +43,7 @@ const SUBCATEGORIES = {
   'Physics': ['Quantum Computing', 'Astrophysics', 'Condensed Matter'],
   'Biology': ['Genetics', 'Microbiology', 'Bioinformatics'],
   'Engineering': ['Robotics', 'Electrical Engineering', 'Civil Engineering'],
+  'Other (Specify Your Research Path)': [],
 };
 
 const NewStudentRegister = () => {
@@ -55,7 +56,11 @@ const NewStudentRegister = () => {
     dateOfBirth: '',
     email: '',
     phoneNumber: '',
+    gender: '',
     university: '',
+    customUniversity: '',
+    faculty: '',
+    department: '',
     registrationNumber: '',
     currentDegree: '',
     educationLevel: '',
@@ -74,6 +79,8 @@ const NewStudentRegister = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPasswordGuide, setShowPasswordGuide] = useState(false);
   const [userClosedGuide, setUserClosedGuide] = useState(false);
+  const [showCustomSubcategoryInput, setShowCustomSubcategoryInput] = useState(false);
+  const [customSubcategoryVal, setCustomSubcategoryVal] = useState('');
 
   const validateField = (name, value, currentFormData = formData) => {
     switch (name) {
@@ -107,10 +114,9 @@ const NewStudentRegister = () => {
       case 'phoneNumber': {
         if (!value || !value.trim()) return 'Please enter your phone number.';
         const clean = value.replace(/\s+/g, '');
-        const isLocal = /^0\d{9}$/.test(clean);
         const isIntl = /^\+94\d{9}$/.test(clean);
-        if (!isLocal && !isIntl) {
-          return 'Include phone number with country code            (e.g: +94 77 123 4567)';
+        if (!isIntl) {
+          return 'Include phone number with country code\n(e.g: +94 77 123 4567)';
         }
         return '';
       }
@@ -119,8 +125,15 @@ const NewStudentRegister = () => {
         if (!value) return 'Please select your current university.';
         return '';
 
+      case 'faculty':
+        if (!value || !value.trim()) return 'Please enter your current faculty.';
+        return '';
+
+      case 'department':
+        if (!value || !value.trim()) return 'Please enter your current department.';
+        return '';
+
       case 'registrationNumber':
-        if (!value || !value.trim()) return 'Please enter your university registration number.';
         return '';
 
       case 'currentDegree':
@@ -213,7 +226,7 @@ const NewStudentRegister = () => {
       ...prev,
       previousDegrees: [
         ...prev.previousDegrees,
-        { degree: '', university: '', registrationNumber: '' },
+        { degree: '', university: '', customUniversity: '' },
       ],
     }));
   };
@@ -237,6 +250,10 @@ const NewStudentRegister = () => {
   const handleAddSubcategory = (e) => {
     const selectedSub = e.target.value;
     if (!selectedSub) return;
+    if (selectedSub === 'Other (Specify Research Subcategories / Interests)') {
+      setShowCustomSubcategoryInput(true);
+      return;
+    }
     if (!formData.researchSubcategories.includes(selectedSub)) {
       setFormData((prev) => ({
         ...prev,
@@ -252,6 +269,17 @@ const NewStudentRegister = () => {
     }));
   };
 
+  const handleAddCustomSubcategory = () => {
+    if (customSubcategoryVal.trim() && !formData.researchSubcategories.includes(customSubcategoryVal.trim())) {
+      setFormData((prev) => ({
+        ...prev,
+        researchSubcategories: [...prev.researchSubcategories, customSubcategoryVal.trim()],
+      }));
+      setCustomSubcategoryVal('');
+      setShowCustomSubcategoryInput(false);
+    }
+  };
+
   // Form Validation with Simple Phrase Notification
   const validateForm = () => {
     const newErrors = {};
@@ -262,7 +290,8 @@ const NewStudentRegister = () => {
       'email',
       'phoneNumber',
       'university',
-      'registrationNumber',
+      'faculty',
+      'department',
       'currentDegree',
       'educationLevel',
       'password',
@@ -273,6 +302,10 @@ const NewStudentRegister = () => {
       const err = validateField(field, formData[field], formData);
       if (err) newErrors[field] = err;
     });
+
+    if (formData.university === 'Other (Specify Your University)' && !formData.customUniversity?.trim()) {
+      newErrors.university = 'Please specify your university name.';
+    }
 
     if (!formData.acceptTerms || !formData.acceptPrivacy) {
       newErrors.terms = 'Please accept both Terms of Service and Privacy Policy to continue.';
@@ -298,9 +331,20 @@ const NewStudentRegister = () => {
     }
 
     setIsSubmitting(true);
+    const resolvedUniversity = formData.university === 'Other (Specify Your University)'
+      ? formData.customUniversity
+      : formData.university;
+
+    const resolvedPreviousDegrees = formData.previousDegrees.map(deg => ({
+      degree: deg.degree,
+      university: deg.university === 'Other (Specify Your University)' ? deg.customUniversity : deg.university
+    }));
+
     try {
       await register({
         ...formData,
+        university: resolvedUniversity,
+        previousDegrees: resolvedPreviousDegrees,
         role: 'student',
       });
 
@@ -311,7 +355,11 @@ const NewStudentRegister = () => {
         dateOfBirth: '',
         email: '',
         phoneNumber: '',
+        gender: '',
         university: '',
+        customUniversity: '',
+        faculty: '',
+        department: '',
         registrationNumber: '',
         currentDegree: '',
         educationLevel: '',
@@ -341,7 +389,8 @@ const NewStudentRegister = () => {
       'email',
       'phoneNumber',
       'university',
-      'registrationNumber',
+      'faculty',
+      'department',
       'currentDegree',
       'educationLevel',
       'password',
@@ -352,6 +401,10 @@ const NewStudentRegister = () => {
       if (!formData[field] || validateField(field, formData[field], formData)) {
         return true;
       }
+    }
+
+    if (formData.university === 'Other (Specify Your University)' && !formData.customUniversity?.trim()) {
+      return true;
     }
 
     if (Object.values(errors).some((err) => !!err)) {
@@ -508,12 +561,31 @@ const NewStudentRegister = () => {
                 <input
                   type="text"
                   name="phoneNumber"
-                  placeholder="e.g. 0772635452, 011 1111 111 or +9411 1111 111"
+                  placeholder="+94 77 123 4567 or +94 11 234 5678"
                   value={formData.phoneNumber}
                   onChange={handleChange}
                   className={`${styles.input} ${errors.phoneNumber ? styles.inputError : ''}`}
                 />
                 {errors.phoneNumber && <span className={styles.errorText}>{errors.phoneNumber}</span>}
+              </div>
+
+              {/* Gender Selection Dropdown */}
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Gender <span className={styles.optionalLabel}>(Optional)</span></label>
+                <div className={styles.selectWrapper}>
+                  <select
+                    name="gender"
+                    value={formData.gender}
+                    onChange={handleChange}
+                    className={styles.select}
+                  >
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Prefer not to say">Prefer not to say</option>
+                  </select>
+                  <ChevronDown className={styles.selectIcon} size={16} />
+                </div>
               </div>
             </div>
 
@@ -523,7 +595,7 @@ const NewStudentRegister = () => {
             </div>
 
             <div className={styles.fieldGrid}>
-              {/* University Dropdown with Placeholder */}
+              {/* University Dropdown */}
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>University *</label>
                 <div className={styles.selectWrapper}>
@@ -537,24 +609,67 @@ const NewStudentRegister = () => {
                     {UNIVERSITIES.map((uni) => (
                       <option key={uni} value={uni}>{uni}</option>
                     ))}
+                    <option value="Other (Specify Your University)">Other (Specify Your University)</option>
                   </select>
                   <ChevronDown className={styles.selectIcon} size={16} />
                 </div>
                 {errors.university && <span className={styles.errorText}>{errors.university}</span>}
               </div>
 
-              {/* Registration Number */}
+              {/* Custom University input if Other chosen */}
+              {formData.university === 'Other (Specify Your University)' && (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.label}>Specify University *</label>
+                  <input
+                    type="text"
+                    name="customUniversity"
+                    placeholder="Enter institution name"
+                    value={formData.customUniversity}
+                    onChange={handleChange}
+                    className={styles.input}
+                  />
+                </div>
+              )}
+
+              {/* Faculty */}
               <div className={styles.fieldGroup}>
-                <label className={styles.label}>Registration Number *</label>
+                <label className={styles.label}>Faculty *</label>
+                <input
+                  type="text"
+                  name="faculty"
+                  placeholder="e.g. Faculty of Science"
+                  value={formData.faculty}
+                  onChange={handleChange}
+                  className={`${styles.input} ${errors.faculty ? styles.inputError : ''}`}
+                />
+                {errors.faculty && <span className={styles.errorText}>{errors.faculty}</span>}
+              </div>
+
+              {/* Department */}
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Department *</label>
+                <input
+                  type="text"
+                  name="department"
+                  placeholder="e.g. Department of Computer Science"
+                  value={formData.department}
+                  onChange={handleChange}
+                  className={`${styles.input} ${errors.department ? styles.inputError : ''}`}
+                />
+                {errors.department && <span className={styles.errorText}>{errors.department}</span>}
+              </div>
+
+              {/* Registration Number (Optional) */}
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Registration Number <span className={styles.optionalLabel}>(Optional)</span></label>
                 <input
                   type="text"
                   name="registrationNumber"
                   placeholder="e.g. 2024/CS/1001"
                   value={formData.registrationNumber}
                   onChange={handleChange}
-                  className={`${styles.input} ${errors.registrationNumber ? styles.inputError : ''}`}
+                  className={styles.input}
                 />
-                {errors.registrationNumber && <span className={styles.errorText}>{errors.registrationNumber}</span>}
               </div>
 
               {/* Current Degree */}
@@ -622,24 +737,31 @@ const NewStudentRegister = () => {
 
                   <div className={styles.fieldGroup}>
                     <label className={styles.label}>University / Institution</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. University of Colombo"
-                      value={deg.university}
-                      onChange={(e) => handlePreviousDegreeChange(idx, 'university', e.target.value)}
-                      className={styles.input}
-                    />
-                  </div>
+                    <div className={styles.selectWrapper}>
+                      <select
+                        value={deg.university}
+                        onChange={(e) => handlePreviousDegreeChange(idx, 'university', e.target.value)}
+                        className={styles.select}
+                      >
+                        <option value="">Select University</option>
+                        {UNIVERSITIES.map((uni) => (
+                          <option key={uni} value={uni}>{uni}</option>
+                        ))}
+                        <option value="Other (Specify Your University)">Other (Specify Your University)</option>
+                      </select>
+                      <ChevronDown className={styles.selectIcon} size={16} />
+                    </div>
 
-                  <div className={styles.fieldGroup}>
-                    <label className={styles.label}>Registration / Student ID</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. HD/2021/045"
-                      value={deg.registrationNumber}
-                      onChange={(e) => handlePreviousDegreeChange(idx, 'registrationNumber', e.target.value)}
-                      className={styles.input}
-                    />
+                    {deg.university === 'Other (Specify Your University)' && (
+                      <input
+                        type="text"
+                        placeholder="Specify University"
+                        value={deg.customUniversity || ''}
+                        onChange={(e) => handlePreviousDegreeChange(idx, 'customUniversity', e.target.value)}
+                        className={styles.input}
+                        style={{ marginTop: '0.5rem' }}
+                      />
+                    )}
                   </div>
                 </div>
               </div>
@@ -671,7 +793,7 @@ const NewStudentRegister = () => {
                       setFormData((prev) => ({
                         ...prev,
                         researchCategory: cat,
-                        researchSubcategories: [SUBCATEGORIES[cat]?.[0] || ''],
+                        researchSubcategories: [],
                       }));
                     }}
                     className={styles.select}
@@ -686,22 +808,44 @@ const NewStudentRegister = () => {
 
               {/* Research Subcategory (Multi Select) */}
               <div className={styles.fieldGroup}>
-                <label className={styles.label}>Add Research Subcategories *</label>
+                <label className={styles.label}>Add Research Subcategories / Research Interests <span className={styles.optionalLabel}>(Optional)</span></label>
                 <div className={styles.selectWrapper}>
                   <select
                     onChange={handleAddSubcategory}
                     value=""
                     className={styles.select}
                   >
-                    <option value="" disabled>-- Select & add subcategories --</option>
+                    <option value="" disabled>-- Select & add subcategories / Interests --</option>
                     {(SUBCATEGORIES[formData.researchCategory] || []).map((sub) => (
                       <option key={sub} value={sub} disabled={formData.researchSubcategories.includes(sub)}>
                         {sub} {formData.researchSubcategories.includes(sub) ? '(Selected)' : ''}
                       </option>
                     ))}
+                    <option value="Other (Specify Research Subcategories / Interests)">Other (Specify Research Subcategories / Interests)</option>
                   </select>
                   <ChevronDown className={styles.selectIcon} size={16} />
                 </div>
+
+                {showCustomSubcategoryInput && (
+                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                    <input
+                      type="text"
+                      placeholder="Specify Custom Subcategory / Interest"
+                      value={customSubcategoryVal}
+                      onChange={(e) => setCustomSubcategoryVal(e.target.value)}
+                      className={styles.input}
+                      style={{ flex: 1 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddCustomSubcategory}
+                      className={styles.addDegreeBtn}
+                      style={{ marginTop: 0, padding: '0.5rem' }}
+                    >
+                      Add
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 

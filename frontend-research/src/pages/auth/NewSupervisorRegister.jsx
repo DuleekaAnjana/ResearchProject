@@ -63,6 +63,7 @@ const CATEGORIES = [
   'Physics',
   'Biology',
   'Engineering',
+  'Other (Specify Your Research Path)',
 ];
 
 const SUBCATEGORIES = {
@@ -72,6 +73,7 @@ const SUBCATEGORIES = {
   'Physics': ['Quantum Computing', 'Astrophysics', 'Condensed Matter'],
   'Biology': ['Genetics', 'Microbiology', 'Bioinformatics'],
   'Engineering': ['Robotics', 'Electrical Engineering', 'Civil Engineering'],
+  'Other (Specify Your Research Path)': [],
 };
 
 const NewSupervisorRegister = () => {
@@ -117,6 +119,8 @@ const NewSupervisorRegister = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPasswordGuide, setShowPasswordGuide] = useState(false);
   const [userClosedGuide, setUserClosedGuide] = useState(false);
+  const [showCustomSubcategoryInput, setShowCustomSubcategoryInput] = useState(false);
+  const [customSubcategoryVal, setCustomSubcategoryVal] = useState('');
 
   const validateField = (name, value, currentFormData = formData) => {
     switch (name) {
@@ -150,10 +154,9 @@ const NewSupervisorRegister = () => {
       case 'phoneNumber': {
         if (!value || !value.trim()) return 'Please enter your phone number.';
         const clean = value.replace(/\s+/g, '');
-        const isLocal = /^0\d{9}$/.test(clean);
         const isIntl = /^\+94\d{9}$/.test(clean);
-        if (!isLocal && !isIntl) {
-          return 'Include phone number with country code            (e.g: +94 77 123 4567)';
+        if (!isIntl) {
+          return 'Include phone number with country code\n(e.g: +94 77 123 4567)';
         }
         return '';
       }
@@ -187,7 +190,6 @@ const NewSupervisorRegister = () => {
         return '';
 
       case 'professionalBiography':
-        if (!value || !value.trim()) return 'Please write a brief professional biography.';
         return '';
 
       case 'password': {
@@ -296,6 +298,10 @@ const NewSupervisorRegister = () => {
   const handleAddSubcategory = (e) => {
     const selectedSub = e.target.value;
     if (!selectedSub) return;
+    if (selectedSub === 'Other (Specify Research Subcategories / Interests)') {
+      setShowCustomSubcategoryInput(true);
+      return;
+    }
     if (!formData.researchSubcategories.includes(selectedSub)) {
       setFormData((prev) => ({
         ...prev,
@@ -309,6 +315,17 @@ const NewSupervisorRegister = () => {
       ...prev,
       researchSubcategories: prev.researchSubcategories.filter((s) => s !== subToRemove),
     }));
+  };
+
+  const handleAddCustomSubcategory = () => {
+    if (customSubcategoryVal.trim() && !formData.researchSubcategories.includes(customSubcategoryVal.trim())) {
+      setFormData((prev) => ({
+        ...prev,
+        researchSubcategories: [...prev.researchSubcategories, customSubcategoryVal.trim()],
+      }));
+      setCustomSubcategoryVal('');
+      setShowCustomSubcategoryInput(false);
+    }
   };
 
   // Form Validation
@@ -327,7 +344,6 @@ const NewSupervisorRegister = () => {
       'highestQualification',
       'yearsOfTeachingExperience',
       'yearsOfResearchExperience',
-      'professionalBiography',
       'password',
       'confirmPassword',
     ];
@@ -363,7 +379,7 @@ const NewSupervisorRegister = () => {
     setIsSubmitting(true);
 
     // Resolve "Other (Specify)" values if selected
-    const universityValue = formData.university === 'Other (Specify)' 
+    const universityValue = (formData.university === 'Other (Specify)' || formData.university === 'Other (Specify Your University)')
       ? formData.customUniversity 
       : formData.university;
     const academicPositionValue = formData.academicPosition === 'Other (Specify)' 
@@ -373,12 +389,18 @@ const NewSupervisorRegister = () => {
       ? formData.customHighestQualification 
       : formData.highestQualification;
 
+    const resolvedPreviousDegrees = formData.previousDegrees.map(deg => ({
+      degree: deg.degree,
+      university: (deg.university === 'Other (Specify)' || deg.university === 'Other (Specify Your University)') ? deg.customUniversity : deg.university
+    }));
+
     try {
       await register({
         ...formData,
         university: universityValue,
         academicPosition: academicPositionValue,
         highestQualification: highestQualificationValue,
+        previousDegrees: resolvedPreviousDegrees,
         role: 'supervisor',
       });
 
@@ -435,7 +457,6 @@ const NewSupervisorRegister = () => {
       'highestQualification',
       'yearsOfTeachingExperience',
       'yearsOfResearchExperience',
-      'professionalBiography',
       'password',
       'confirmPassword',
     ];
@@ -446,7 +467,7 @@ const NewSupervisorRegister = () => {
       }
     }
 
-    if (formData.university === 'Other (Specify)' && !formData.customUniversity.trim()) return true;
+    if ((formData.university === 'Other (Specify)' || formData.university === 'Other (Specify Your University)') && !formData.customUniversity.trim()) return true;
     if (formData.academicPosition === 'Other (Specify)' && !formData.customAcademicPosition.trim()) return true;
     if (formData.highestQualification === 'Other (Specify)' && !formData.customHighestQualification.trim()) return true;
 
@@ -606,7 +627,7 @@ const NewSupervisorRegister = () => {
                 <input
                   type="text"
                   name="phoneNumber"
-                  placeholder="e.g. 0772635452, 011 1111 111 or +9411 1111 111"
+                  placeholder="+94 77 123 4567 or +94 11 234 5678"
                   value={formData.phoneNumber}
                   onChange={handleChange}
                   className={`${styles.input} ${errors.phoneNumber ? styles.inputError : ''}`}
@@ -654,7 +675,7 @@ const NewSupervisorRegister = () => {
                     {UNIVERSITIES.map((uni) => (
                       <option key={uni} value={uni}>{uni}</option>
                     ))}
-                    <option value="Other (Specify)">Other (Specify)</option>
+                    <option value="Other (Specify Your University)">Other (Specify Your University)</option>
                   </select>
                   <ChevronDown className={styles.selectIcon} size={16} />
                 </div>
@@ -662,7 +683,7 @@ const NewSupervisorRegister = () => {
               </div>
 
               {/* Custom University input if Other chosen */}
-              {formData.university === 'Other (Specify)' && (
+              {(formData.university === 'Other (Specify)' || formData.university === 'Other (Specify Your University)') && (
                 <div className={styles.fieldGroup}>
                   <label className={styles.label}>Specify University *</label>
                   <input
@@ -864,13 +885,31 @@ const NewSupervisorRegister = () => {
 
                   <div className={styles.fieldGroup}>
                     <label className={styles.label}>University / Institution</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. University of Moratuwa"
-                      value={deg.university}
-                      onChange={(e) => handlePreviousDegreeChange(idx, 'university', e.target.value)}
-                      className={styles.input}
-                    />
+                    <div className={styles.selectWrapper}>
+                      <select
+                        value={deg.university}
+                        onChange={(e) => handlePreviousDegreeChange(idx, 'university', e.target.value)}
+                        className={styles.select}
+                      >
+                        <option value="">Select University</option>
+                        {UNIVERSITIES.map((uni) => (
+                          <option key={uni} value={uni}>{uni}</option>
+                        ))}
+                        <option value="Other (Specify Your University)">Other (Specify Your University)</option>
+                      </select>
+                      <ChevronDown className={styles.selectIcon} size={16} />
+                    </div>
+
+                    {(deg.university === 'Other (Specify Your University)' || deg.university === 'Other (Specify)') && (
+                      <input
+                        type="text"
+                        placeholder="Specify University"
+                        value={deg.customUniversity || ''}
+                        onChange={(e) => handlePreviousDegreeChange(idx, 'customUniversity', e.target.value)}
+                        className={styles.input}
+                        style={{ marginTop: '0.5rem' }}
+                      />
+                    )}
                   </div>
                 </div>
               </div>
@@ -887,16 +926,15 @@ const NewSupervisorRegister = () => {
 
             {/* Professional Biography */}
             <div className={styles.fieldGroup} style={{ width: '100%' }}>
-              <label className={styles.label}>Professional Biography *</label>
+              <label className={styles.label}>Professional Biography <span className={styles.optionalLabel}>(Optional)</span></label>
               <textarea
                 name="professionalBiography"
                 placeholder="A brief overview of your academic and research career..."
                 value={formData.professionalBiography}
                 onChange={handleChange}
-                className={`${styles.textarea} ${errors.professionalBiography ? styles.inputError : ''}`}
+                className={styles.textarea}
                 rows={4}
               />
-              {errors.professionalBiography && <span className={styles.errorText}>{errors.professionalBiography}</span>}
             </div>
 
             {/* Research Domain & Specializations Section */}
@@ -917,7 +955,7 @@ const NewSupervisorRegister = () => {
                       setFormData((prev) => ({
                         ...prev,
                         researchCategory: cat,
-                        researchSubcategories: [SUBCATEGORIES[cat]?.[0] || ''],
+                        researchSubcategories: [],
                       }));
                     }}
                     className={styles.select}
@@ -930,24 +968,46 @@ const NewSupervisorRegister = () => {
                 </div>
               </div>
 
-              {/* Research Subcategory (Optional tag selection) */}
+              {/* Research Subcategory (Multi Select) */}
               <div className={styles.fieldGroup}>
-                <label className={styles.label}>Research Subcategory <span className={styles.optionalLabel}>(Optional)</span></label>
+                <label className={styles.label}>Add Research Subcategories / Research Interests* <span className={styles.optionalLabel}>(Optional)</span></label>
                 <div className={styles.selectWrapper}>
                   <select
                     onChange={handleAddSubcategory}
                     value=""
                     className={styles.select}
                   >
-                    <option value="" disabled>-- Select & add subcategories --</option>
+                    <option value="" disabled>-- Select & add subcategories / Interests --</option>
                     {(SUBCATEGORIES[formData.researchCategory] || []).map((sub) => (
                       <option key={sub} value={sub} disabled={formData.researchSubcategories.includes(sub)}>
                         {sub} {formData.researchSubcategories.includes(sub) ? '(Selected)' : ''}
                       </option>
                     ))}
+                    <option value="Other (Specify Research Subcategories / Interests)">Other (Specify Research Subcategories / Interests)</option>
                   </select>
                   <ChevronDown className={styles.selectIcon} size={16} />
                 </div>
+
+                {showCustomSubcategoryInput && (
+                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                    <input
+                      type="text"
+                      placeholder="Specify Custom Subcategory / Interest"
+                      value={customSubcategoryVal}
+                      onChange={(e) => setCustomSubcategoryVal(e.target.value)}
+                      className={styles.input}
+                      style={{ flex: 1 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddCustomSubcategory}
+                      className={styles.addDegreeBtn}
+                      style={{ marginTop: 0, padding: '0.5rem' }}
+                    >
+                      Add
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -969,19 +1029,6 @@ const NewSupervisorRegister = () => {
                 ))}
               </div>
             )}
-
-            {/* Research Interests Keywords */}
-            <div className={styles.fieldGroup} style={{ width: '100%', marginTop: '1rem' }}>
-              <label className={styles.label}>Research Interests / Keywords</label>
-              <input
-                type="text"
-                name="researchInterests"
-                placeholder="e.g. Deep Learning, Computer Vision, Bioinformatics"
-                value={formData.researchInterests}
-                onChange={handleChange}
-                className={styles.input}
-              />
-            </div>
 
             {/* Account Security Section */}
             <div className={styles.sectionHeader}>

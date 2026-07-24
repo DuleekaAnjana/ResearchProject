@@ -29,7 +29,13 @@ public class Student {
 
     private String phoneNumber;
 
+    private String gender;
+
     private String university;
+
+    private String faculty;
+
+    private String department;
 
     private String registrationNumber;
 

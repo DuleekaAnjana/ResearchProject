@@ -150,7 +150,7 @@ const DashboardHeader = ({ onSidebarToggle, notificationsRoute = '/student/notif
   };
 
   return (
-    <header className={styles.topbar}>
+    <header className={`${styles.topbar} ${user?.role === 'supervisor' ? styles.supervisorTheme : ''}`}>
       {/* Left: sidebar toggle + search */}
       <div className={styles.topbarLeft}>
         <button
