@@ -110,7 +110,7 @@ const NewStudentRegister = () => {
         const isLocal = /^0\d{9}$/.test(clean);
         const isIntl = /^\+94\d{9}$/.test(clean);
         if (!isLocal && !isIntl) {
-          return 'Phone number must be in +9411 1111 111 or 011 1111 111 / 0772635452 format.';
+          return 'Include phone number with country code            (e.g: +94 77 123 4567)';
         }
         return '';
       }
@@ -315,7 +315,7 @@ const NewStudentRegister = () => {
         registrationNumber: '',
         currentDegree: '',
         educationLevel: '',
-        researchCategory: 'Computer Science',
+        researchCategory: '',
         researchSubcategories: [],
         previousDegrees: [],
         password: '',
