@@ -11,6 +11,7 @@ import NewStudentRegister from '../pages/auth/NewStudentRegister';
 import NewSupervisorRegister from '../pages/auth/NewSupervisorRegister';
 import StudentDashboard from '../pages/student/StudentDashboard';
 import SupervisorDashboard from '../pages/supervisor/SupervisorDashboard';
+import SupervisorPlaceholderPage from '../pages/supervisor/SupervisorPlaceholderPage';
 import NotificationsPage from '../pages/student/NotificationsPage';
 import SearchPublicationsPage from '../pages/student/SearchPublicationsPage';
 import AllPublicationsPage from '../pages/student/AllPublicationsPage';
@@ -65,11 +66,16 @@ const AppRoutes = () => {
 
       {/* ====== Supervisor Routes ====== */}
       <Route path="/supervisor/dashboard" element={<SupervisorDashboard />} />
-      <Route path="/supervisor/assigned" element={<PlaceholderPage title="Assigned Papers" />} />
+      <Route path="/supervisor/assigned" element={<SupervisorPlaceholderPage title="Assigned Papers" />} />
+      <Route path="/supervisor/pending" element={<SupervisorPlaceholderPage title="Pending Reviews" />} />
+      <Route path="/supervisor/approved" element={<SupervisorPlaceholderPage title="Approved Papers" />} />
+      <Route path="/supervisor/rejected" element={<SupervisorPlaceholderPage title="Rejected Papers" />} />
+      <Route path="/supervisor/analytics" element={<SupervisorPlaceholderPage title="Analytics" />} />
+      <Route path="/supervisor/notifications" element={<SupervisorPlaceholderPage title="Notifications" />} />
+      <Route path="/supervisor/profile" element={<SupervisorPlaceholderPage title="Supervisor Profile" />} />
       <Route path="/supervisor/review/:id" element={<PlaceholderPage title="Review Paper" />} />
       <Route path="/supervisor/approval" element={<PlaceholderPage title="Approval Page" />} />
       <Route path="/supervisor/feedback/:id" element={<PlaceholderPage title="Feedback Page" />} />
-      <Route path="/supervisor/profile" element={<PlaceholderPage title="Supervisor Profile" />} />
 
       {/* ====== Admin Routes ====== */}
       {/* TODO: Wrap with ProtectedRoute role="admin" */}

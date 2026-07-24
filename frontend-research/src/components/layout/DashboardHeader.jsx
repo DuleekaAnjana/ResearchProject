@@ -163,20 +163,22 @@ const DashboardHeader = ({ onSidebarToggle, notificationsRoute = '/student/notif
           <PanelLeft size={20} />
         </button>
 
-        <form className={styles.searchBox} onSubmit={handleSearchSubmit} role="search">
-          <Search className={styles.searchIcon} />
-          <input
-            type="text"
-            id="dashboard-search-input"
-            className={styles.searchInput}
-            placeholder="Search papers, authors, categories..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onFocus={handleSearchFocus}
-            onKeyDown={handleSearchKeyDown}
-            aria-label="Search publications"
-          />
-        </form>
+        {user?.role !== 'supervisor' && (
+          <form className={styles.searchBox} onSubmit={handleSearchSubmit} role="search">
+            <Search className={styles.searchIcon} />
+            <input
+              type="text"
+              id="dashboard-search-input"
+              className={styles.searchInput}
+              placeholder="Search papers, authors, categories..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={handleSearchFocus}
+              onKeyDown={handleSearchKeyDown}
+              aria-label="Search publications"
+            />
+          </form>
+        )}
       </div>
 
       {/* Right: notification bell + profile pill */}

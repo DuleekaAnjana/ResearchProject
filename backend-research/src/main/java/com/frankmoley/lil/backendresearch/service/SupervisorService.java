@@ -2,10 +2,10 @@ package com.frankmoley.lil.backendresearch.service;
 
 import com.frankmoley.lil.backendresearch.dto.PaperDTO;
 import com.frankmoley.lil.backendresearch.dto.SupervisorDashboardDTO;
+import com.frankmoley.lil.backendresearch.entity.Supervisor;
 import com.frankmoley.lil.backendresearch.entity.Paper;
-import com.frankmoley.lil.backendresearch.entity.User;
 import com.frankmoley.lil.backendresearch.repository.PaperRepository;
-import com.frankmoley.lil.backendresearch.repository.UserRepository;
+import com.frankmoley.lil.backendresearch.repository.SupervisorRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,16 +16,16 @@ import java.util.*;
 public class SupervisorService {
 
     private final PaperRepository paperRepository;
-    private final UserRepository userRepository;
+    private final SupervisorRepository supervisorRepository;
 
     public SupervisorDashboardDTO getDashboardData(String supervisorEmail) {
         String email = (supervisorEmail != null && !supervisorEmail.isBlank()) 
                 ? supervisorEmail 
                 : "demo@researchsphere.edu";
 
-        Optional<User> userOptional = userRepository.findByEmail(email);
-        String name = userOptional.map(User::getFullName).orElse("Prof. R. Silva");
-        String university = userOptional.map(User::getUniversity).orElse("University of Colombo");
+        Optional<Supervisor> supervisorOptional = supervisorRepository.findByEmail(email);
+        String name = supervisorOptional.map(Supervisor::getFullName).orElse("Prof. R. Silva");
+        String university = supervisorOptional.map(Supervisor::getUniversity).orElse("University of Colombo");
 
         List<Paper> papers = paperRepository.findBySupervisorEmail(email);
         if (papers.isEmpty()) {

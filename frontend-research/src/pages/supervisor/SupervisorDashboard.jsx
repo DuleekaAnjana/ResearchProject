@@ -19,6 +19,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import DashboardHeader from '../../components/layout/DashboardHeader';
+import SupervisorSidebar from '../../components/layout/SupervisorSidebar';
 import styles from './SupervisorDashboard.module.css';
 
 const SupervisorDashboard = () => {
@@ -84,103 +85,15 @@ const SupervisorDashboard = () => {
 
   return (
     <div className={styles.dashboardLayout}>
-      {/* Sidebar Navigation */}
-      {sidebarOpen && (
-        <aside className={styles.sidebar}>
-          <div className={styles.sidebarHeader}>
-            <div className={styles.logoIcon}>
-              <GraduationCap size={20} />
-            </div>
-            <div className={styles.logoTextGroup}>
-              <span className={styles.logoTitle}>ResearchSphere</span>
-              <span className={styles.logoSubtitle}>RESEARCH REPOSITORY</span>
-            </div>
-          </div>
-
-          <nav className={styles.sidebarNav}>
-            {/* Workspace Section */}
-            <div className={styles.navGroup}>
-              <span className={styles.groupTitle}>Workspace</span>
-              
-              <button
-                className={`${styles.navItem} ${activeTab === 'dashboard' ? styles.navItemActive : ''}`}
-                onClick={() => setActiveTab('dashboard')}
-              >
-                <LayoutDashboard className={styles.navIcon} />
-                <span>Dashboard</span>
-              </button>
-
-              <button
-                className={`${styles.navItem} ${activeTab === 'assigned' ? styles.navItemActive : ''}`}
-                onClick={() => setActiveTab('assigned')}
-              >
-                <FileText className={styles.navIcon} />
-                <span>Assigned Papers</span>
-              </button>
-
-              <button
-                className={`${styles.navItem} ${activeTab === 'pending' ? styles.navItemActive : ''}`}
-                onClick={() => setActiveTab('pending')}
-              >
-                <Clock className={styles.navIcon} />
-                <span>Pending Reviews</span>
-              </button>
-
-              <button
-                className={`${styles.navItem} ${activeTab === 'approved' ? styles.navItemActive : ''}`}
-                onClick={() => setActiveTab('approved')}
-              >
-                <CheckCircle2 className={styles.navIcon} />
-                <span>Approved</span>
-              </button>
-
-              <button
-                className={`${styles.navItem} ${activeTab === 'rejected' ? styles.navItemActive : ''}`}
-                onClick={() => setActiveTab('rejected')}
-              >
-                <XCircle className={styles.navIcon} />
-                <span>Rejected</span>
-              </button>
-
-              <button
-                className={`${styles.navItem} ${activeTab === 'analytics' ? styles.navItemActive : ''}`}
-                onClick={() => setActiveTab('analytics')}
-              >
-                <Sliders className={styles.navIcon} />
-                <span>Analytics</span>
-              </button>
-
-              <button
-                className={`${styles.navItem} ${activeTab === 'notifications' ? styles.navItemActive : ''}`}
-                onClick={() => setActiveTab('notifications')}
-              >
-                <Bell className={styles.navIcon} />
-                <span>Notifications</span>
-              </button>
-            </div>
-
-            {/* Account Section */}
-            <div className={styles.navGroup}>
-              <span className={styles.groupTitle}>Account</span>
-              <button
-                className={`${styles.navItem} ${activeTab === 'profile' ? styles.navItemActive : ''}`}
-                onClick={() => setActiveTab('profile')}
-              >
-                <User className={styles.navIcon} />
-                <span>Profile</span>
-              </button>
-            </div>
-          </nav>
-        </aside>
-      )}
-
-      {/* Main Content View */}
-      <div className={styles.mainContent}>
-          {/* Top Header Bar - replaced with shared DashboardHeader */}
-          <DashboardHeader
-            onSidebarToggle={() => setSidebarOpen((prev) => !prev)}
-            notificationsRoute="/student/notifications"
-          />
+      {sidebarOpen && <SupervisorSidebar />}
+ 
+       {/* Main Content View */}
+       <div className={styles.mainContent}>
+           {/* Top Header Bar - replaced with shared DashboardHeader */}
+           <DashboardHeader
+             onSidebarToggle={() => setSidebarOpen((prev) => !prev)}
+             notificationsRoute="/supervisor/notifications"
+           />
 
         {/* Page Body */}
         <main className={styles.pageBody}>
