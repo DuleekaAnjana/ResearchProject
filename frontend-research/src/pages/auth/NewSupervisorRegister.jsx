@@ -4,7 +4,7 @@ import { ArrowLeft, Check, ChevronDown, Plus, X, AlertCircle, Info } from 'lucid
 import Button from '../../components/common/Button';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
-import styles from './Register.module.css';
+import styles from './NewSupervisorRegister.module.css';
 
 const getYesterdayString = () => {
   const yesterday = new Date();
@@ -20,11 +20,40 @@ const UNIVERSITIES = [
   'University of Sri Jayewardenepura',
 ];
 
-const EDUCATION_LEVELS = [
-  'Undergraduate',
-  'Postgraduate (Master)',
-  'Doctoral (PhD)',
-  'Diploma',
+const ACADEMIC_POSITIONS = [
+  'Teaching Assistant',
+  'Assistant Lecturer',
+  'Lecturer',
+  'Senior Lecturer',
+  'Associate Professor',
+  'Professor',
+  'Emeritus Professor',
+  'Research Fellow',
+  'Senior Research Fellow',
+  'Postdoctoral Researcher',
+  'Industry Researcher',
+  'Other (Specify)',
+];
+
+const HIGHEST_QUALIFICATIONS = [
+  "Bachelor's Degree",
+  "Bachelor's Degree (Honours)",
+  "Master's Degree",
+  "Master of Philosophy (MPhil)",
+  "Doctor of Philosophy (PhD)",
+  "Doctor of Science (DSc)",
+  "Professional Doctorate",
+  "Postdoctoral Qualification",
+  "Other (Specify)",
+];
+
+const EXPERIENCE_YEARS = [
+  'Less than 1 Year',
+  '1–3 Years',
+  '4–6 Years',
+  '7–10 Years',
+  '11–15 Years',
+  'More than 15 Years',
 ];
 
 const CATEGORIES = [
@@ -45,7 +74,7 @@ const SUBCATEGORIES = {
   'Engineering': ['Robotics', 'Electrical Engineering', 'Civil Engineering'],
 };
 
-const NewStudentRegister = () => {
+const NewSupervisorRegister = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
 
@@ -55,13 +84,27 @@ const NewStudentRegister = () => {
     dateOfBirth: '',
     email: '',
     phoneNumber: '',
+    gender: '',
+    
     university: '',
-    registrationNumber: '',
-    currentDegree: '',
-    educationLevel: '',
+    customUniversity: '',
+    faculty: '',
+    department: '',
+    academicPosition: '',
+    customAcademicPosition: '',
+    employeeId: '',
+
+    highestQualification: '',
+    customHighestQualification: '',
+    previousDegrees: [],
+    yearsOfTeachingExperience: '',
+    yearsOfResearchExperience: '',
+    professionalBiography: '',
+
     researchCategory: 'Computer Science',
     researchSubcategories: [],
-    previousDegrees: [],
+    researchInterests: '',
+
     password: '',
     confirmPassword: '',
     acceptTerms: false,
@@ -119,16 +162,32 @@ const NewStudentRegister = () => {
         if (!value) return 'Please select your current university.';
         return '';
 
-      case 'registrationNumber':
-        if (!value || !value.trim()) return 'Please enter your university registration number.';
+      case 'faculty':
+        if (!value || !value.trim()) return 'Please enter your current faculty.';
         return '';
 
-      case 'currentDegree':
-        if (!value || !value.trim()) return 'Please enter your current degree name.';
+      case 'department':
+        if (!value || !value.trim()) return 'Please enter your current department.';
         return '';
 
-      case 'educationLevel':
-        if (!value) return 'Please select your education level.';
+      case 'academicPosition':
+        if (!value) return 'Please select your academic position.';
+        return '';
+
+      case 'highestQualification':
+        if (!value) return 'Please select your highest academic qualification.';
+        return '';
+
+      case 'yearsOfTeachingExperience':
+        if (!value) return 'Please select your teaching experience.';
+        return '';
+
+      case 'yearsOfResearchExperience':
+        if (!value) return 'Please select your research experience.';
+        return '';
+
+      case 'professionalBiography':
+        if (!value || !value.trim()) return 'Please write a brief professional biography.';
         return '';
 
       case 'password': {
@@ -207,13 +266,13 @@ const NewStudentRegister = () => {
     setUserClosedGuide(true);
   };
 
-  // Add/Remove Previous Degrees
+  // Add/Remove Previous Degrees (Optional)
   const handleAddPreviousDegree = () => {
     setFormData((prev) => ({
       ...prev,
       previousDegrees: [
         ...prev.previousDegrees,
-        { degree: '', university: '', registrationNumber: '' },
+        { degree: '', university: '' },
       ],
     }));
   };
@@ -252,7 +311,7 @@ const NewStudentRegister = () => {
     }));
   };
 
-  // Form Validation with Simple Phrase Notification
+  // Form Validation
   const validateForm = () => {
     const newErrors = {};
     const fieldsToValidate = [
@@ -262,9 +321,13 @@ const NewStudentRegister = () => {
       'email',
       'phoneNumber',
       'university',
-      'registrationNumber',
-      'currentDegree',
-      'educationLevel',
+      'faculty',
+      'department',
+      'academicPosition',
+      'highestQualification',
+      'yearsOfTeachingExperience',
+      'yearsOfResearchExperience',
+      'professionalBiography',
       'password',
       'confirmPassword',
     ];
@@ -298,33 +361,58 @@ const NewStudentRegister = () => {
     }
 
     setIsSubmitting(true);
+
+    // Resolve "Other (Specify)" values if selected
+    const universityValue = formData.university === 'Other (Specify)' 
+      ? formData.customUniversity 
+      : formData.university;
+    const academicPositionValue = formData.academicPosition === 'Other (Specify)' 
+      ? formData.customAcademicPosition 
+      : formData.academicPosition;
+    const highestQualificationValue = formData.highestQualification === 'Other (Specify)' 
+      ? formData.customHighestQualification 
+      : formData.highestQualification;
+
     try {
       await register({
         ...formData,
-        role: 'student',
+        university: universityValue,
+        academicPosition: academicPositionValue,
+        highestQualification: highestQualificationValue,
+        role: 'supervisor',
       });
 
-      // Clear filled data after successful registration
+      // Clear filled data
       setFormData({
         fullName: '',
         nicNumber: '',
         dateOfBirth: '',
         email: '',
         phoneNumber: '',
+        gender: '',
         university: '',
-        registrationNumber: '',
-        currentDegree: '',
-        educationLevel: '',
-        researchCategory: '',
-        researchSubcategories: [],
+        customUniversity: '',
+        faculty: '',
+        department: '',
+        academicPosition: '',
+        customAcademicPosition: '',
+        employeeId: '',
+        highestQualification: '',
+        customHighestQualification: '',
         previousDegrees: [],
+        yearsOfTeachingExperience: '',
+        yearsOfResearchExperience: '',
+        professionalBiography: '',
+        researchCategory: 'Computer Science',
+        researchSubcategories: [],
+        researchInterests: '',
         password: '',
         confirmPassword: '',
         acceptTerms: false,
         acceptPrivacy: false,
       });
 
-      navigate(`/auth/student/login?registered=true`);
+      navigate(`/login?role=supervisor&registered=true`);
     } catch (err) {
       console.error('Registration failed:', err);
       setServerError(err.message || 'Registration failed. Please check your information and try again.');
@@ -341,9 +429,13 @@ const NewStudentRegister = () => {
       'email',
       'phoneNumber',
       'university',
-      'registrationNumber',
-      'currentDegree',
-      'educationLevel',
+      'faculty',
+      'department',
+      'academicPosition',
+      'highestQualification',
+      'yearsOfTeachingExperience',
+      'yearsOfResearchExperience',
+      'professionalBiography',
       'password',
       'confirmPassword',
     ];
@@ -353,6 +445,10 @@ const NewStudentRegister = () => {
         return true;
       }
     }
+
+    if (formData.university === 'Other (Specify)' && !formData.customUniversity.trim()) return true;
+    if (formData.academicPosition === 'Other (Specify)' && !formData.customAcademicPosition.trim()) return true;
+    if (formData.highestQualification === 'Other (Specify)' && !formData.customHighestQualification.trim()) return true;
 
     if (Object.values(errors).some((err) => !!err)) {
       return true;
@@ -374,7 +470,7 @@ const NewStudentRegister = () => {
         <div className={styles.leftHeader}>
           <Link to="/" className={styles.logo}>
             <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="16" cy="16" r="16" fill="#2563eb" />
+              <circle cx="16" cy="16" r="16" fill="#10b981" />
               <path d="M10 12C10 10.8954 10.8954 10 12 10H20C21.1046 10 22 10.8954 22 12V20C22 21.1046 21.1046 22 20 22H12C10.8954 22 10 21.1046 10 20V12Z" fill="white" fillOpacity="0.3" />
               <path d="M13 14L16 11L19 14" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               <path d="M16 11V20" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
@@ -385,16 +481,19 @@ const NewStudentRegister = () => {
         </div>
 
         <div className={styles.leftBody}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ffffff', marginBottom: '1rem', lineHeight: 1.3 }}>
+            Join Our Network of Academic Experts
+          </h2>
           <p className={styles.heroText}>
-            Join a trusted academic platform to index your research work, receive supervisor inputs, and showcase your publication.
+            Mentor & Elevate Research — Register as a ResearchSphere Supervisor to review scholarly publications, provide expert guidance, and help shape the next generation of academic research.
           </p>
 
           <div className={styles.testimonial}>
             <p className={styles.quote}>
-              &ldquo;ResearchSphere transformed how our department manages student publications.&rdquo;
+              &ldquo;Mentoring the next generation of researchers is highly streamlined on ResearchSphere.&rdquo;
             </p>
             <p className={styles.author}>
-              PROF. B. SILVA, UNIVERSITY OF SRI JAYAWARDENAPURA
+              PROF. R. SILVA, UNIVERSITY OF COLOMBO
             </p>
           </div>
         </div>
@@ -414,12 +513,11 @@ const NewStudentRegister = () => {
         </div>
 
         <div className={styles.formContainer}>
-          <h1 className={styles.title}>Join or Register - Student Portal</h1>
-          <p className={styles.subtitle} style={{ marginBottom: '1.25rem', color: 'var(--color-primary)' }}>
-            Submit & Disseminate Your Research — Register to easily upload your PDF publications, secure expert feedback, and share your peer-reviewed academic findings.
+          <h1 className={styles.title}>Register Account - Supervisor Portal</h1>
+          <p className={styles.subtitle} style={{ marginBottom: '1.25rem', color: 'var(--color-primary-green)' }}>
+            Join our network of academic reviewers. Fill in your professional credentials below.
           </p>
 
-          {/* Simple phrase alert notification on validation failure */}
           {validationAlert && (
             <div className={styles.validationAlert}>
               <AlertCircle size={18} className={styles.validationAlertIcon} />
@@ -451,7 +549,7 @@ const NewStudentRegister = () => {
                 <input
                   type="text"
                   name="fullName"
-                  placeholder="e.g. Amara Perera"
+                  placeholder="e.g. Prof. Ranjith Silva"
                   value={formData.fullName}
                   onChange={handleChange}
                   className={`${styles.input} ${errors.fullName ? styles.inputError : ''}`}
@@ -465,7 +563,7 @@ const NewStudentRegister = () => {
                 <input
                   type="text"
                   name="nicNumber"
-                  placeholder="e.g. 200112345678"
+                  placeholder="e.g. 197012345678"
                   value={formData.nicNumber}
                   onChange={handleChange}
                   onBlur={handleNicBlur}
@@ -515,17 +613,36 @@ const NewStudentRegister = () => {
                 />
                 {errors.phoneNumber && <span className={styles.errorText}>{errors.phoneNumber}</span>}
               </div>
+
+              {/* Gender (Optional) */}
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Gender <span className={styles.optionalLabel}>(Optional)</span></label>
+                <div className={styles.selectWrapper}>
+                  <select
+                    name="gender"
+                    value={formData.gender}
+                    onChange={handleChange}
+                    className={styles.select}
+                  >
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Prefer not to say">Prefer not to say</option>
+                  </select>
+                  <ChevronDown className={styles.selectIcon} size={16} />
+                </div>
+              </div>
             </div>
 
-            {/* University Details Section */}
+            {/* Institutional Information Details Section */}
             <div className={styles.sectionHeader}>
-              <span className={styles.sectionTitle}>Current Studying University Details</span>
+              <span className={styles.sectionTitle}>Institutional Information Details</span>
             </div>
 
             <div className={styles.fieldGrid}>
-              {/* University Dropdown with Placeholder */}
+              {/* University dropdown */}
               <div className={styles.fieldGroup}>
-                <label className={styles.label}>University *</label>
+                <label className={styles.label}>University / Institution *</label>
                 <div className={styles.selectWrapper}>
                   <select
                     name="university"
@@ -533,69 +650,194 @@ const NewStudentRegister = () => {
                     onChange={handleChange}
                     className={`${styles.select} ${errors.university ? styles.inputError : ''}`}
                   >
-                    <option value="" disabled>Select your current university</option>
+                    <option value="" disabled>Select University / Institution</option>
                     {UNIVERSITIES.map((uni) => (
                       <option key={uni} value={uni}>{uni}</option>
                     ))}
+                    <option value="Other (Specify)">Other (Specify)</option>
                   </select>
                   <ChevronDown className={styles.selectIcon} size={16} />
                 </div>
                 {errors.university && <span className={styles.errorText}>{errors.university}</span>}
               </div>
 
-              {/* Registration Number */}
+              {/* Custom University input if Other chosen */}
+              {formData.university === 'Other (Specify)' && (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.label}>Specify University *</label>
+                  <input
+                    type="text"
+                    name="customUniversity"
+                    placeholder="Enter institution name"
+                    value={formData.customUniversity}
+                    onChange={handleChange}
+                    className={styles.input}
+                  />
+                </div>
+              )}
+
+              {/* Faculty */}
               <div className={styles.fieldGroup}>
-                <label className={styles.label}>Registration Number *</label>
+                <label className={styles.label}>Faculty *</label>
                 <input
                   type="text"
-                  name="registrationNumber"
-                  placeholder="e.g. 2024/CS/1001"
-                  value={formData.registrationNumber}
+                  name="faculty"
+                  placeholder="e.g. Faculty of Science"
+                  value={formData.faculty}
                   onChange={handleChange}
-                  className={`${styles.input} ${errors.registrationNumber ? styles.inputError : ''}`}
+                  className={`${styles.input} ${errors.faculty ? styles.inputError : ''}`}
                 />
-                {errors.registrationNumber && <span className={styles.errorText}>{errors.registrationNumber}</span>}
+                {errors.faculty && <span className={styles.errorText}>{errors.faculty}</span>}
               </div>
 
-              {/* Current Degree */}
+              {/* Department */}
               <div className={styles.fieldGroup}>
-                <label className={styles.label}>Current Degree *</label>
+                <label className={styles.label}>Department *</label>
                 <input
                   type="text"
-                  name="currentDegree"
-                  placeholder="e.g. BSc Honours in Computer Science"
-                  value={formData.currentDegree}
+                  name="department"
+                  placeholder="e.g. Department of Computer Science"
+                  value={formData.department}
                   onChange={handleChange}
-                  className={`${styles.input} ${errors.currentDegree ? styles.inputError : ''}`}
+                  className={`${styles.input} ${errors.department ? styles.inputError : ''}`}
                 />
-                {errors.currentDegree && <span className={styles.errorText}>{errors.currentDegree}</span>}
+                {errors.department && <span className={styles.errorText}>{errors.department}</span>}
               </div>
 
-              {/* Education Level Dropdown with Placeholder */}
+              {/* Academic Position */}
               <div className={styles.fieldGroup}>
-                <label className={styles.label}>Education Level *</label>
+                <label className={styles.label}>Academic Position *</label>
                 <div className={styles.selectWrapper}>
                   <select
-                    name="educationLevel"
-                    value={formData.educationLevel}
+                    name="academicPosition"
+                    value={formData.academicPosition}
                     onChange={handleChange}
-                    className={`${styles.select} ${errors.educationLevel ? styles.inputError : ''}`}
+                    className={`${styles.select} ${errors.academicPosition ? styles.inputError : ''}`}
                   >
-                    <option value="" disabled>Select your current degree type</option>
-                    {EDUCATION_LEVELS.map((level) => (
-                      <option key={level} value={level}>{level}</option>
+                    <option value="" disabled>Select Current Academic Position</option>
+                    {ACADEMIC_POSITIONS.map((pos) => (
+                      <option key={pos} value={pos}>{pos}</option>
                     ))}
                   </select>
                   <ChevronDown className={styles.selectIcon} size={16} />
                 </div>
-                {errors.educationLevel && <span className={styles.errorText}>{errors.educationLevel}</span>}
+                {errors.academicPosition && <span className={styles.errorText}>{errors.academicPosition}</span>}
+              </div>
+
+              {/* Custom Academic Position input if Other chosen */}
+              {formData.academicPosition === 'Other (Specify)' && (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.label}>Specify Academic Position *</label>
+                  <input
+                    type="text"
+                    name="customAcademicPosition"
+                    placeholder="Enter academic position"
+                    value={formData.customAcademicPosition}
+                    onChange={handleChange}
+                    className={styles.input}
+                  />
+                </div>
+              )}
+
+              {/* Employee ID (Optional) */}
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Employee / Staff ID <span className={styles.optionalLabel}>(Optional)</span></label>
+                <input
+                  type="text"
+                  name="employeeId"
+                  placeholder="e.g. EMP12345"
+                  value={formData.employeeId}
+                  onChange={handleChange}
+                  className={styles.input}
+                />
               </div>
             </div>
 
-            {/* Previously Completed Degrees Section (Optional) */}
+            {/* Academic Qualifications Section */}
             <div className={styles.sectionHeader}>
-              <span className={styles.sectionTitle}>Previously Completed Degrees</span>
-              <span className={styles.optionalBadge}>(Optional)</span>
+              <span className={styles.sectionTitle}>Academic Qualifications</span>
+            </div>
+
+            <div className={styles.fieldGrid}>
+              {/* Highest Academic Qualification Dropdown */}
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Highest Academic Qualification *</label>
+                <div className={styles.selectWrapper}>
+                  <select
+                    name="highestQualification"
+                    value={formData.highestQualification}
+                    onChange={handleChange}
+                    className={`${styles.select} ${errors.highestQualification ? styles.inputError : ''}`}
+                  >
+                    <option value="" disabled>Select Highest Academic Qualification</option>
+                    {HIGHEST_QUALIFICATIONS.map((q) => (
+                      <option key={q} value={q}>{q}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className={styles.selectIcon} size={16} />
+                </div>
+                {errors.highestQualification && <span className={styles.errorText}>{errors.highestQualification}</span>}
+              </div>
+
+              {/* Custom Highest Qualification */}
+              {formData.highestQualification === 'Other (Specify)' && (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.label}>Specify Highest Qualification *</label>
+                  <input
+                    type="text"
+                    name="customHighestQualification"
+                    placeholder="Enter highest qualification"
+                    value={formData.customHighestQualification}
+                    onChange={handleChange}
+                    className={styles.input}
+                  />
+                </div>
+              )}
+
+              {/* Years of Teaching Experience */}
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Years of Teaching Experience *</label>
+                <div className={styles.selectWrapper}>
+                  <select
+                    name="yearsOfTeachingExperience"
+                    value={formData.yearsOfTeachingExperience}
+                    onChange={handleChange}
+                    className={`${styles.select} ${errors.yearsOfTeachingExperience ? styles.inputError : ''}`}
+                  >
+                    <option value="" disabled>Select Teaching Experience</option>
+                    {EXPERIENCE_YEARS.map((y) => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className={styles.selectIcon} size={16} />
+                </div>
+                {errors.yearsOfTeachingExperience && <span className={styles.errorText}>{errors.yearsOfTeachingExperience}</span>}
+              </div>
+
+              {/* Years of Research Experience */}
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Years of Research Experience *</label>
+                <div className={styles.selectWrapper}>
+                  <select
+                    name="yearsOfResearchExperience"
+                    value={formData.yearsOfResearchExperience}
+                    onChange={handleChange}
+                    className={`${styles.select} ${errors.yearsOfResearchExperience ? styles.inputError : ''}`}
+                  >
+                    <option value="" disabled>Select Research Experience</option>
+                    {EXPERIENCE_YEARS.map((y) => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className={styles.selectIcon} size={16} />
+                </div>
+                {errors.yearsOfResearchExperience && <span className={styles.errorText}>{errors.yearsOfResearchExperience}</span>}
+              </div>
+            </div>
+
+            {/* Previously Completed Degrees (Optional) */}
+            <div className={styles.subsectionHeader} style={{ marginTop: '1rem', marginBottom: '0.5rem' }}>
+              <span className={styles.subsectionTitle}>Previously Completed Degrees <span className={styles.optionalLabel}>(Optional)</span></span>
             </div>
 
             {formData.previousDegrees.map((deg, idx) => (
@@ -613,7 +855,7 @@ const NewStudentRegister = () => {
                     <label className={styles.label}>Completed Degree</label>
                     <input
                       type="text"
-                      placeholder="e.g. Higher Diploma in IT"
+                      placeholder="e.g. Master of Science"
                       value={deg.degree}
                       onChange={(e) => handlePreviousDegreeChange(idx, 'degree', e.target.value)}
                       className={styles.input}
@@ -624,20 +866,9 @@ const NewStudentRegister = () => {
                     <label className={styles.label}>University / Institution</label>
                     <input
                       type="text"
-                      placeholder="e.g. University of Colombo"
+                      placeholder="e.g. University of Moratuwa"
                       value={deg.university}
                       onChange={(e) => handlePreviousDegreeChange(idx, 'university', e.target.value)}
-                      className={styles.input}
-                    />
-                  </div>
-
-                  <div className={styles.fieldGroup}>
-                    <label className={styles.label}>Registration / Student ID</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. HD/2021/045"
-                      value={deg.registrationNumber}
-                      onChange={(e) => handlePreviousDegreeChange(idx, 'registrationNumber', e.target.value)}
                       className={styles.input}
                     />
                   </div>
@@ -649,11 +880,26 @@ const NewStudentRegister = () => {
               type="button"
               onClick={handleAddPreviousDegree}
               className={styles.addDegreeBtn}
+              style={{ marginBottom: '1.25rem' }}
             >
-              <Plus size={16} /> Add Previous Degree
+              <Plus size={16} /> Add Previously Completed Degree
             </button>
 
-            {/* Academic & Research Interests Section */}
+            {/* Professional Biography */}
+            <div className={styles.fieldGroup} style={{ width: '100%' }}>
+              <label className={styles.label}>Professional Biography *</label>
+              <textarea
+                name="professionalBiography"
+                placeholder="A brief overview of your academic and research career..."
+                value={formData.professionalBiography}
+                onChange={handleChange}
+                className={`${styles.textarea} ${errors.professionalBiography ? styles.inputError : ''}`}
+                rows={4}
+              />
+              {errors.professionalBiography && <span className={styles.errorText}>{errors.professionalBiography}</span>}
+            </div>
+
+            {/* Research Domain & Specializations Section */}
             <div className={styles.sectionHeader}>
               <span className={styles.sectionTitle}>Research Domain & Specializations</span>
             </div>
@@ -684,9 +930,9 @@ const NewStudentRegister = () => {
                 </div>
               </div>
 
-              {/* Research Subcategory (Multi Select) */}
+              {/* Research Subcategory (Optional tag selection) */}
               <div className={styles.fieldGroup}>
-                <label className={styles.label}>Add Research Subcategories *</label>
+                <label className={styles.label}>Research Subcategory <span className={styles.optionalLabel}>(Optional)</span></label>
                 <div className={styles.selectWrapper}>
                   <select
                     onChange={handleAddSubcategory}
@@ -724,13 +970,26 @@ const NewStudentRegister = () => {
               </div>
             )}
 
-            {/* Password Section */}
+            {/* Research Interests Keywords */}
+            <div className={styles.fieldGroup} style={{ width: '100%', marginTop: '1rem' }}>
+              <label className={styles.label}>Research Interests / Keywords</label>
+              <input
+                type="text"
+                name="researchInterests"
+                placeholder="e.g. Deep Learning, Computer Vision, Bioinformatics"
+                value={formData.researchInterests}
+                onChange={handleChange}
+                className={styles.input}
+              />
+            </div>
+
+            {/* Account Security Section */}
             <div className={styles.sectionHeader}>
               <span className={styles.sectionTitle}>Account Security</span>
             </div>
 
             <div className={styles.fieldGrid}>
-              {/* Password Field with Arrowed Guidance Tooltip */}
+              {/* Password */}
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Password *</label>
                 <div className={styles.passwordGuidanceWrapper}>
@@ -749,9 +1008,6 @@ const NewStudentRegister = () => {
                       </div>
                       <div>
                         Please enter at least eight characters including at least one letter, one number, and one special character.
-                      </div>
-                      <div style={{ marginTop: 4 }}>
-                        Example: <span className={styles.passwordExample}>123abc*#</span>
                       </div>
                     </div>
                   )}
@@ -823,7 +1079,6 @@ const NewStudentRegister = () => {
               {errors.terms && <p className={styles.errorText}>{errors.terms}</p>}
             </div>
 
-            {/* Submit Button */}
             <Button
               type="submit"
               variant="primary"
@@ -831,14 +1086,13 @@ const NewStudentRegister = () => {
               fullWidth
               disabled={isSubmitDisabled}
             >
-              {isSubmitting ? 'Registering Account...' : 'Create Student Account'}
+              Create Supervisor Account
             </Button>
           </form>
 
-          {/* Footer Navigation & Support Links */}
           <p className={styles.footerText}>
             Already have an account?{' '}
-            <Link to="/auth/student/login" className={styles.footerLink}>
+            <Link to="/login?role=supervisor" className={styles.footerLink}>
               Back to sign-in
             </Link>
           </p>
@@ -852,4 +1106,4 @@ const NewStudentRegister = () => {
   );
 };
 
-export default NewStudentRegister;
+export default NewSupervisorRegister;

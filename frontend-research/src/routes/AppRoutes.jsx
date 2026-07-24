@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import Home from '../pages/shared/Home';
 import NotFound from '../pages/shared/NotFound';
+import ProtectedRoute from './ProtectedRoute';
 import TermsPage from '../pages/shared/TermsPage';
 import PrivacyPage from '../pages/shared/PrivacyPage';
 import ContactPage from '../pages/shared/ContactPage';
@@ -8,8 +9,10 @@ import Register from '../pages/auth/Register';
 import Login from '../pages/auth/Login';
 import ChooseRegistration from '../pages/auth/ChooseRegistration';
 import NewStudentRegister from '../pages/auth/NewStudentRegister';
+import NewSupervisorRegister from '../pages/auth/NewSupervisorRegister';
 import StudentDashboard from '../pages/student/StudentDashboard';
 import SupervisorDashboard from '../pages/supervisor/SupervisorDashboard';
+import SupervisorPlaceholderPage from '../pages/supervisor/SupervisorPlaceholderPage';
 import NotificationsPage from '../pages/student/NotificationsPage';
 import SearchPublicationsPage from '../pages/student/SearchPublicationsPage';
 import AllPublicationsPage from '../pages/student/AllPublicationsPage';
@@ -38,6 +41,7 @@ const AppRoutes = () => {
       <Route path="/auth/register" element={<ChooseRegistration />} />
       <Route path="/chooseregistration" element={<ChooseRegistration />} />
       <Route path="/newstudentregistegpage" element={<NewStudentRegister />} />
+      <Route path="/newsupervisorregistergpage" element={<NewSupervisorRegister />} />
       <Route path="/forgot-password" element={<PlaceholderPage title="Forgot Password" />} />
 
       {/* Shared / Legal Pages */}
@@ -47,27 +51,31 @@ const AppRoutes = () => {
       <Route path="/contact" element={<ContactPage />} />
 
       {/* ====== Student Routes ====== */}
-      {/* TODO: Wrap with ProtectedRoute role="student" */}
-      <Route path="/student/dashboard" element={<StudentDashboard />} />
-      <Route path="/student/upload" element={<NewSubmissionPage />} />
-      <Route path="/student/edit/:id" element={<PlaceholderPage title="Edit Submission" />} />
-      <Route path="/student/status" element={<SubmissionStatusPage />} />
-      <Route path="/student/search" element={<SearchPublicationsPage />} />
-      <Route path="/student/publications" element={<AllPublicationsPage />} />
-      <Route path="/student/notifications" element={<NotificationsPage />} />
-      <Route path="/student/publication/:id" element={<PlaceholderPage title="Publication Details" />} />
-      <Route path="/student/profile" element={<StudentProfilePage />} />
-      <Route path="/articles" element={<ArticlesPage />} />
-      <Route path="/blogs" element={<BlogsPage />} />
-      <Route path="/student/contact" element={<ContactSupervisorsPage />} />
+      <Route path="/student/dashboard" element={<ProtectedRoute allowedRole="student"><StudentDashboard /></ProtectedRoute>} />
+      <Route path="/student/upload" element={<ProtectedRoute allowedRole="student"><NewSubmissionPage /></ProtectedRoute>} />
+      <Route path="/student/edit/:id" element={<ProtectedRoute allowedRole="student"><PlaceholderPage title="Edit Submission" /></ProtectedRoute>} />
+      <Route path="/student/status" element={<ProtectedRoute allowedRole="student"><SubmissionStatusPage /></ProtectedRoute>} />
+      <Route path="/student/search" element={<ProtectedRoute allowedRole="student"><SearchPublicationsPage /></ProtectedRoute>} />
+      <Route path="/student/publications" element={<ProtectedRoute allowedRole="student"><AllPublicationsPage /></ProtectedRoute>} />
+      <Route path="/student/notifications" element={<ProtectedRoute allowedRole="student"><NotificationsPage /></ProtectedRoute>} />
+      <Route path="/student/publication/:id" element={<ProtectedRoute allowedRole="student"><PlaceholderPage title="Publication Details" /></ProtectedRoute>} />
+      <Route path="/student/profile" element={<ProtectedRoute allowedRole="student"><StudentProfilePage /></ProtectedRoute>} />
+      <Route path="/articles" element={<ProtectedRoute allowedRole="student"><ArticlesPage /></ProtectedRoute>} />
+      <Route path="/blogs" element={<ProtectedRoute allowedRole="student"><BlogsPage /></ProtectedRoute>} />
+      <Route path="/student/contact" element={<ProtectedRoute allowedRole="student"><ContactSupervisorsPage /></ProtectedRoute>} />
 
       {/* ====== Supervisor Routes ====== */}
-      <Route path="/supervisor/dashboard" element={<SupervisorDashboard />} />
-      <Route path="/supervisor/assigned" element={<PlaceholderPage title="Assigned Papers" />} />
-      <Route path="/supervisor/review/:id" element={<PlaceholderPage title="Review Paper" />} />
-      <Route path="/supervisor/approval" element={<PlaceholderPage title="Approval Page" />} />
-      <Route path="/supervisor/feedback/:id" element={<PlaceholderPage title="Feedback Page" />} />
-      <Route path="/supervisor/profile" element={<PlaceholderPage title="Supervisor Profile" />} />
+      <Route path="/supervisor/dashboard" element={<ProtectedRoute allowedRole="supervisor"><SupervisorDashboard /></ProtectedRoute>} />
+      <Route path="/supervisor/assigned" element={<ProtectedRoute allowedRole="supervisor"><SupervisorPlaceholderPage title="Assigned Papers" /></ProtectedRoute>} />
+      <Route path="/supervisor/pending" element={<ProtectedRoute allowedRole="supervisor"><SupervisorPlaceholderPage title="Pending Reviews" /></ProtectedRoute>} />
+      <Route path="/supervisor/approved" element={<ProtectedRoute allowedRole="supervisor"><SupervisorPlaceholderPage title="Approved Papers" /></ProtectedRoute>} />
+      <Route path="/supervisor/rejected" element={<ProtectedRoute allowedRole="supervisor"><SupervisorPlaceholderPage title="Rejected Papers" /></ProtectedRoute>} />
+      <Route path="/supervisor/analytics" element={<ProtectedRoute allowedRole="supervisor"><SupervisorPlaceholderPage title="Analytics" /></ProtectedRoute>} />
+      <Route path="/supervisor/notifications" element={<ProtectedRoute allowedRole="supervisor"><SupervisorPlaceholderPage title="Notifications" /></ProtectedRoute>} />
+      <Route path="/supervisor/profile" element={<ProtectedRoute allowedRole="supervisor"><SupervisorPlaceholderPage title="Supervisor Profile" /></ProtectedRoute>} />
+      <Route path="/supervisor/review/:id" element={<ProtectedRoute allowedRole="supervisor"><PlaceholderPage title="Review Paper" /></ProtectedRoute>} />
+      <Route path="/supervisor/approval" element={<ProtectedRoute allowedRole="supervisor"><PlaceholderPage title="Approval Page" /></ProtectedRoute>} />
+      <Route path="/supervisor/feedback/:id" element={<ProtectedRoute allowedRole="supervisor"><PlaceholderPage title="Feedback Page" /></ProtectedRoute>} />
 
       {/* ====== Admin Routes ====== */}
       {/* TODO: Wrap with ProtectedRoute role="admin" */}

@@ -59,7 +59,7 @@ const ChooseRegistration = () => {
               <div className={styles.benefitItem}>✓ Professional peer review interface</div>
               <div className={styles.benefitItem}>✓ Track review and recommendation history</div>
             </div>
-            <Link to="/register?role=supervisor" className={styles.cardButton}>
+            <Link to="/newsupervisorregistergpage" className={styles.cardButton}>
               <span>Register as Supervisor</span>
               <ArrowRight size={16} />
             </Link>

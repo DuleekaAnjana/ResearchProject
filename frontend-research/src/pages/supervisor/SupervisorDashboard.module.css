@@ -28,7 +28,7 @@
 .logoIcon {
   width: 32px;
   height: 32px;
-  background-color: #2563eb;
+  background-color: #10b981;
   color: #ffffff;
   border-radius: 50%;
   display: flex;
@@ -99,8 +99,8 @@
 }
 
 .navItemActive {
-  background-color: #eff6ff;
-  color: #2563eb;
+  background-color: #f0fdf4;
+  color: #10b981;
   font-weight: 600;
 }
 
@@ -210,7 +210,7 @@
 .avatarCircle {
   width: 36px;
   height: 36px;
-  background-color: #1d4ed8;
+  background-color: #047857;
   color: #ffffff;
   border-radius: 50%;
   font-size: 0.85rem;
@@ -330,8 +330,8 @@
 }
 
 .iconBlue {
-  background-color: #eff6ff;
-  color: #2563eb;
+  background-color: #f0fdf4;
+  color: #10b981;
 }
 
 .iconYellow {
@@ -381,7 +381,7 @@
 .viewAllLink {
   font-size: 0.8125rem;
   font-weight: 600;
-  color: #2563eb;
+  color: #10b981;
   text-decoration: none;
   display: flex;
   align-items: center;
@@ -504,7 +504,7 @@
 .barFill {
   width: 100%;
   max-width: 32px;
-  background-color: #2563eb;
+  background-color: #10b981;
   border-radius: 4px 4px 0 0;
   transition: height 0.3s ease;
 }
