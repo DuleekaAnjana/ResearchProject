@@ -13,6 +13,7 @@ import NewSupervisorRegister from '../pages/auth/NewSupervisorRegister';
 import StudentDashboard from '../pages/student/StudentDashboard';
 import SupervisorDashboard from '../pages/supervisor/SupervisorDashboard';
 import SupervisorPlaceholderPage from '../pages/supervisor/SupervisorPlaceholderPage';
+import SupervisorNotificationsPage from '../pages/supervisor/SupervisorNotificationsPage';
 import NotificationsPage from '../pages/student/NotificationsPage';
 import SearchPublicationsPage from '../pages/student/SearchPublicationsPage';
 import AllPublicationsPage from '../pages/student/AllPublicationsPage';
@@ -71,7 +72,7 @@ const AppRoutes = () => {
       <Route path="/supervisor/approved" element={<ProtectedRoute allowedRole="supervisor"><SupervisorPlaceholderPage title="Approved Papers" /></ProtectedRoute>} />
       <Route path="/supervisor/rejected" element={<ProtectedRoute allowedRole="supervisor"><SupervisorPlaceholderPage title="Rejected Papers" /></ProtectedRoute>} />
       <Route path="/supervisor/analytics" element={<ProtectedRoute allowedRole="supervisor"><SupervisorPlaceholderPage title="Analytics" /></ProtectedRoute>} />
-      <Route path="/supervisor/notifications" element={<ProtectedRoute allowedRole="supervisor"><SupervisorPlaceholderPage title="Notifications" /></ProtectedRoute>} />
+      <Route path="/supervisor/notifications" element={<ProtectedRoute allowedRole="supervisor"><SupervisorNotificationsPage /></ProtectedRoute>} />
       <Route path="/supervisor/profile" element={<ProtectedRoute allowedRole="supervisor"><SupervisorPlaceholderPage title="Supervisor Profile" /></ProtectedRoute>} />
       <Route path="/supervisor/review/:id" element={<ProtectedRoute allowedRole="supervisor"><PlaceholderPage title="Review Paper" /></ProtectedRoute>} />
       <Route path="/supervisor/approval" element={<ProtectedRoute allowedRole="supervisor"><PlaceholderPage title="Approval Page" /></ProtectedRoute>} />
