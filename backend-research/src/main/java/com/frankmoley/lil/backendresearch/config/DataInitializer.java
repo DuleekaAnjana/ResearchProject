@@ -63,7 +63,6 @@ public class DataInitializer implements CommandLineRunner {
             student.setFullName("Amara Perera");
             student.setEmail("student@researchsphere.edu");
             student.setPassword(defaultHashedPassword);
-            student.setRole("student");
             student.setUniversity("University of Colombo");
             student.setRegistrationNumber("2024/CS/1001");
             student.setResearchCategory("Computer Science");
@@ -154,10 +153,13 @@ public class DataInitializer implements CommandLineRunner {
         paper.setTitle(title);
         paper.setStudentName(studentName);
         paper.setStudentEmail(studentEmail);
-        paper.setSupervisorEmail(supervisorEmail);
-        paper.setStatus(status);
+        paper.setStuRequestedSupervisorEmail(supervisorEmail);
+        paper.setAssignedSupervisorEmail(supervisorEmail);
+        paper.setSupervisorApprovalStatus(status);
+        paper.setAdminApprovalStatus("APPROVED");
+        paper.setIsPublished("APPROVED".equalsIgnoreCase(status));
+        paper.setUploadedManuscript("manuscript.pdf");
         paper.setCategory(category);
-        paper.setReviewTimeDays(reviewTime);
         paper.setSubmittedAt(submittedAt);
         if (submittedAt != null) {
             paper.setAdminValidatedAt(submittedAt.plusDays(2));
@@ -165,12 +167,11 @@ public class DataInitializer implements CommandLineRunner {
             paper.setSupervisorAssignedAt(submittedAt.plusDays(6));
             paper.setUnderReviewAt(submittedAt.plusDays(8));
             if ("APPROVED".equalsIgnoreCase(status)) {
-                paper.setReviewedAt(submittedAt.plusDays(10));
+                paper.setAdminReviewedAt(submittedAt.plusDays(10));
             }
         }
         paper.setAbstractText("This is the default abstract description for the research titled '" + title + "'. It addresses critical challenges and proposed methodologies.");
         paper.setKeywords("research, publication, Sinhala, Federated, Rainfall");
-        paper.setStudent(student);
         // Add random pages, views, downloads
         paper.setPages((int) (Math.random() * 15) + 15);
         paper.setViews((int) (Math.random() * 3000) + 500);

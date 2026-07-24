@@ -84,7 +84,6 @@ public class AuthService {
 
             student.setResearchCategory(request.getResearchCategory());
             student.setPassword(hashedPassword);
-            student.setRole("student");
 
             Student savedStudent = studentRepository.save(student);
 

@@ -53,16 +53,15 @@ public class Paper {
     /** Category (Optional, inherited from student) */
     private String category;
 
-    /** Name of the submitting student */
-    @Column(nullable = false)
-    private String studentName;
-
     /** Email of the submitting student */
     private String studentEmail;
 
     /** Requested supervisor's email */
-    @Column(nullable = false)
-    private String supervisorEmail;
+    @Column(name = "stu_requested_supervisor_email", nullable = false)
+    private String stuRequestedSupervisorEmail;
+
+    @Column(name = "assigned_supervisor_email")
+    private String assignedSupervisorEmail;
 
     private String supervisorName;
 
@@ -71,7 +70,8 @@ public class Paper {
     private String comments;
 
     /** Filename of the uploaded PDF manuscript */
-    private String pdfFileName;
+    @Column(name = "uploaded_manuscript")
+    private String uploadedManuscript;
 
     private Integer pages;
 
@@ -79,9 +79,14 @@ public class Paper {
 
     private Integer downloads = 0;
 
-    /** Status: DRAFT, SUBMITTED, PENDING, APPROVED, REJECTED */
-    @Column(name = "supervisor_approval_status", nullable = false)
-    private String status;
+    @Column(name = "supervisor_approval_status")
+    private String supervisorApprovalStatus;
+
+    @Column(name = "admin_approval_status")
+    private String adminApprovalStatus;
+
+    @Column(name = "is_published")
+    private Boolean isPublished = false;
 
     @Column(columnDefinition = "TEXT")
     private String researchDirection;
@@ -94,11 +99,10 @@ public class Paper {
 
     private Integer satisfactionLevel;
 
-    private Double reviewTimeDays;
-
     private LocalDateTime submittedAt;
 
-    private LocalDateTime reviewedAt;
+    @Column(name = "admin_reviewed_at")
+    private LocalDateTime adminReviewedAt;
 
     private LocalDateTime adminValidatedAt;
 
@@ -110,11 +114,51 @@ public class Paper {
 
     private LocalDateTime publishedAt;
 
-    /**
-     * Relationship mapping: Registered student primary key is used as a foreign key.
-     * Demonstrates OOP composition/relationship concepts.
-     */
-    @ManyToOne
-    @JoinColumn(name = "student_id", nullable = true)
-    private Student student;
+    @Transient
+    private String studentName;
+
+    @Transient
+    public String getStudentName() {
+        return this.studentName;
+    }
+
+    public void setStudentName(String studentName) {
+        this.studentName = studentName;
+    }
+
+    @Transient
+    public String getStatus() {
+        return this.supervisorApprovalStatus != null ? this.supervisorApprovalStatus : "PENDING";
+    }
+
+    public void setStatus(String status) {
+        this.supervisorApprovalStatus = status;
+    }
+
+    @Transient
+    public String getPdfFileName() {
+        return this.uploadedManuscript;
+    }
+
+    public void setPdfFileName(String pdfFileName) {
+        this.uploadedManuscript = pdfFileName;
+    }
+
+    @Transient
+    public String getSupervisorEmail() {
+        return this.assignedSupervisorEmail != null ? this.assignedSupervisorEmail : this.stuRequestedSupervisorEmail;
+    }
+
+    public void setSupervisorEmail(String supervisorEmail) {
+        this.assignedSupervisorEmail = supervisorEmail;
+    }
+
+    @Transient
+    public LocalDateTime getReviewedAt() {
+        return this.adminReviewedAt;
+    }
+
+    public void setReviewedAt(LocalDateTime reviewedAt) {
+        this.adminReviewedAt = reviewedAt;
+    }
 }

@@ -8,8 +8,9 @@ import java.util.List;
 
 @Repository
 public interface PaperRepository extends JpaRepository<Paper, Long> {
-    List<Paper> findBySupervisorEmail(String supervisorEmail);
-    List<Paper> findBySupervisorEmailOrderBySubmittedAtDesc(String supervisorEmail);
-    long countBySupervisorEmail(String supervisorEmail);
-    long countBySupervisorEmailAndStatus(String supervisorEmail, String status);
+    List<Paper> findByAssignedSupervisorEmail(String email);
+    List<Paper> findByAssignedSupervisorEmailOrderBySubmittedAtDesc(String email);
+    List<Paper> findByStuRequestedSupervisorEmailOrderBySubmittedAtDesc(String email);
+    long countByAssignedSupervisorEmail(String email);
+    long countByAssignedSupervisorEmailAndSupervisorApprovalStatus(String email, String status);
 }

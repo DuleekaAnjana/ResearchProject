@@ -68,9 +68,10 @@ public class PaperController {
         paper.setCategory(student.getResearchCategory());
         paper.setStudentName(student.getFullName());
         paper.setStudentEmail(student.getEmail());
-        paper.setSupervisorEmail(paperRequest.getSupervisorEmail());
+        paper.setStuRequestedSupervisorEmail(paperRequest.getSupervisorEmail());
+        paper.setAssignedSupervisorEmail(paperRequest.getSupervisorEmail()); // Default auto-assigned to requested
         paper.setComments(paperRequest.getComments());
-        paper.setPdfFileName(paperRequest.getPdfFileName() != null ? paperRequest.getPdfFileName() : "manuscript.pdf");
+        paper.setUploadedManuscript(paperRequest.getPdfFileName() != null ? paperRequest.getPdfFileName() : "manuscript.pdf");
         paper.setPages(paperRequest.getPages());
         if (paperRequest.getViews() != null) {
             paper.setViews(paperRequest.getViews());
@@ -88,12 +89,12 @@ public class PaperController {
         boolean isPending = "SUBMITTED".equalsIgnoreCase(requestStatus) || "PENDING".equalsIgnoreCase(requestStatus);
         if (isPending) {
             paper.setStatus("PENDING");
+            paper.setAdminApprovalStatus("PENDING");
             paper.setSubmittedAt(LocalDateTime.now());
         } else {
             paper.setStatus("DRAFT");
+            paper.setAdminApprovalStatus("DRAFT");
         }
-
-        paper.setStudent(student);
 
         Paper savedPaper = paperRepository.save(paper);
 
@@ -109,6 +110,16 @@ public class PaperController {
         return ResponseEntity.ok(savedPaper);
     }
 
+    private void populateStudentName(Paper paper) {
+        if (paper.getStudentEmail() != null) {
+            studentRepository.findByEmail(paper.getStudentEmail())
+                    .ifPresent(student -> paper.setStudentName(student.getFullName()));
+        }
+        if (paper.getStudentName() == null) {
+            paper.setStudentName("Registered Student");
+        }
+    }
+
     /**
      * GET /api/papers/student
      * Retrieves all papers (drafts, pending, approved, rejected) for a specific student.
@@ -119,6 +130,7 @@ public class PaperController {
         List<Paper> allPapers = paperRepository.findAll();
         List<Paper> studentPapers = allPapers.stream()
                 .filter(p -> p.getStudentEmail() != null && p.getStudentEmail().equalsIgnoreCase(email))
+                .peek(this::populateStudentName)
                 .toList();
         return ResponseEntity.ok(studentPapers);
     }
@@ -129,12 +141,16 @@ public class PaperController {
      */
     @GetMapping("/supervisor")
     public ResponseEntity<List<Paper>> getPapersBySupervisor(@RequestParam String email) {
-        List<Paper> papers = paperRepository.findBySupervisorEmailOrderBySubmittedAtDesc(email);
+        List<Paper> papers = paperRepository.findByAssignedSupervisorEmailOrderBySubmittedAtDesc(email);
+        if (papers.isEmpty()) {
+            papers = paperRepository.findByStuRequestedSupervisorEmailOrderBySubmittedAtDesc(email);
+        }
         String name = supervisorRepository.findByEmail(email)
                 .map(Supervisor::getFullName)
                 .orElse("Prof. Ranjith Silva");
         for (Paper p : papers) {
             p.setSupervisorName(name);
+            populateStudentName(p);
         }
         return ResponseEntity.ok(papers);
     }
@@ -152,6 +168,7 @@ public class PaperController {
                     .map(Supervisor::getFullName)
                     .orElse("Prof. Ranjith Silva");
             paper.setSupervisorName(name);
+            populateStudentName(paper);
             return ResponseEntity.ok(paper);
         }
         return ResponseEntity.notFound().build();
@@ -214,6 +231,7 @@ public class PaperController {
             "FEEDBACK"
         );
 
+        populateStudentName(saved);
         return ResponseEntity.ok(saved);
     }
 
