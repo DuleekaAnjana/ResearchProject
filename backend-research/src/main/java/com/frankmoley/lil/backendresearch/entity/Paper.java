@@ -20,7 +20,16 @@ public class Paper {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "publication_id", unique = true, nullable = false)
+    private Long publicationId;
+
+    public Long getId() {
+        return this.publicationId;
+    }
+
+    public void setId(Long id) {
+        this.publicationId = id;
+    }
 
     /** Title of the publication */
     @Column(nullable = false)
@@ -55,6 +64,8 @@ public class Paper {
     @Column(nullable = false)
     private String supervisorEmail;
 
+    private String supervisorName;
+
     /** Additional comments for the reviewer (Optional) */
     @Column(columnDefinition = "TEXT")
     private String comments;
@@ -69,14 +80,35 @@ public class Paper {
     private Integer downloads = 0;
 
     /** Status: DRAFT, SUBMITTED, PENDING, APPROVED, REJECTED */
-    @Column(nullable = false)
+    @Column(name = "supervisor_approval_status", nullable = false)
     private String status;
+
+    @Column(columnDefinition = "TEXT")
+    private String researchDirection;
+
+    @Column(columnDefinition = "TEXT")
+    private String researchGapFeedback;
+
+    @Column(columnDefinition = "TEXT")
+    private String missingFindings;
+
+    private Integer satisfactionLevel;
 
     private Double reviewTimeDays;
 
     private LocalDateTime submittedAt;
 
     private LocalDateTime reviewedAt;
+
+    private LocalDateTime adminValidatedAt;
+
+    private LocalDateTime duplicateCheckedAt;
+
+    private LocalDateTime supervisorAssignedAt;
+
+    private LocalDateTime underReviewAt;
+
+    private LocalDateTime publishedAt;
 
     /**
      * Relationship mapping: Registered student primary key is used as a foreign key.

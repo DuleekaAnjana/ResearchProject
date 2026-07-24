@@ -71,13 +71,15 @@ const NotificationsPage = () => {
   };
 
   const handleMarkOneRead = async (notif) => {
-    if (notif.read) return;
-    try {
-      await notificationService.markAsRead(notif.id);
-      await fetchNotifications();
-    } catch (err) {
-      console.warn('Failed to mark as read:', err);
+    if (!notif.read) {
+      try {
+        await notificationService.markAsRead(notif.id);
+        await fetchNotifications();
+      } catch (err) {
+        console.warn('Failed to mark as read:', err);
+      }
     }
+    navigate('/student/publications');
   };
 
   // ---- Relative time ----

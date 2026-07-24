@@ -2,8 +2,10 @@ package com.frankmoley.lil.backendresearch.controller;
 
 import com.frankmoley.lil.backendresearch.entity.Paper;
 import com.frankmoley.lil.backendresearch.entity.Student;
+import com.frankmoley.lil.backendresearch.entity.Supervisor;
 import com.frankmoley.lil.backendresearch.repository.PaperRepository;
 import com.frankmoley.lil.backendresearch.repository.StudentRepository;
+import com.frankmoley.lil.backendresearch.repository.SupervisorRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +26,7 @@ public class PaperController {
 
     private final PaperRepository paperRepository;
     private final StudentRepository studentRepository;
+    private final SupervisorRepository supervisorRepository;
     private final com.frankmoley.lil.backendresearch.service.NotificationService notificationService;
 
     /**
@@ -118,6 +121,100 @@ public class PaperController {
                 .filter(p -> p.getStudentEmail() != null && p.getStudentEmail().equalsIgnoreCase(email))
                 .toList();
         return ResponseEntity.ok(studentPapers);
+    }
+
+    /**
+     * GET /api/papers/supervisor
+     * Retrieves all papers assigned to a specific supervisor.
+     */
+    @GetMapping("/supervisor")
+    public ResponseEntity<List<Paper>> getPapersBySupervisor(@RequestParam String email) {
+        List<Paper> papers = paperRepository.findBySupervisorEmailOrderBySubmittedAtDesc(email);
+        String name = supervisorRepository.findByEmail(email)
+                .map(Supervisor::getFullName)
+                .orElse("Prof. Ranjith Silva");
+        for (Paper p : papers) {
+            p.setSupervisorName(name);
+        }
+        return ResponseEntity.ok(papers);
+    }
+
+    /**
+     * GET /api/papers/{id}
+     * Retrieves a single paper by ID.
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<Paper> getPaperById(@PathVariable Long id) {
+        Optional<Paper> paperOpt = paperRepository.findById(id);
+        if (paperOpt.isPresent()) {
+            Paper paper = paperOpt.get();
+            String name = supervisorRepository.findByEmail(paper.getSupervisorEmail())
+                    .map(Supervisor::getFullName)
+                    .orElse("Prof. Ranjith Silva");
+            paper.setSupervisorName(name);
+            return ResponseEntity.ok(paper);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    /**
+     * POST /api/papers/{id}/review
+     * Supervisor submits decision (APPROVED or REJECTED) with satisfaction level and comments.
+     */
+    @PostMapping("/{id}/review")
+    public ResponseEntity<?> reviewPaper(@PathVariable Long id, @RequestBody Paper reviewData) {
+        Optional<Paper> paperOpt = paperRepository.findById(id);
+        if (paperOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        Paper paper = paperOpt.get();
+
+        String newStatus = reviewData.getStatus();
+        if (newStatus == null || (!newStatus.equalsIgnoreCase("APPROVED") && !newStatus.equalsIgnoreCase("REJECTED"))) {
+            return ResponseEntity.badRequest().body("Invalid review status. Must be APPROVED or REJECTED.");
+        }
+
+        if ("REJECTED".equalsIgnoreCase(newStatus)) {
+            boolean hasReason = (reviewData.getResearchDirection() != null && !reviewData.getResearchDirection().trim().isEmpty())
+                    || (reviewData.getResearchGapFeedback() != null && !reviewData.getResearchGapFeedback().trim().isEmpty())
+                    || (reviewData.getMissingFindings() != null && !reviewData.getMissingFindings().trim().isEmpty())
+                    || (reviewData.getComments() != null && !reviewData.getComments().trim().isEmpty());
+            if (!hasReason) {
+                return ResponseEntity.badRequest().body("Require at least one reason to Reject Reaseach");
+            }
+        } else if ("APPROVED".equalsIgnoreCase(newStatus)) {
+            Integer satLevel = reviewData.getSatisfactionLevel();
+            if (satLevel == null || satLevel < 2) {
+                return ResponseEntity.badRequest().body("You need atleast Satisfaction level: 2 / 5 to Approval");
+            }
+        }
+
+        paper.setStatus(newStatus.toUpperCase());
+        String name = supervisorRepository.findByEmail(paper.getSupervisorEmail())
+                .map(Supervisor::getFullName)
+                .orElse("Prof. Ranjith Silva");
+        paper.setSupervisorName(name);
+        paper.setResearchDirection(reviewData.getResearchDirection());
+        paper.setResearchGapFeedback(reviewData.getResearchGapFeedback());
+        paper.setMissingFindings(reviewData.getMissingFindings());
+        paper.setComments(reviewData.getComments());
+        paper.setSatisfactionLevel(reviewData.getSatisfactionLevel());
+        paper.setReviewedAt(LocalDateTime.now());
+        if (paper.getUnderReviewAt() == null) {
+            paper.setUnderReviewAt(LocalDateTime.now().minusDays(1));
+        }
+
+        Paper saved = paperRepository.save(paper);
+
+        // Notify the student
+        notificationService.createNotification(
+            paper.getStudentEmail(),
+            "Paper review complete",
+            "Your paper '" + paper.getTitle() + "' has been " + paper.getStatus().toLowerCase() + " by supervisor.",
+            "FEEDBACK"
+        );
+
+        return ResponseEntity.ok(saved);
     }
 
     /**

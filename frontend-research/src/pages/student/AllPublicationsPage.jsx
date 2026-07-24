@@ -216,6 +216,10 @@ ${paper.comments || ''}
         const timeA = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
         const timeB = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
         return timeA - timeB;
+      } else if (sortOrder === 'most_downloaded') {
+        return (b.downloads || 0) - (a.downloads || 0);
+      } else if (sortOrder === 'most_viewed') {
+        return (b.views || 0) - (a.views || 0);
       } else if (sortOrder === 'alphabetical') {
         return (a.title || '').localeCompare(b.title || '');
       }
@@ -294,6 +298,8 @@ ${paper.comments || ''}
             >
               <option value="newest">Newest</option>
               <option value="oldest">Oldest</option>
+              <option value="most_downloaded">Most downloaded</option>
+              <option value="most_viewed">Most Viewed</option>
               <option value="alphabetical">A-Z</option>
             </select>
           </div>

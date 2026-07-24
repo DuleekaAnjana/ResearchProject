@@ -159,6 +159,15 @@ public class DataInitializer implements CommandLineRunner {
         paper.setCategory(category);
         paper.setReviewTimeDays(reviewTime);
         paper.setSubmittedAt(submittedAt);
+        if (submittedAt != null) {
+            paper.setAdminValidatedAt(submittedAt.plusDays(2));
+            paper.setDuplicateCheckedAt(submittedAt.plusDays(4));
+            paper.setSupervisorAssignedAt(submittedAt.plusDays(6));
+            paper.setUnderReviewAt(submittedAt.plusDays(8));
+            if ("APPROVED".equalsIgnoreCase(status)) {
+                paper.setReviewedAt(submittedAt.plusDays(10));
+            }
+        }
         paper.setAbstractText("This is the default abstract description for the research titled '" + title + "'. It addresses critical challenges and proposed methodologies.");
         paper.setKeywords("research, publication, Sinhala, Federated, Rainfall");
         paper.setStudent(student);
