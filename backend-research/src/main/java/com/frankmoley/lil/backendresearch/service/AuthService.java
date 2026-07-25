@@ -3,9 +3,11 @@ package com.frankmoley.lil.backendresearch.service;
 import com.frankmoley.lil.backendresearch.dto.AuthResponse;
 import com.frankmoley.lil.backendresearch.dto.LoginRequest;
 import com.frankmoley.lil.backendresearch.dto.RegisterRequest;
+import com.frankmoley.lil.backendresearch.entity.Admin;
 import com.frankmoley.lil.backendresearch.entity.Student;
 import com.frankmoley.lil.backendresearch.entity.User;
 import com.frankmoley.lil.backendresearch.entity.Supervisor;
+import com.frankmoley.lil.backendresearch.repository.AdminRepository;
 import com.frankmoley.lil.backendresearch.repository.StudentRepository;
 import com.frankmoley.lil.backendresearch.repository.UserRepository;
 import com.frankmoley.lil.backendresearch.repository.SupervisorRepository;
@@ -25,6 +27,7 @@ public class AuthService {
     private final StudentRepository studentRepository;
     private final UserRepository userRepository;
     private final SupervisorRepository supervisorRepository;
+    private final AdminRepository adminRepository;
     private final NotificationService notificationService;
 
     public AuthResponse register(RegisterRequest request) {
@@ -248,6 +251,21 @@ public class AuthService {
                         .role(user.getRole())
                         .university(user.getUniversity())
                         .researchCategory(user.getResearchCategory())
+                        .build();
+            }
+        }
+
+        Optional<Admin> adminOpt = adminRepository.findByEmail(request.getEmail());
+        if (adminOpt.isPresent()) {
+            Admin admin = adminOpt.get();
+            if (admin.getPassword().equals(hashedPassword) || admin.getPassword().equals(request.getPassword())) {
+                return AuthResponse.builder()
+                        .success(true)
+                        .message("Login successful!")
+                        .id(admin.getId())
+                        .name(admin.getFullName())
+                        .email(admin.getEmail())
+                        .role(admin.getRole())
                         .build();
             }
         }

@@ -33,7 +33,7 @@ const Login = ({ roleProp }) => {
   const { role: routeRole } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
 
   // Determine role from props, route params, or search query (default: student)
   const roleKey = roleProp || routeRole || searchParams.get('role') || 'student';
@@ -59,11 +59,16 @@ const Login = ({ roleProp }) => {
 
     try {
       const response = await login(email, password, rememberMe);
-      // Navigate to Student Dashboard or role-specific dashboard after successful sign-in
       const userRole = response?.role || roleKey;
+      if (userRole === 'repositary admin' && roleKey !== 'admin') {
+        logout();
+        setError('Repository Admin must sign in through the administrator portal.');
+        return;
+      }
+      // Navigate to Student Dashboard or role-specific dashboard after successful sign-in
       if (userRole === 'supervisor') {
         navigate('/supervisor/dashboard');
-      } else if (userRole.includes('admin')) {
+      } else if (userRole === 'repositary admin' || userRole.includes('admin')) {
         navigate('/admin/dashboard');
       } else {
         navigate('/student/dashboard');

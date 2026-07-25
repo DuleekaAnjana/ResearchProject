@@ -1,0 +1,136 @@
+package com.frankmoley.lil.backendresearch.controller;
+
+import com.frankmoley.lil.backendresearch.entity.Paper;
+import com.frankmoley.lil.backendresearch.entity.Supervisor;
+import com.frankmoley.lil.backendresearch.repository.PaperRepository;
+import com.frankmoley.lil.backendresearch.repository.SupervisorRepository;
+import com.frankmoley.lil.backendresearch.service.NotificationService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
+import java.util.*;
+
+@RestController
+@RequestMapping("/api/admin")
+@CrossOrigin(origins = "*")
+@RequiredArgsConstructor
+public class AdminController {
+
+    private final PaperRepository paperRepository;
+    private final SupervisorRepository supervisorRepository;
+    private final NotificationService notificationService;
+
+    @GetMapping("/dashboard")
+    public ResponseEntity<?> getDashboardData() {
+        List<Paper> allPapers = paperRepository.findAll();
+
+        long totalPublications = allPapers.size();
+        long approved = allPapers.stream()
+                .filter(p -> "APPROVED".equalsIgnoreCase(p.getStatus()))
+                .count();
+
+        long totalViews = allPapers.stream()
+                .mapToLong(p -> p.getViews() != null ? p.getViews() : 0L)
+                .sum();
+
+        long downloads = allPapers.stream()
+                .mapToLong(p -> p.getDownloads() != null ? p.getDownloads() : 0L)
+                .sum();
+
+        // Get latest 10 submissions (ordered by submittedAt desc)
+        List<Paper> latestSubmissions = allPapers.stream()
+                .filter(p -> p.getSubmittedAt() != null)
+                .sorted((p1, p2) -> p2.getSubmittedAt().compareTo(p1.getSubmittedAt()))
+                .limit(10)
+                .toList();
+
+        // Populate student names
+        for (Paper p : latestSubmissions) {
+            if (p.getStudentName() == null || p.getStudentName().isBlank()) {
+                p.setStudentName("Registered Student");
+            }
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("totalPublications", totalPublications);
+        response.put("approved", approved);
+        response.put("totalViews", totalViews);
+        response.put("downloads", downloads);
+        response.put("latestSubmissions", latestSubmissions);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/supervisors")
+    public ResponseEntity<List<Supervisor>> getAllSupervisors() {
+        return ResponseEntity.ok(supervisorRepository.findAll());
+    }
+
+    @PostMapping("/papers/{id}/check-duplicate")
+    public ResponseEntity<?> checkDuplicate(@PathVariable Long id) {
+        Optional<Paper> paperOpt = paperRepository.findById(id);
+        if (paperOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Paper paper = paperOpt.get();
+        paper.setDuplicateCheckedAt(LocalDateTime.now());
+        Paper saved = paperRepository.save(paper);
+
+        // Notify student that plagiarism/duplicate check was performed
+        notificationService.createNotification(
+                paper.getStudentEmail(),
+                "Duplicate Check Completed",
+                "Your submission '" + paper.getTitle() + "' has successfully completed duplicate check.",
+                "SUBMISSION"
+        );
+
+        return ResponseEntity.ok(saved);
+    }
+
+    @PostMapping("/papers/{id}/assign-supervisor")
+    public ResponseEntity<?> assignSupervisor(@PathVariable Long id, @RequestBody Map<String, String> request) {
+        Optional<Paper> paperOpt = paperRepository.findById(id);
+        if (paperOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        String supervisorEmail = request.get("supervisorEmail");
+        if (supervisorEmail == null || supervisorEmail.isBlank()) {
+            return ResponseEntity.badRequest().body("Supervisor email is required.");
+        }
+
+        Optional<Supervisor> supervisorOpt = supervisorRepository.findByEmail(supervisorEmail);
+        if (supervisorOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("Supervisor not found.");
+        }
+
+        Supervisor supervisor = supervisorOpt.get();
+        Paper paper = paperOpt.get();
+        paper.setAssignedSupervisorEmail(supervisor.getEmail());
+        paper.setSupervisorName(supervisor.getFullName());
+        paper.setSupervisorAssignedAt(LocalDateTime.now());
+        paper.setStatus("PENDING");
+        Paper saved = paperRepository.save(paper);
+
+        // Notify student that supervisor has been assigned
+        notificationService.createNotification(
+                paper.getStudentEmail(),
+                "Supervisor Assigned",
+                supervisor.getFullName() + " has been assigned as supervisor for your submission '" + paper.getTitle() + "'.",
+                "SUPERVISOR_ASSIGNED"
+        );
+
+        // Notify supervisor of the new assigned paper
+        notificationService.createNotification(
+                supervisor.getEmail(),
+                "New Research Paper Assigned",
+                "A new research paper '" + paper.getTitle() + "' has been assigned to you for review.",
+                "SUBMISSION"
+        );
+
+        return ResponseEntity.ok(saved);
+    }
+}

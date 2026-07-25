@@ -22,9 +22,11 @@ import styles from './DashboardHeader.module.css';
  * - Notification bell with badge and dropdown panel
  * - User profile pill with dropdown menu (signed in label, profile, notifications, log out)
  */
-const DashboardHeader = ({ onSidebarToggle, notificationsRoute = '/student/notifications' }) => {
+const DashboardHeader = ({ onSidebarToggle, notificationsRoute = null }) => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+
+  const finalNotificationsRoute = notificationsRoute || (user?.role === 'repositary admin' ? '/admin/notifications' : user?.role === 'supervisor' ? '/supervisor/notifications' : '/student/notifications');
 
   // ---- State ----
   const [searchQuery, setSearchQuery] = useState('');
@@ -49,6 +51,7 @@ const DashboardHeader = ({ onSidebarToggle, notificationsRoute = '/student/notif
     if (!role) return 'User';
     if (role === 'student') return 'Student';
     if (role === 'supervisor') return 'Supervisor';
+    if (role === 'repositary admin') return 'Repositary Admin';
     if (role.includes('admin')) return 'Admin';
     return role;
   };
@@ -131,7 +134,7 @@ const DashboardHeader = ({ onSidebarToggle, notificationsRoute = '/student/notif
       notificationService.markAsRead(notif.id).then(fetchNotifications).catch(() => {});
     }
     setNotifOpen(false);
-    navigate(notificationsRoute);
+    navigate(finalNotificationsRoute);
   };
 
   // ---- Relative time helper ----
@@ -150,7 +153,7 @@ const DashboardHeader = ({ onSidebarToggle, notificationsRoute = '/student/notif
   };
 
   return (
-    <header className={`${styles.topbar} ${user?.role === 'supervisor' ? styles.supervisorTheme : ''}`}>
+    <header className={`${styles.topbar} ${user?.role === 'supervisor' ? styles.supervisorTheme : user?.role === 'repositary admin' ? styles.adminTheme : ''}`}>
       {/* Left: sidebar toggle + search */}
       <div className={styles.topbarLeft}>
         <button
@@ -163,7 +166,7 @@ const DashboardHeader = ({ onSidebarToggle, notificationsRoute = '/student/notif
           <PanelLeft size={20} />
         </button>
 
-        {user?.role !== 'supervisor' && (
+        {user?.role !== 'supervisor' && user?.role !== 'repositary admin' && (
           <form className={styles.searchBox} onSubmit={handleSearchSubmit} role="search">
             <Search className={styles.searchIcon} />
             <input
@@ -204,7 +207,7 @@ const DashboardHeader = ({ onSidebarToggle, notificationsRoute = '/student/notif
               <div className={styles.notifPanelHeader}>
                 <span className={styles.notifPanelTitle}>Notifications</span>
                 <Link
-                  to={notificationsRoute}
+                  to={finalNotificationsRoute}
                   className={styles.viewAllLink}
                   onClick={() => setNotifOpen(false)}
                   id="view-all-notifications-link"
@@ -254,10 +257,10 @@ const DashboardHeader = ({ onSidebarToggle, notificationsRoute = '/student/notif
             aria-label="User profile menu"
           >
             <div className={styles.avatarCircle}>
-              {getInitials(user?.name)}
+              {getInitials(user?.role === 'repositary admin' ? 'Repositary Admin' : user?.name)}
             </div>
             <div className={styles.userInfo}>
-              <span className={styles.userName}>{user?.name || 'User'}</span>
+              <span className={styles.userName}>{user?.role === 'repositary admin' ? 'Repositary Admin' : (user?.name || 'User')}</span>
               <span className={styles.userRole}>{getRoleLabel(user?.role)}</span>
             </div>
             <ChevronDown size={14} style={{ color: '#94a3b8', marginLeft: '2px' }} />
@@ -275,7 +278,7 @@ const DashboardHeader = ({ onSidebarToggle, notificationsRoute = '/student/notif
 
               <div className={styles.profilePanelMenu}>
                 <Link
-                  to={user?.role === 'supervisor' ? '/supervisor/profile' : '/student/profile'}
+                  to={user?.role === 'repositary admin' ? '/admin/profile' : user?.role === 'supervisor' ? '/supervisor/profile' : '/student/profile'}
                   className={styles.profileMenuItem}
                   onClick={() => setProfileOpen(false)}
                   id="profile-menu-profile-link"
@@ -285,7 +288,7 @@ const DashboardHeader = ({ onSidebarToggle, notificationsRoute = '/student/notif
                 </Link>
 
                 <Link
-                  to={notificationsRoute}
+                  to={finalNotificationsRoute}
                   className={styles.profileMenuItem}
                   onClick={() => setProfileOpen(false)}
                   id="profile-menu-notifications-link"

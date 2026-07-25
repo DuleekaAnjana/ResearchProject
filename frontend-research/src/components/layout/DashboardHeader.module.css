@@ -470,3 +470,50 @@
   background: #ecfdf5;
   color: #047857;
 }
+
+/* ============================================
+   Repository Admin Pale Yellow Theme Customization
+   ============================================ */
+.adminTheme .notificationBtn.active {
+  background: rgb(254, 251, 199);
+  color: #ca8a04;
+  border-color: #fde047;
+}
+
+.adminTheme .notificationBtn:hover {
+  background: rgb(254, 251, 199);
+  color: #a16207;
+  border-color: #fde047;
+}
+
+.adminTheme .userProfilePill.active {
+  background: rgb(254, 251, 199);
+  border-color: #fde047;
+}
+
+.adminTheme .userProfilePill:hover {
+  background: rgb(254, 251, 199);
+  border-color: #fde047;
+}
+
+.adminTheme .avatarCircle {
+  background: linear-gradient(135deg, #facc15 0%, #ca8a04 100%);
+}
+
+.adminTheme .viewAllLink {
+  color: #ca8a04;
+}
+
+.adminTheme .viewAllLink:hover {
+  color: #a16207;
+}
+
+.adminTheme .newBadge {
+  background: #eab308;
+}
+
+.adminTheme .profileMenuItem:hover {
+  background: rgb(254, 251, 199);
+  color: #a16207;
+}
+

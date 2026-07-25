@@ -25,6 +25,10 @@ import StudentProfilePage from '../pages/student/StudentProfilePage';
 import ArticlesPage from '../pages/student/ArticlesPage';
 import BlogsPage from '../pages/student/BlogsPage';
 import ContactSupervisorsPage from '../pages/student/ContactSupervisorsPage';
+import AdminDashboard from '../pages/admin/AdminDashboard';
+import ManageSubmissions from '../pages/admin/ManageSubmissions';
+import AdminNotificationsPage from '../pages/admin/AdminNotificationsPage';
+import AdminProfilePage from '../pages/admin/AdminProfilePage';
 
 /**
  * Application routes configuration
@@ -81,15 +85,10 @@ const AppRoutes = () => {
       <Route path="/supervisor/feedback/:id" element={<ProtectedRoute allowedRole="supervisor"><PlaceholderPage title="Feedback Page" /></ProtectedRoute>} />
 
       {/* ====== Admin Routes ====== */}
-      {/* TODO: Wrap with ProtectedRoute role="admin" */}
-      <Route path="/admin/dashboard" element={<PlaceholderPage title="Admin Dashboard" />} />
-      <Route path="/admin/users" element={<PlaceholderPage title="User Management" />} />
-      <Route path="/admin/departments" element={<PlaceholderPage title="Department Management" />} />
-      <Route path="/admin/categories" element={<PlaceholderPage title="Category Management" />} />
-      <Route path="/admin/publications" element={<PlaceholderPage title="Publication Management" />} />
-      <Route path="/admin/archive" element={<PlaceholderPage title="Archive Publications" />} />
-      <Route path="/admin/reports" element={<PlaceholderPage title="Reports" />} />
-      <Route path="/admin/statistics" element={<PlaceholderPage title="System Statistics" />} />
+      <Route path="/admin/dashboard" element={<ProtectedRoute allowedRole="repositary admin"><AdminDashboard /></ProtectedRoute>} />
+      <Route path="/admin/submissions" element={<ProtectedRoute allowedRole="repositary admin"><ManageSubmissions /></ProtectedRoute>} />
+      <Route path="/admin/notifications" element={<ProtectedRoute allowedRole="repositary admin"><AdminNotificationsPage /></ProtectedRoute>} />
+      <Route path="/admin/profile" element={<ProtectedRoute allowedRole="repositary admin"><AdminProfilePage /></ProtectedRoute>} />
 
       {/* ====== 404 ====== */}
       <Route path="*" element={<NotFound />} />

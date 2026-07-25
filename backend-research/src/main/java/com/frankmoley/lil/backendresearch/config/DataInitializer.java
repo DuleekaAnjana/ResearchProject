@@ -1,9 +1,11 @@
 package com.frankmoley.lil.backendresearch.config;
 
+import com.frankmoley.lil.backendresearch.entity.Admin;
 import com.frankmoley.lil.backendresearch.entity.Notification;
 import com.frankmoley.lil.backendresearch.entity.Paper;
 import com.frankmoley.lil.backendresearch.entity.Student;
 import com.frankmoley.lil.backendresearch.entity.User;
+import com.frankmoley.lil.backendresearch.repository.AdminRepository;
 import com.frankmoley.lil.backendresearch.repository.NotificationRepository;
 import com.frankmoley.lil.backendresearch.repository.PaperRepository;
 import com.frankmoley.lil.backendresearch.repository.StudentRepository;
@@ -27,10 +29,22 @@ public class DataInitializer implements CommandLineRunner {
     private final StudentRepository studentRepository;
     private final PaperRepository paperRepository;
     private final NotificationRepository notificationRepository;
+    private final AdminRepository adminRepository;
 
     @Override
     public void run(String... args) throws Exception {
         String defaultHashedPassword = hashPassword("password123");
+
+        // Seed repository admin if not exists
+        if (!adminRepository.existsByEmail("repoadmin@researchsphere.edu")) {
+            Admin admin = new Admin();
+            admin.setFullName("Repositary Admin");
+            admin.setEmail("repoadmin@researchsphere.edu");
+            admin.setPassword(hashPassword("123"));
+            admin.setRole("repositary admin");
+            adminRepository.save(admin);
+        }
+
 
         // Seed default Demo Supervisor if not exists
         if (!userRepository.existsByEmail("demo@researchsphere.edu")) {

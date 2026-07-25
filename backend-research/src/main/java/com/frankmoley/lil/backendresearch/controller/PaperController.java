@@ -105,6 +105,12 @@ public class PaperController {
                 "Your paper '" + savedPaper.getTitle() + "' is under administrator validation.",
                 "SUBMISSION"
             );
+            notificationService.createNotification(
+                "repoadmin@researchsphere.edu",
+                "New paper submission",
+                "A new paper '" + savedPaper.getTitle() + "' has been submitted by " + student.getFullName() + ".",
+                "SUBMISSION"
+            );
         }
 
         return ResponseEntity.ok(savedPaper);
