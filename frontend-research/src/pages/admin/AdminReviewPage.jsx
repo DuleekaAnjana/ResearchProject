@@ -64,7 +64,7 @@ const AdminReviewPage = () => {
         const isDup = data.adminApprovalStatus === 'DUPLICATE DETECTED' || data.adminApprovalStatus === 'VERIFIED';
         setIsDuplicateChecked(isDup);
         setIsOriginalityConfirmed(isDup);
-        setOriginalityDecision(data.adminApprovalStatus);
+        setOriginalityDecision(isDup ? data.adminApprovalStatus : null);
         
         if (data.duplicateCheckedAt) {
           const date = new Date(data.duplicateCheckedAt);
@@ -542,7 +542,7 @@ Keywords: ${paper.keywords}
                     };
 
                     const renderAssignedSupervisorSection = () => {
-                      if (paper.assignedSupervisorEmail) {
+                      if (paper.assignedSupervisorEmail && paper.supervisorAssignedAt) {
                         const isNoSup = paper.assignedSupervisorEmail === 'No Supervisor Available';
                         const isSame = paper.assignedSupervisorEmail === paper.stuRequestedSupervisorEmail;
                         const displayColor = isSame ? '#16a34a' : '#dc2626';
@@ -577,12 +577,12 @@ Keywords: ${paper.keywords}
                         
                         return (
                           <span style={{ display: 'block', marginTop: '0.25rem' }}>
-                            <strong style={{ display: 'block', color: displayColor }}>
-                              {isNoSup ? 'No Supervisor Available' : tempSupervisorName}
-                            </strong>
-                            <span style={{ display: 'block', color: '#0f172a', fontWeight: 500, fontSize: '0.85rem', marginTop: '0.1rem' }}>
+                            <span style={{ display: 'block', color: '#0f172a', fontWeight: 500, fontSize: '0.85rem' }}>
                               Not Assigned Yet
                             </span>
+                            <strong style={{ display: 'block', color: displayColor, marginTop: '0.1rem' }}>
+                              {isNoSup ? 'No Supervisor Available' : tempSupervisorName}
+                            </strong>
                           </span>
                         );
                       }
@@ -624,7 +624,7 @@ Keywords: ${paper.keywords}
                           </label>
                           <select
                             onChange={handleSelectSupervisorChange}
-                            value={tempSupervisorEmail || paper.assignedSupervisorEmail || ""}
+                            value={tempSupervisorEmail || (paper.supervisorAssignedAt ? paper.assignedSupervisorEmail : "") || ""}
                             disabled={!isAssignSupervisorEnabled}
                             style={{
                               width: '100%',

@@ -69,7 +69,7 @@ public class PaperController {
         paper.setStudentName(student.getFullName());
         paper.setStudentEmail(student.getEmail());
         paper.setStuRequestedSupervisorEmail(paperRequest.getSupervisorEmail());
-        paper.setAssignedSupervisorEmail(paperRequest.getSupervisorEmail()); // Default auto-assigned to requested
+        paper.setAssignedSupervisorEmail(null); // Do NOT auto-assign upon submission, admin must review and assign
         paper.setComments(paperRequest.getComments());
         paper.setUploadedManuscript(paperRequest.getPdfFileName() != null ? paperRequest.getPdfFileName() : "manuscript.pdf");
         paper.setPages(paperRequest.getPages());

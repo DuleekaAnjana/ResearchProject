@@ -187,6 +187,17 @@ public class DataInitializer implements CommandLineRunner {
                             .build()
             ));
         }
+
+        // Clean up any existing seeded pending papers that have assigned supervisor/status set incorrectly
+        List<Paper> allPapers = paperRepository.findAll();
+        for (Paper p : allPapers) {
+            if ("PENDING".equalsIgnoreCase(p.getSupervisorApprovalStatus()) && p.getSupervisorAssignedAt() == null) {
+                p.setAssignedSupervisorEmail(null);
+                p.setSupervisorName(null);
+                p.setAdminApprovalStatus("PENDING");
+                paperRepository.save(p);
+            }
+        }
     }
 
     private Paper createPaper(Student student, String title, String studentName, String studentEmail, String supervisorEmail, String status, String category, Double reviewTime, LocalDateTime submittedAt) {
@@ -195,9 +206,14 @@ public class DataInitializer implements CommandLineRunner {
         paper.setStudentName(studentName);
         paper.setStudentEmail(studentEmail);
         paper.setStuRequestedSupervisorEmail(supervisorEmail);
-        paper.setAssignedSupervisorEmail(supervisorEmail);
+        if ("PENDING".equalsIgnoreCase(status)) {
+            paper.setAssignedSupervisorEmail(null);
+            paper.setAdminApprovalStatus("PENDING");
+        } else {
+            paper.setAssignedSupervisorEmail(supervisorEmail);
+            paper.setAdminApprovalStatus("APPROVED");
+        }
         paper.setSupervisorApprovalStatus(status);
-        paper.setAdminApprovalStatus("APPROVED");
         paper.setIsPublished("APPROVED".equalsIgnoreCase(status));
         paper.setUploadedManuscript("manuscript.pdf");
         paper.setCategory(category);
