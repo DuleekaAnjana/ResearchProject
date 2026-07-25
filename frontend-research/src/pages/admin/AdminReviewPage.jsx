@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ChevronRight, ArrowLeft, Check, Clock, AlertCircle, FileText, Download, Eye, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import api from '../../services/api';
+import api, { API_BASE_URL } from '../../services/api';
 import DashboardHeader from '../../components/layout/DashboardHeader';
 import AdminSidebar from '../../components/layout/AdminSidebar';
 import styles from './ManageSubmissions.module.css';
@@ -61,10 +61,14 @@ const AdminReviewPage = () => {
         setPaper(data);
         
         // Initialize states based on DB data
-        const isDup = data.adminApprovalStatus === 'DUPLICATE DETECTED' || data.adminApprovalStatus === 'VERIFIED';
-        setIsDuplicateChecked(isDup);
-        setIsOriginalityConfirmed(isDup);
-        setOriginalityDecision(isDup ? data.adminApprovalStatus : null);
+        const isOriginalityDone = data.duplicateCheckedAt !== null || data.adminApprovalStatus === 'DUPLICATE DETECTED' || data.adminApprovalStatus === 'VERIFIED';
+        setIsDuplicateChecked(isOriginalityDone);
+        setIsOriginalityConfirmed(isOriginalityDone);
+        let decision = data.adminApprovalStatus;
+        if (data.duplicateCheckedAt && (data.adminApprovalStatus === 'PENDING' || data.adminApprovalStatus === 'VERIFIED')) {
+          decision = 'VERIFIED';
+        }
+        setOriginalityDecision(isOriginalityDone ? decision : null);
         
         if (data.duplicateCheckedAt) {
           const date = new Date(data.duplicateCheckedAt);
@@ -140,6 +144,12 @@ const AdminReviewPage = () => {
         setTempSupervisorName(null);
         setTempSupervisorDateText(null);
         fetchDetails();
+        setTimeout(() => {
+          const ws = document.getElementById('verification-workflow');
+          if (ws) {
+            ws.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 500);
       }
     } catch (err) {
       console.error('Failed to confirm originality:', err);
@@ -199,27 +209,24 @@ const AdminReviewPage = () => {
     // Warning alerts are removed as requested.
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!paper) return;
-    const docInfo = `
-Title: ${paper.title}
-Author: ${paper.studentName}
-University: ${paper.studentUniversity || 'University of Colombo'}
-Category: ${paper.category}
-Subcategory: ${paper.subcategory || 'N/A'}
-Abstract: ${paper.abstractText}
-Research Gap: ${paper.researchGap || 'N/A'}
-Keywords: ${paper.keywords}
-`;
-    const blob = new Blob([docInfo], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = paper.pdfFileName || `${paper.title.toLowerCase().replace(/[^a-z0-9]+/g, '_')}_manuscript.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    try {
+      const response = await fetch(`${API_BASE_URL}/papers/${getNumericId(id)}/pdf`);
+      if (!response.ok) throw new Error('PDF download failed');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = paper.pdfFileName || `${paper.title.toLowerCase().replace(/[^a-z0-9]+/g, '_')}_manuscript.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to download PDF:', err);
+      alert('Failed to download PDF.');
+    }
   };
 
   const getStatusBadgeStyle = (status) => {
@@ -383,28 +390,42 @@ Keywords: ${paper.keywords}
                   </div>
                 </div>
 
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Abstract</h3>
-                  <p style={{ fontSize: '0.95rem', color: '#334155', lineHeight: '1.6' }}>{paper.abstractText}</p>
-                </div>
-
-                {paper.researchGap && (
+                {paper.abstractText && paper.abstractText.trim() !== '' && (
                   <div style={{ marginBottom: '1.5rem' }}>
-                    <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Research Gap Filled</h3>
+                    <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Abstract</h3>
+                    <p style={{ fontSize: '0.95rem', color: '#334155', lineHeight: '1.6' }}>{paper.abstractText}</p>
+                  </div>
+                )}
+
+                {paper.researchGap && paper.researchGap.trim() !== '' && (
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Research Gap Found</h3>
                     <p style={{ fontSize: '0.95rem', color: '#334155', lineHeight: '1.6' }}>{paper.researchGap}</p>
                   </div>
                 )}
 
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Keywords</h3>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                    {paper.keywords?.split(',').map((kw) => (
-                      <span key={kw} style={{ fontSize: '0.8rem', backgroundColor: '#e2e8f0', color: '#475569', padding: '0.25rem 0.75rem', borderRadius: '9999px', fontWeight: 500 }}>
-                        {kw.trim()}
-                      </span>
-                    ))}
+                {paper.keywords && paper.keywords.trim() !== '' && (
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Keywords</h3>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                      {paper.keywords.split(',').map((kw) => {
+                        const trimmed = kw.trim();
+                        return trimmed && (
+                          <span key={trimmed} style={{ fontSize: '0.8rem', backgroundColor: '#e2e8f0', color: '#475569', padding: '0.25rem 0.75rem', borderRadius: '9999px', fontWeight: 500 }}>
+                            {trimmed}
+                          </span>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {paper.comments && paper.comments.trim() !== '' && (
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Comment from Author</h3>
+                    <p style={{ fontSize: '0.95rem', color: '#334155', lineHeight: '1.6' }}>{paper.comments}</p>
+                  </div>
+                )}
 
                 <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '1.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div>
@@ -433,8 +454,8 @@ Keywords: ${paper.keywords}
               </div>
 
               {/* Verification Workflow Card */}
-              <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1.5rem' }}>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ef4444', marginBottom: '1.5rem' }}>Verification Workflow</h2>
+              <div id="verification-workflow" style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1.5rem' }}>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ca8a04', marginBottom: '1.5rem' }}>Verification Workflow</h2>
                 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                   {/* Left: Duplicate/Plagiarism */}
@@ -524,7 +545,12 @@ Keywords: ${paper.keywords}
                   {/* Right: Assign Supervisor */}
                   {(() => {
                     const isAssignSupervisorEnabled = isOriginalityConfirmed && originalityDecision === 'VERIFIED';
+                    const isSupervisorAlreadyAssigned = !!paper.supervisorAssignedAt;
                     
+                    const filteredSupervisors = supervisors.filter(
+                      sup => sup.available && sup.researchCategory && sup.researchCategory.toLowerCase() === paper.category?.toLowerCase()
+                    );
+
                     const getRequestedSupervisorDisplay = () => {
                       if (!paper.stuRequestedSupervisorEmail || paper.stuRequestedSupervisorEmail.trim() === '') {
                         return <span style={{ color: '#0f172a', fontWeight: 500 }}>Not Requested Specific Expert</span>;
@@ -594,6 +620,9 @@ Keywords: ${paper.keywords}
                       );
                     };
 
+                    const isSelectDisabled = !isAssignSupervisorEnabled || isSupervisorAlreadyAssigned;
+                    const isButtonDisabled = !isAssignSupervisorEnabled || !selectedSupervisor || paper?.assignedSupervisorEmail === selectedSupervisor.email || isSupervisorAlreadyAssigned;
+
                     return (
                       <div 
                         style={{ 
@@ -625,20 +654,20 @@ Keywords: ${paper.keywords}
                           <select
                             onChange={handleSelectSupervisorChange}
                             value={tempSupervisorEmail || (paper.supervisorAssignedAt ? paper.assignedSupervisorEmail : "") || ""}
-                            disabled={!isAssignSupervisorEnabled}
+                            disabled={isSelectDisabled}
                             style={{
                               width: '100%',
                               padding: '0.5rem',
                               borderRadius: '6px',
                               border: '1px solid #cbd5e1',
                               fontSize: '0.85rem',
-                              cursor: isAssignSupervisorEnabled ? 'pointer' : 'not-allowed'
+                              cursor: !isSelectDisabled ? 'pointer' : 'not-allowed'
                             }}
                           >
                             <option value="">-- Choose Supervisor --</option>
-                            {supervisors.map(sup => (
-                              <option key={sup.id} value={sup.email} disabled={!sup.available}>
-                                {sup.fullName} ({sup.available ? "Available" : "Unavailable"})
+                            {filteredSupervisors.map(sup => (
+                              <option key={sup.id} value={sup.email}>
+                                {sup.fullName}
                               </option>
                             ))}
                             <option value="No Supervisor Available">Not Available Supervisor</option>
@@ -647,17 +676,17 @@ Keywords: ${paper.keywords}
 
                         <button
                           onClick={handleAssignSupervisorClick}
-                          disabled={!isAssignSupervisorEnabled || !selectedSupervisor || paper?.assignedSupervisorEmail === selectedSupervisor.email}
+                          disabled={isButtonDisabled}
                           style={{
                             width: '100%',
-                            backgroundColor: (!isAssignSupervisorEnabled || !selectedSupervisor || paper?.assignedSupervisorEmail === selectedSupervisor.email) ? '#cbd5e1' : '#1e293b',
+                            backgroundColor: isButtonDisabled ? '#cbd5e1' : '#1e293b',
                             border: 'none',
                             color: '#ffffff',
                             padding: '0.6rem',
                             borderRadius: '6px',
                             fontWeight: 700,
                             fontSize: '0.875rem',
-                            cursor: (!isAssignSupervisorEnabled || !selectedSupervisor || paper?.assignedSupervisorEmail === selectedSupervisor.email) ? 'not-allowed' : 'pointer'
+                            cursor: isButtonDisabled ? 'not-allowed' : 'pointer'
                           }}
                         >
                           Assign Supervisor
@@ -729,28 +758,6 @@ Keywords: ${paper.keywords}
                 </span>
               </div>
 
-              {/* Zoom and Page controls */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: '#1e293b', padding: '0.25rem 0.5rem', borderRadius: '6px' }}>
-                  <button 
-                    onClick={() => setPdfZoom(prev => Math.max(50, prev - 10))}
-                    style={{ background: 'none', border: 'none', color: '#cbd5e1', cursor: 'pointer', fontWeight: 'bold', width: '24px', height: '24px' }}
-                  >
-                    -
-                  </button>
-                  <span style={{ fontSize: '0.8rem', minWidth: '40px', textAlign: 'center', color: '#f8fafc' }}>{pdfZoom}%</span>
-                  <button 
-                    onClick={() => setPdfZoom(prev => Math.min(200, prev + 10))}
-                    style={{ background: 'none', border: 'none', color: '#cbd5e1', cursor: 'pointer', fontWeight: 'bold', width: '24px', height: '24px' }}
-                  >
-                    +
-                  </button>
-                </div>
-                <div style={{ fontSize: '0.85rem', color: '#cbd5e1', borderLeft: '1px solid #334155', paddingLeft: '1rem' }}>
-                  Page 1 of 1
-                </div>
-              </div>
-
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <button
                   onClick={handleDownload}
@@ -768,96 +775,17 @@ Keywords: ${paper.keywords}
               </div>
             </div>
 
-            {/* Document Content Pane (Simulating PDF canvas) */}
-            <div style={{ flex: 1, overflow: 'auto', backgroundColor: '#475569', padding: '2rem 1rem' }}>
-              <div 
-                style={{ 
-                  backgroundColor: '#ffffff', 
-                  width: '100%', 
-                  maxWidth: `${760 * (pdfZoom / 100)}px`, 
-                  minHeight: `${980 * (pdfZoom / 100)}px`,
-                  margin: '0 auto', 
-                  padding: `${3.5 * (pdfZoom / 100)}rem ${3 * (pdfZoom / 100)}rem`, 
-                  boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2)',
-                  fontFamily: 'Georgia, serif',
-                  color: '#0f172a',
-                  lineHeight: 1.6,
-                  fontSize: `${0.95 * (pdfZoom / 100)}rem`,
-                  transition: 'all 0.1s ease',
-                  boxSizing: 'border-box'
-                }}
-              >
-                {/* Header */}
-                <div style={{ borderBottom: '1px solid #cbd5e1', paddingBottom: '0.5rem', marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', fontSize: `${0.75 * (pdfZoom / 100)}rem`, color: '#64748b', fontStyle: 'italic' }}>
-                  <span>ResearchSphere Manuscript Submission</span>
-                  <span>ID: {paper.formattedPublicationId || `Pub-0${paper.id}`}</span>
-                </div>
-
-                {/* Document Title */}
-                <h1 style={{ fontSize: `${1.75 * (pdfZoom / 100)}rem`, fontWeight: 700, textAlign: 'center', marginBottom: '1.5rem', fontFamily: 'Times New Roman, serif', color: '#1e293b' }}>
-                  {paper.title}
-                </h1>
-
-                {/* Authors */}
-                <div style={{ textAlign: 'center', marginBottom: '2rem', fontSize: `${0.95 * (pdfZoom / 100)}rem` }}>
-                  <div style={{ fontWeight: 600 }}>{paper.studentName}</div>
-                  <div style={{ color: '#475569', fontStyle: 'italic', fontSize: `${0.85 * (pdfZoom / 100)}rem` }}>
-                    {paper.studentUniversity || 'University of Ruhuna'}
-                  </div>
-                  <div style={{ color: '#64748b', fontSize: `${0.8 * (pdfZoom / 100)}rem` }}>
-                    Email: {paper.studentEmail}
-                  </div>
-                </div>
-
-                {/* Abstract Section */}
-                <div style={{ borderTop: '2px double #cbd5e1', borderBottom: '2px double #cbd5e1', padding: '1.5rem 0', marginBottom: '2.5rem' }}>
-                  <h3 style={{ fontSize: `${1 * (pdfZoom / 100)}rem`, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'center', margin: '0 0 1rem 0' }}>
-                    Abstract
-                  </h3>
-                  <p style={{ textAlign: 'justify', margin: 0, textIndent: '1.5rem' }}>
-                    {paper.abstractText}
-                  </p>
-                  
-                  {paper.keywords && (
-                    <div style={{ marginTop: '1.5rem', fontSize: `${0.85 * (pdfZoom / 100)}rem` }}>
-                      <strong>Keywords: </strong> 
-                      <span style={{ fontStyle: 'italic' }}>{paper.keywords}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Research Gap Filled */}
-                {paper.researchGap && (
-                  <div style={{ marginBottom: '2.5rem' }}>
-                    <h3 style={{ fontSize: `${1.1 * (pdfZoom / 100)}rem`, fontWeight: 'bold', borderBottom: '1px solid #cbd5e1', paddingBottom: '0.25rem', marginBottom: '0.75rem' }}>
-                      1. Research Gap
-                    </h3>
-                    <p style={{ textAlign: 'justify', margin: 0 }}>
-                      {paper.researchGap}
-                    </p>
-                  </div>
-                )}
-
-                {/* Footer simulation */}
-                <div style={{ marginTop: 'auto', borderTop: '1px solid #e2e8f0', paddingTop: '1rem', display: 'flex', justifyContent: 'center', fontSize: `${0.7 * (pdfZoom / 100)}rem`, color: '#94a3b8', letterSpacing: '1px' }}>
-                  <span>CONFIDENTIAL RESEARCH MANUSCRIPT - FOR INTERNAL REVIEW ONLY</span>
-                </div>
-              </div>
+            {/* Document Content Pane */}
+            <div style={{ flex: 1, overflow: 'hidden', backgroundColor: '#475569', position: 'relative' }}>
+              <iframe
+                src={`${API_BASE_URL}/papers/${getNumericId(id)}/pdf`}
+                style={{ width: '100%', height: '100%', border: 'none' }}
+                title="PDF Preview"
+              />
             </div>
             
             {/* Modal Footer */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', padding: '0.75rem 1.5rem', borderTop: '1px solid #334155', backgroundColor: '#0f172a' }}>
-              <button 
-                onClick={() => {
-                  const docInfo = `Title: ${paper.title}\nAuthor: ${paper.studentName}`;
-                  const blob = new Blob([docInfo], { type: 'application/pdf' });
-                  const url = URL.createObjectURL(blob);
-                  window.open(url, '_blank');
-                }}
-                style={{ backgroundColor: '#1e293b', border: '1px solid #475569', color: '#cbd5e1', padding: '0.4rem 1rem', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}
-              >
-                Open in New Tab
-              </button>
               <button 
                 onClick={() => setShowPdfPreview(false)}
                 style={{ backgroundColor: '#2563eb', color: '#ffffff', border: 'none', padding: '0.4rem 1.25rem', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}

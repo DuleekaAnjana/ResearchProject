@@ -137,7 +137,7 @@ public class AdminController {
             paper.setAdminApprovalStatus("DUPLICATE DETECTED");
             paper.setStatus("REJECTED");
         } else {
-            paper.setAdminApprovalStatus("VERIFIED");
+            paper.setAdminApprovalStatus("PENDING");
         }
 
         String supervisorEmail = request.get("supervisorEmail");
@@ -200,6 +200,7 @@ public class AdminController {
             paper.setSupervisorName("No Supervisor Available");
             paper.setSupervisorAssignedAt(LocalDateTime.now());
             paper.setStatus("SUPERVISOR NOT AVAILABLE");
+            paper.setAdminApprovalStatus("SUPERVISOR NOT AVAILABLE");
             Paper saved = paperRepository.save(paper);
             populateFormattedPublicationId(saved);
             
@@ -224,6 +225,7 @@ public class AdminController {
         paper.setSupervisorName(supervisor.getFullName());
         paper.setSupervisorAssignedAt(LocalDateTime.now());
         paper.setStatus("PENDING");
+        paper.setAdminApprovalStatus("VERIFIED");
         Paper saved = paperRepository.save(paper);
         populateFormattedPublicationId(saved);
 

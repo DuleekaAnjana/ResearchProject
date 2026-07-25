@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 
@@ -71,6 +72,18 @@ public class PaperController {
         paper.setStuRequestedSupervisorEmail(paperRequest.getSupervisorEmail());
         paper.setAssignedSupervisorEmail(null); // Do NOT auto-assign upon submission, admin must review and assign
         paper.setComments(paperRequest.getComments());
+        if (paperRequest.getPdfBase64() != null && !paperRequest.getPdfBase64().isBlank()) {
+            try {
+                String base64Data = paperRequest.getPdfBase64();
+                if (base64Data.contains(",")) {
+                    base64Data = base64Data.split(",")[1];
+                }
+                byte[] decoded = Base64.getDecoder().decode(base64Data);
+                paper.setPdfData(decoded);
+            } catch (Exception e) {
+                // ignore
+            }
+        }
         paper.setUploadedManuscript(paperRequest.getPdfFileName() != null ? paperRequest.getPdfFileName() : "manuscript.pdf");
         paper.setPages(paperRequest.getPages());
         if (paperRequest.getViews() != null) {
@@ -289,5 +302,49 @@ public class PaperController {
             return ResponseEntity.ok().body("{\"message\": \"Paper deleted successfully.\"}");
         }
         return ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/{id}/pdf")
+    public ResponseEntity<byte[]> getPaperPdf(@PathVariable Long id) {
+        Optional<Paper> paperOpt = paperRepository.findById(id);
+        if (paperOpt.isPresent()) {
+            Paper paper = paperOpt.get();
+            byte[] pdf = paper.getPdfData();
+            if (pdf == null) {
+                pdf = createDummyPdf(paper.getTitle());
+            }
+            return ResponseEntity.ok()
+                    .header("Content-Type", "application/pdf")
+                    .header("Content-Disposition", "inline; filename=\"" + paper.getPdfFileName() + "\"")
+                    .body(pdf);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    private byte[] createDummyPdf(String title) {
+        String pdfContent = "%PDF-1.4\n" +
+                "1 0 obj <</Type/Catalog/Pages 2 0 R>> endobj\n" +
+                "2 0 obj <</Type/Pages/Kids[3 0 R]/Count 1>> endobj\n" +
+                "3 0 obj <</Type/Page/Parent 2 0 R/MediaBox[0 0 595 842]/Resources<</Font<</F1<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>>>>>/Contents 4 0 R>> endobj\n" +
+                "4 0 obj <</Length 60>> stream\n" +
+                "BT\n" +
+                "/F1 24 Tf\n" +
+                "100 700 Td\n" +
+                "(" + title + ") Tj\n" +
+                "ET\n" +
+                "endstream\n" +
+                "endobj\n" +
+                "xref\n" +
+                "0 5\n" +
+                "0000000000 65535 f\n" +
+                "0000000009 00000 n\n" +
+                "0000000052 00000 n\n" +
+                "0000000101 00000 n\n" +
+                "0000000224 00000 n\n" +
+                "trailer <</Size 5/Root 1 0 R>>\n" +
+                "startxref\n" +
+                "335\n" +
+                "%%EOF";
+        return pdfContent.getBytes(java.nio.charset.StandardCharsets.ISO_8859_1);
     }
 }

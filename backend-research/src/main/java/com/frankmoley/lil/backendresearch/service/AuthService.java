@@ -144,6 +144,7 @@ public class AuthService {
             supervisor.setResearchInterests(request.getResearchInterests());
             supervisor.setPassword(hashedPassword);
             supervisor.setRole("supervisor");
+            supervisor.setAvailable(true);
 
             Supervisor savedSupervisor = supervisorRepository.save(supervisor);
 

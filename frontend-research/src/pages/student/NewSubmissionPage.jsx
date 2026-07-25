@@ -177,6 +177,16 @@ const NewSubmissionPage = () => {
       return;
     }
 
+    let pdfBase64 = null;
+    if (selectedFile) {
+      pdfBase64 = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(selectedFile);
+      });
+    }
+
     setLoading(true);
     try {
       const payload = {
@@ -189,6 +199,7 @@ const NewSubmissionPage = () => {
         studentEmail: user?.email || 'student@researchsphere.edu',
         comments: comments.trim(),
         pdfFileName: selectedFile ? selectedFile.name : 'manuscript.pdf',
+        pdfBase64: pdfBase64,
         pages: pages ? parseInt(pages, 10) : null,
         status: statusType, // DRAFT or PENDING (for review)
       };

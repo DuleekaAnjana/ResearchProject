@@ -73,6 +73,13 @@ public class Paper {
     @Column(name = "uploaded_manuscript")
     private String uploadedManuscript;
 
+    @Lob
+    @Column(name = "pdf_data", columnDefinition = "LONGBLOB")
+    private byte[] pdfData;
+
+    @Transient
+    private String pdfBase64;
+
     private Integer pages;
 
     private Integer views = 0;

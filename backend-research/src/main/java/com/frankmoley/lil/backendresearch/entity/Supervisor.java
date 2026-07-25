@@ -66,6 +66,6 @@ public class Supervisor {
     @Column(nullable = false)
     private String role = "supervisor";
 
-    @Column(nullable = false, columnDefinition = "boolean default true")
+    @Column(name = "is_available", nullable = false, columnDefinition = "boolean default true")
     private Boolean available = true;
 }
