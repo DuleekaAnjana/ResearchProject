@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   GraduationCap,
@@ -39,7 +39,7 @@ const NewSubmissionPage = () => {
   const [researchGap, setResearchGap] = useState('');
   const [keywords, setKeywords] = useState('');
   const [subcategory, setSubcategory] = useState('');
-  const [supervisorEmail, setSupervisorEmail] = useState('demo@researchsphere.edu');
+  const [supervisorEmail, setSupervisorEmail] = useState('');
   const [comments, setComments] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [pages, setPages] = useState('');
@@ -50,9 +50,34 @@ const NewSubmissionPage = () => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [supervisors, setSupervisors] = useState([]);
 
   // ---- Derived category sub-options ----
   const studentCategory = user?.researchCategory || 'Computer Science';
+
+  useEffect(() => {
+    const fetchSupervisors = async () => {
+      try {
+        const data = await api.get('/admin/supervisors');
+        if (data) {
+          setSupervisors(data);
+          const filtered = data.filter(
+            (sup) => sup.researchCategory && sup.researchCategory.toLowerCase() === studentCategory.toLowerCase()
+          );
+          if (filtered.length > 0) {
+            setSupervisorEmail(filtered[0].email);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch supervisors:', err);
+      }
+    };
+    fetchSupervisors();
+  }, [studentCategory]);
+
+  const filteredSupervisors = supervisors.filter(
+    (sup) => sup.researchCategory && sup.researchCategory.toLowerCase() === studentCategory.toLowerCase()
+  );
 
   const getSubcategories = (category) => {
     switch (category) {
@@ -338,12 +363,12 @@ const NewSubmissionPage = () => {
                     value={supervisorEmail}
                     onChange={(e) => setSupervisorEmail(e.target.value)}
                   >
-                    <option value="demo@researchsphere.edu">
-                      Prof. Ranjith Silva — University of Colombo
-                    </option>
-                    <option value="supervisor@researchsphere.edu">
-                      Prof. B. Perera — University of Colombo
-                    </option>
+                    <option value="">-- Choose Preferred Expert --</option>
+                    {filteredSupervisors.map((sup) => (
+                      <option key={sup.id || sup.email} value={sup.email}>
+                        {sup.fullName} — {sup.university || 'University of Colombo'}
+                      </option>
+                    ))}
                   </select>
                   <span style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.25rem', display: 'block' }}>
                     *Selection are filtered to You regisered Resarch Category / path
