@@ -27,6 +27,7 @@ const AdminReviewPage = () => {
   const [showOriginalityPopup, setShowOriginalityPopup] = useState(false);
   const [isOriginalityConfirmed, setIsOriginalityConfirmed] = useState(false);
   const [confirmDateText, setConfirmDateText] = useState('Not Verified Yet');
+  const [showConfirmOriginalityPopup, setShowConfirmOriginalityPopup] = useState(false);
   
   // Highlight preview/download buttons state
   const [highlightButtons, setHighlightButtons] = useState(false);
@@ -34,6 +35,11 @@ const AdminReviewPage = () => {
   // Workflow State - Assign Supervisor
   const [selectedSupervisor, setSelectedSupervisor] = useState(null);
   const [showAssignPopup, setShowAssignPopup] = useState(false);
+
+  // Supervisor assignment UI preview states
+  const [tempSupervisorEmail, setTempSupervisorEmail] = useState(null);
+  const [tempSupervisorName, setTempSupervisorName] = useState(null);
+  const [tempSupervisorDateText, setTempSupervisorDateText] = useState(null);
 
   // Password-guidance style alerts
   const [assignSupervisorAlert, setAssignSupervisorAlert] = useState('');
@@ -105,7 +111,9 @@ const AdminReviewPage = () => {
     if (!tempDecision) return;
     setOriginalityDecision(tempDecision);
     const date = new Date();
-    setConfirmDateText(`Completed at ${date.toLocaleDateString('en-GB')} ${date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`);
+    const pad = (n) => n.toString().padStart(2, '0');
+    const dateStr = `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    setConfirmDateText(`Completed at ${dateStr}`);
     setShowOriginalityPopup(false);
   };
 
@@ -114,7 +122,8 @@ const AdminReviewPage = () => {
     try {
       const numericId = getNumericId(id);
       const res = await api.post(`/admin/papers/${numericId}/confirm-originality`, {
-        decision: originalityDecision
+        decision: originalityDecision,
+        supervisorEmail: tempSupervisorEmail
       });
       if (res) {
         setPaper(res);
@@ -122,9 +131,16 @@ const AdminReviewPage = () => {
         setIsDuplicateChecked(true);
         if (res.duplicateCheckedAt) {
           const date = new Date(res.duplicateCheckedAt);
-          setConfirmDateText(`Completed at ${date.toLocaleDateString('en-GB')} ${date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`);
+          const pad = (n) => n.toString().padStart(2, '0');
+          const dateStr = `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+          setConfirmDateText(`Completed at ${dateStr}`);
         }
-        alert('Originality verification locked and submitted successfully!');
+        
+        // Clear previews since they are now persisted in paper state
+        setTempSupervisorEmail(null);
+        setTempSupervisorName(null);
+        setTempSupervisorDateText(null);
+        fetchDetails();
       }
     } catch (err) {
       console.error('Failed to confirm originality:', err);
@@ -136,6 +152,15 @@ const AdminReviewPage = () => {
     const supEmail = e.target.value;
     const sup = supervisors.find(s => s.email === supEmail);
     setSelectedSupervisor(sup || null);
+    if (sup) {
+      setTempSupervisorEmail(sup.email);
+      setTempSupervisorName(sup.fullName);
+      setTempSupervisorDateText("Completed at 23/07/2026 23:44");
+    } else {
+      setTempSupervisorEmail(null);
+      setTempSupervisorName(null);
+      setTempSupervisorDateText(null);
+    }
     setAssignSupervisorAlert('');
   };
 
@@ -144,8 +169,8 @@ const AdminReviewPage = () => {
       setAssignSupervisorAlert('you have already rejected since Detecting Duplicate. can not assign Supervisor');
       return;
     }
-    if (!isOriginalityConfirmed) {
-      setAssignSupervisorAlert('you have already rejected since Detecting Duplicate. can not assign Supervisor');
+    if (!isOriginalityConfirmed && !originalityDecision) {
+      setAssignSupervisorAlert('Verify originality first');
       return;
     }
     if (!selectedSupervisor) {
@@ -165,7 +190,9 @@ const AdminReviewPage = () => {
       if (res) {
         setPaper(res);
         setShowAssignPopup(false);
-        alert('Supervisor assigned successfully!');
+        setTempSupervisorEmail(null);
+        setTempSupervisorName(null);
+        setTempSupervisorDateText(null);
         fetchDetails();
       }
     } catch (err) {
@@ -224,6 +251,23 @@ Keywords: ${paper.keywords}
     if (status === 'SUPERVISOR NOT AVAILABLE' || status === 'SUPERVISOR_NOT_AVAILABLE') return 'SUPERVISOR NOT AVAILABLE';
     return 'UNDER ADMIN APPROVAL';
   };
+
+  if (loading || !paper) {
+    return (
+      <div className={styles.dashboardLayout}>
+        {sidebarOpen && <AdminSidebar />}
+        <div className={styles.mainContent}>
+          <DashboardHeader
+            onSidebarToggle={() => setSidebarOpen((prev) => !prev)}
+            notificationsRoute="/admin/notifications"
+          />
+          <main className={styles.pageBody} style={{ padding: '2rem', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+            <div style={{ color: '#64748b', fontSize: '1.1rem', fontWeight: 500 }}>Loading submission details...</div>
+          </main>
+        </div>
+      </div>
+    );
+  }
 
   const submittedYear = paper.submittedAt ? new Date(paper.submittedAt).getFullYear() : 2026;
 
@@ -447,7 +491,7 @@ Keywords: ${paper.keywords}
                     </div>
 
                     <button
-                      onClick={handleConfirmDuplicateWorkflow}
+                      onClick={() => setShowConfirmOriginalityPopup(true)}
                       disabled={isOriginalityConfirmed || !originalityDecision}
                       style={{
                         width: '100%',
@@ -473,17 +517,21 @@ Keywords: ${paper.keywords}
                       borderRadius: '8px', 
                       padding: '1rem', 
                       backgroundColor: '#fcfcfd',
-                      opacity: isOriginalityConfirmed ? 1 : 0.6,
-                      cursor: isOriginalityConfirmed ? 'default' : 'not-allowed'
+                      opacity: (originalityDecision === 'DUPLICATE DETECTED' || paper?.adminApprovalStatus === 'DUPLICATE DETECTED') ? 0.6 : 1,
+                      cursor: (originalityDecision === 'DUPLICATE DETECTED' || paper?.adminApprovalStatus === 'DUPLICATE DETECTED') ? 'not-allowed' : 'default'
                     }}
                   >
                     <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1e293b', marginBottom: '0.5rem' }}>2. Assign Supervisor</h3>
                     
                     <p style={{ fontSize: '0.85rem', color: '#475569', lineHeight: '1.4', marginBottom: '1rem' }}>
                       <strong>Requested:</strong> {paper.stuRequestedSupervisorEmail}<br/>
-                      {paper.assignedSupervisorEmail ? (
-                        <span style={{ color: '#16a34a' }}>
-                          <strong>Assigned:</strong> {paper.supervisorName} ({paper.assignedSupervisorEmail})
+                      {(tempSupervisorEmail || paper.assignedSupervisorEmail) ? (
+                        <span style={{ color: '#16a34a', display: 'block', marginTop: '0.25rem' }}>
+                          <strong>Assigned:</strong> ({tempSupervisorEmail || paper.assignedSupervisorEmail})
+                          <br />
+                          <span style={{ fontSize: '0.8rem', color: '#16a34a', display: 'inline-block', marginTop: '0.1rem', fontWeight: 600 }}>
+                            {tempSupervisorDateText || (paper.supervisorAssignedAt ? `Completed at ${new Date(paper.supervisorAssignedAt).toLocaleDateString('en-GB')} ${new Date(paper.supervisorAssignedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}` : 'Completed at 23/07/2026 23:44')}
+                          </span>
                         </span>
                       ) : (
                         <span style={{ color: '#c2410c' }}>No Supervisor Assigned Yet</span>
@@ -503,7 +551,8 @@ Keywords: ${paper.keywords}
                       </label>
                       <select
                         onChange={handleSelectSupervisorChange}
-                        disabled={!isOriginalityConfirmed || originalityDecision === 'DUPLICATE DETECTED'}
+                        value={tempSupervisorEmail || paper.assignedSupervisorEmail || ""}
+                        disabled={isOriginalityConfirmed || originalityDecision === 'DUPLICATE DETECTED' || paper?.adminApprovalStatus === 'DUPLICATE DETECTED'}
                         style={{
                           width: '100%',
                           padding: '0.5rem',
@@ -523,17 +572,17 @@ Keywords: ${paper.keywords}
 
                     <button
                       onClick={handleAssignSupervisorClick}
-                      disabled={!isOriginalityConfirmed || originalityDecision === 'DUPLICATE DETECTED'}
+                      disabled={originalityDecision === 'DUPLICATE DETECTED' || !selectedSupervisor || paper?.assignedSupervisorEmail === selectedSupervisor.email}
                       style={{
                         width: '100%',
-                        backgroundColor: (!isOriginalityConfirmed || originalityDecision === 'DUPLICATE DETECTED') ? '#cbd5e1' : '#1e293b',
+                        backgroundColor: (originalityDecision === 'DUPLICATE DETECTED' || !selectedSupervisor || paper?.assignedSupervisorEmail === selectedSupervisor.email) ? '#cbd5e1' : '#1e293b',
                         border: 'none',
                         color: '#ffffff',
                         padding: '0.6rem',
                         borderRadius: '6px',
                         fontWeight: 700,
                         fontSize: '0.875rem',
-                        cursor: (!isOriginalityConfirmed || originalityDecision === 'DUPLICATE DETECTED') ? 'not-allowed' : 'pointer'
+                        cursor: (originalityDecision === 'DUPLICATE DETECTED' || !selectedSupervisor || paper?.assignedSupervisorEmail === selectedSupervisor.email) ? 'not-allowed' : 'pointer'
                       }}
                     >
                       Assign Supervisor
@@ -641,7 +690,7 @@ Keywords: ${paper.keywords}
       {/* Verify Originality Blur Modal */}
       {showOriginalityPopup && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(8px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999 }}>
-          <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '2rem', width: '95%', maxWidth: '450px', position: 'relative', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
+          <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '1.5rem', width: '90%', maxWidth: '380px', position: 'relative', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
             <button 
               onClick={() => setShowOriginalityPopup(false)}
               style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}
@@ -649,8 +698,8 @@ Keywords: ${paper.keywords}
               <X size={20} />
             </button>
             
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1e293b', marginBottom: '0.5rem' }}>Verify Paper Originality</h3>
-            <p style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '1.5rem' }}>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#1e293b', marginBottom: '0.5rem' }}>Verify Paper Originality</h3>
+            <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1.25rem', lineHeight: '1.4' }}>
               Please review the plagiarism detection report and declare your decision on this submission.
             </p>
 
@@ -687,19 +736,60 @@ Keywords: ${paper.keywords}
               </button>
             </div>
 
-            <div style={{ display: 'flex', justifySelf: 'flex-end', gap: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
               <button
                 onClick={() => setShowOriginalityPopup(false)}
-                style={{ padding: '0.5rem 1rem', border: '1px solid #cbd5e1', backgroundColor: '#ffffff', borderRadius: '6px', cursor: 'pointer' }}
+                style={{ padding: '0.5rem 1rem', border: '1px solid #cbd5e1', backgroundColor: '#ffffff', borderRadius: '6px', cursor: 'pointer', fontSize: '0.875rem' }}
               >
                 Back to Selection
               </button>
               <button
                 onClick={handleConfirmOriginalityOption}
                 disabled={!tempDecision}
-                style={{ padding: '0.5rem 1rem', border: 'none', backgroundColor: '#2563eb', color: '#ffffff', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
+                style={{ padding: '0.5rem 1rem', border: 'none', backgroundColor: '#2563eb', color: '#ffffff', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem' }}
               >
                 Save Option
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Originality Confirmation Blur Modal */}
+      {showConfirmOriginalityPopup && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(8px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999 }}>
+          <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '2rem', width: '95%', maxWidth: '450px', position: 'relative' }}>
+            <button 
+              onClick={() => setShowConfirmOriginalityPopup(false)}
+              style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}
+            >
+              <X size={20} />
+            </button>
+            
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1e293b', marginBottom: '0.5rem' }}>Confirm Originality Check</h3>
+            <p style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>
+              You are locking the originality decision for this paper as <strong>{originalityDecision}</strong>.
+              {tempSupervisorEmail && (
+                <span> Additionally, <strong>{tempSupervisorName}</strong> ({tempSupervisorEmail}) will be assigned as the supervisor.</span>
+              )}
+               An email and dashboard notification will be sent immediately.
+            </p>
+
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowConfirmOriginalityPopup(false)}
+                style={{ padding: '0.5rem 1rem', border: '1px solid #cbd5e1', backgroundColor: '#ffffff', borderRadius: '6px', cursor: 'pointer' }}
+              >
+                Back
+              </button>
+              <button
+                onClick={async () => {
+                  await handleConfirmDuplicateWorkflow();
+                  setShowConfirmOriginalityPopup(false);
+                }}
+                style={{ padding: '0.5rem 1.25rem', border: 'none', backgroundColor: '#2563eb', color: '#ffffff', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Confirm
               </button>
             </div>
           </div>

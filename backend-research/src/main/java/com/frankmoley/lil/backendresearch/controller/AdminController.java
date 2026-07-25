@@ -102,6 +102,7 @@ public class AdminController {
             return ResponseEntity.notFound().build();
         }
 
+        Paper paper = paperOpt.get();
         paper.setDuplicateCheckedAt(LocalDateTime.now());
         Paper saved = paperRepository.save(paper);
 
@@ -137,6 +138,34 @@ public class AdminController {
             paper.setStatus("REJECTED");
         } else {
             paper.setAdminApprovalStatus("VERIFIED");
+        }
+
+        String supervisorEmail = request.get("supervisorEmail");
+        if (supervisorEmail != null && !supervisorEmail.isBlank()) {
+            Optional<Supervisor> supervisorOpt = supervisorRepository.findByEmail(supervisorEmail);
+            if (supervisorOpt.isPresent() && !"DUPLICATE DETECTED".equalsIgnoreCase(paper.getAdminApprovalStatus())) {
+                Supervisor supervisor = supervisorOpt.get();
+                paper.setAssignedSupervisorEmail(supervisor.getEmail());
+                paper.setSupervisorName(supervisor.getFullName());
+                paper.setSupervisorAssignedAt(LocalDateTime.now());
+                paper.setStatus("PENDING");
+
+                // Notify student that supervisor has been assigned
+                notificationService.createNotification(
+                        paper.getStudentEmail(),
+                        "Supervisor Assigned",
+                        supervisor.getFullName() + " has been assigned as supervisor for your submission '" + paper.getTitle() + "'.",
+                        "SUPERVISOR_ASSIGNED"
+                );
+
+                // Notify supervisor of the new assigned paper
+                notificationService.createNotification(
+                        supervisor.getEmail(),
+                        "New Research Paper Assigned",
+                        "A new research paper '" + paper.getTitle() + "' has been assigned to you for review.",
+                        "SUBMISSION"
+                );
+            }
         }
         
         Paper saved = paperRepository.save(paper);
