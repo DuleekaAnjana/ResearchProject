@@ -193,17 +193,32 @@ public class AdminController {
             return ResponseEntity.badRequest().body("Supervisor email is required.");
         }
 
+        Paper paper = paperOpt.get();
+
+        if ("No Supervisor Available".equalsIgnoreCase(supervisorEmail)) {
+            paper.setAssignedSupervisorEmail("No Supervisor Available");
+            paper.setSupervisorName("No Supervisor Available");
+            paper.setSupervisorAssignedAt(LocalDateTime.now());
+            paper.setStatus("SUPERVISOR NOT AVAILABLE");
+            Paper saved = paperRepository.save(paper);
+            populateFormattedPublicationId(saved);
+            
+            // Notify student that no supervisor is available
+            notificationService.createNotification(
+                    paper.getStudentEmail(),
+                    "Supervisor Assignment Status",
+                    "No supervisor is currently available for your submission '" + paper.getTitle() + "'.",
+                    "SUBMISSION"
+            );
+            return ResponseEntity.ok(saved);
+        }
+
         Optional<Supervisor> supervisorOpt = supervisorRepository.findByEmail(supervisorEmail);
         if (supervisorOpt.isEmpty()) {
             return ResponseEntity.badRequest().body("Supervisor not found.");
         }
 
         Supervisor supervisor = supervisorOpt.get();
-        Paper paper = paperOpt.get();
-
-        if ("DUPLICATE DETECTED".equalsIgnoreCase(paper.getAdminApprovalStatus())) {
-            return ResponseEntity.badRequest().body("you have already rejected since Detecting Duplicate. can not assign Supervisor");
-        }
 
         paper.setAssignedSupervisorEmail(supervisor.getEmail());
         paper.setSupervisorName(supervisor.getFullName());

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ChevronRight, ArrowLeft, Check, Clock, AlertCircle, FileText, Download, Eye, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -19,6 +19,7 @@ const AdminReviewPage = () => {
 
   // PDF Preview State
   const [showPdfPreview, setShowPdfPreview] = useState(false);
+  const [pdfZoom, setPdfZoom] = useState(100);
 
   // Workflow State - Duplicate Check
   const [isDuplicateChecked, setIsDuplicateChecked] = useState(false);
@@ -41,8 +42,8 @@ const AdminReviewPage = () => {
   const [tempSupervisorName, setTempSupervisorName] = useState(null);
   const [tempSupervisorDateText, setTempSupervisorDateText] = useState(null);
 
-  // Password-guidance style alerts
-  const [assignSupervisorAlert, setAssignSupervisorAlert] = useState('');
+  // Ref for scrolling to download/preview buttons
+  const buttonsRef = useRef(null);
 
   const getNumericId = (pubId) => {
     if (!pubId) return 1;
@@ -67,9 +68,10 @@ const AdminReviewPage = () => {
         
         if (data.duplicateCheckedAt) {
           const date = new Date(data.duplicateCheckedAt);
-          setConfirmDateText(`Completed at ${date.toLocaleDateString('en-GB')} ${date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`);
+          const pad = (n) => n.toString().padStart(2, '0');
+          setConfirmDateText(`Completed at ${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`);
         } else if (isDup) {
-          setConfirmDateText(`Completed at Jul 27, 2026 23:54`); // Seed placeholder default
+          setConfirmDateText(`Completed at 27/07/2026 23:54`); // Seed placeholder default
         } else {
           setConfirmDateText('Not Verified Yet');
         }
@@ -92,6 +94,9 @@ const AdminReviewPage = () => {
 
   const handleCheckDuplicate = () => {
     setHighlightButtons(true);
+    if (buttonsRef.current) {
+      buttonsRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
     setTimeout(() => {
       setHighlightButtons(false);
     }, 3000);
@@ -104,17 +109,12 @@ const AdminReviewPage = () => {
   };
 
   const handleSaveOriginalityOption = (option) => {
-    setTempDecision(option);
+    setOriginalityDecision(option);
+    setShowOriginalityPopup(false);
   };
 
   const handleConfirmOriginalityOption = () => {
-    if (!tempDecision) return;
-    setOriginalityDecision(tempDecision);
-    const date = new Date();
-    const pad = (n) => n.toString().padStart(2, '0');
-    const dateStr = `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
-    setConfirmDateText(`Completed at ${dateStr}`);
-    setShowOriginalityPopup(false);
+    // Deprecated since selection immediately closes and saves option state.
   };
 
   const handleConfirmDuplicateWorkflow = async () => {
@@ -122,8 +122,7 @@ const AdminReviewPage = () => {
     try {
       const numericId = getNumericId(id);
       const res = await api.post(`/admin/papers/${numericId}/confirm-originality`, {
-        decision: originalityDecision,
-        supervisorEmail: tempSupervisorEmail
+        decision: originalityDecision
       });
       if (res) {
         setPaper(res);
@@ -150,33 +149,28 @@ const AdminReviewPage = () => {
 
   const handleSelectSupervisorChange = (e) => {
     const supEmail = e.target.value;
-    const sup = supervisors.find(s => s.email === supEmail);
-    setSelectedSupervisor(sup || null);
-    if (sup) {
-      setTempSupervisorEmail(sup.email);
-      setTempSupervisorName(sup.fullName);
-      setTempSupervisorDateText("Completed at 23/07/2026 23:44");
+    if (supEmail === 'No Supervisor Available') {
+      setSelectedSupervisor({ fullName: 'No Supervisor Available', email: 'No Supervisor Available' });
+      setTempSupervisorEmail('No Supervisor Available');
+      setTempSupervisorName('No Supervisor Available');
+      setTempSupervisorDateText("Not Assigned Yet");
     } else {
-      setTempSupervisorEmail(null);
-      setTempSupervisorName(null);
-      setTempSupervisorDateText(null);
+      const sup = supervisors.find(s => s.email === supEmail);
+      setSelectedSupervisor(sup || null);
+      if (sup) {
+        setTempSupervisorEmail(sup.email);
+        setTempSupervisorName(sup.fullName);
+        setTempSupervisorDateText("Not Assigned Yet");
+      } else {
+        setTempSupervisorEmail(null);
+        setTempSupervisorName(null);
+        setTempSupervisorDateText(null);
+      }
     }
-    setAssignSupervisorAlert('');
   };
 
   const handleAssignSupervisorClick = () => {
-    if (originalityDecision === 'DUPLICATE DETECTED' || paper?.adminApprovalStatus === 'DUPLICATE DETECTED') {
-      setAssignSupervisorAlert('you have already rejected since Detecting Duplicate. can not assign Supervisor');
-      return;
-    }
-    if (!isOriginalityConfirmed && !originalityDecision) {
-      setAssignSupervisorAlert('Verify originality first');
-      return;
-    }
-    if (!selectedSupervisor) {
-      setAssignSupervisorAlert('Assign Supervisor First');
-      return;
-    }
+    if (!selectedSupervisor) return;
     setShowAssignPopup(true);
   };
 
@@ -202,11 +196,7 @@ const AdminReviewPage = () => {
   };
 
   const handleCancelClickOnSupervisor = () => {
-    if (originalityDecision === 'DUPLICATE DETECTED' || paper?.adminApprovalStatus === 'DUPLICATE DETECTED') {
-      setAssignSupervisorAlert('you have already rejected since Detecting Duplicate. can not assign Supervisor');
-    } else if (!isOriginalityConfirmed) {
-      setAssignSupervisorAlert('you have already rejected since Detecting Duplicate. can not assign Supervisor');
-    }
+    // Warning alerts are removed as requested.
   };
 
   const handleDownload = () => {
@@ -317,6 +307,7 @@ Keywords: ${paper.keywords}
             
             {/* Download and Preview actions */}
             <div 
+              ref={buttonsRef}
               style={{ 
                 marginLeft: 'auto', 
                 display: 'flex', 
@@ -449,9 +440,30 @@ Keywords: ${paper.keywords}
                   {/* Left: Duplicate/Plagiarism */}
                   <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '1rem', backgroundColor: '#fcfcfd' }}>
                     <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1e293b', marginBottom: '0.25rem' }}>1. Duplicate / Plagiarism Check</h3>
-                    <p style={{ fontSize: '0.85rem', color: isOriginalityConfirmed ? '#16a34a' : '#64748b', marginBottom: '1rem' }}>
-                      {confirmDateText}
-                    </p>
+                    
+                    {!isOriginalityConfirmed ? (
+                      <>
+                        <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '0.5rem' }}>
+                          Not Verified Yet
+                        </p>
+                        {originalityDecision && (
+                          <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1rem', fontStyle: 'italic' }}>
+                            Selected: <span style={{ fontWeight: 600, color: originalityDecision === 'VERIFIED' ? '#16a34a' : '#dc2626' }}>
+                              {originalityDecision === 'VERIFIED' ? 'Verified / No Duplicate Found' : 'Refuse / Duplicate Detected'}
+                            </span>
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <div style={{ marginBottom: '1rem' }}>
+                        <p style={{ fontSize: '0.9rem', fontWeight: 700, color: originalityDecision === 'VERIFIED' ? '#16a34a' : '#dc2626', margin: 0 }}>
+                          {originalityDecision === 'VERIFIED' ? 'Verified / No Duplicate Found' : 'Refuse / Duplicate Detected'}
+                        </p>
+                        <p style={{ fontSize: '0.8rem', color: originalityDecision === 'VERIFIED' ? '#16a34a' : '#dc2626', margin: '0.2rem 0 0 0', fontWeight: 600 }}>
+                          {confirmDateText}
+                        </p>
+                      </div>
+                    )}
                     
                     <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
                       <button
@@ -495,7 +507,7 @@ Keywords: ${paper.keywords}
                       disabled={isOriginalityConfirmed || !originalityDecision}
                       style={{
                         width: '100%',
-                        backgroundColor: (isOriginalityConfirmed || !originalityDecision) ? '#cbd5e1' : '#2563eb',
+                        backgroundColor: (isOriginalityConfirmed || !originalityDecision) ? '#cbd5e1' : '#1e293b',
                         border: 'none',
                         color: '#ffffff',
                         padding: '0.6rem',
@@ -510,84 +522,149 @@ Keywords: ${paper.keywords}
                   </div>
 
                   {/* Right: Assign Supervisor */}
-                  <div 
-                    onClick={handleCancelClickOnSupervisor}
-                    style={{ 
-                      border: '1px solid #e2e8f0', 
-                      borderRadius: '8px', 
-                      padding: '1rem', 
-                      backgroundColor: '#fcfcfd',
-                      opacity: (originalityDecision === 'DUPLICATE DETECTED' || paper?.adminApprovalStatus === 'DUPLICATE DETECTED') ? 0.6 : 1,
-                      cursor: (originalityDecision === 'DUPLICATE DETECTED' || paper?.adminApprovalStatus === 'DUPLICATE DETECTED') ? 'not-allowed' : 'default'
-                    }}
-                  >
-                    <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1e293b', marginBottom: '0.5rem' }}>2. Assign Supervisor</h3>
+                  {(() => {
+                    const isAssignSupervisorEnabled = isOriginalityConfirmed && originalityDecision === 'VERIFIED';
                     
-                    <p style={{ fontSize: '0.85rem', color: '#475569', lineHeight: '1.4', marginBottom: '1rem' }}>
-                      <strong>Requested:</strong> {paper.stuRequestedSupervisorEmail}<br/>
-                      {(tempSupervisorEmail || paper.assignedSupervisorEmail) ? (
-                        <span style={{ color: '#16a34a', display: 'block', marginTop: '0.25rem' }}>
-                          <strong>Assigned:</strong> ({tempSupervisorEmail || paper.assignedSupervisorEmail})
-                          <br />
-                          <span style={{ fontSize: '0.8rem', color: '#16a34a', display: 'inline-block', marginTop: '0.1rem', fontWeight: 600 }}>
-                            {tempSupervisorDateText || (paper.supervisorAssignedAt ? `Completed at ${new Date(paper.supervisorAssignedAt).toLocaleDateString('en-GB')} ${new Date(paper.supervisorAssignedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}` : 'Completed at 23/07/2026 23:44')}
+                    const getRequestedSupervisorDisplay = () => {
+                      if (!paper.stuRequestedSupervisorEmail || paper.stuRequestedSupervisorEmail.trim() === '') {
+                        return <span style={{ color: '#0f172a', fontWeight: 500 }}>Not Requested Specific Expert</span>;
+                      }
+                      const reqSup = supervisors.find(s => s.email === paper.stuRequestedSupervisorEmail);
+                      if (reqSup) {
+                        return (
+                          <span>
+                            {reqSup.fullName}<br />
+                            <span style={{ color: '#64748b', fontSize: '0.8rem' }}>{paper.stuRequestedSupervisorEmail}</span>
                           </span>
+                        );
+                      }
+                      return paper.stuRequestedSupervisorEmail;
+                    };
+
+                    const renderAssignedSupervisorSection = () => {
+                      if (paper.assignedSupervisorEmail) {
+                        const isNoSup = paper.assignedSupervisorEmail === 'No Supervisor Available';
+                        const isSame = paper.assignedSupervisorEmail === paper.stuRequestedSupervisorEmail;
+                        const displayColor = isSame ? '#16a34a' : '#dc2626';
+                        
+                        const date = paper.supervisorAssignedAt ? new Date(paper.supervisorAssignedAt) : null;
+                        const pad = (n) => n.toString().padStart(2, '0');
+                        const dateStr = date 
+                          ? `Completed at ${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`
+                          : 'Completed at 23/07/2026 23:44';
+
+                        return (
+                          <span style={{ display: 'block', color: displayColor, marginTop: '0.25rem' }}>
+                            <strong style={{ display: 'block' }}>
+                              {isNoSup ? 'No Supervisor Available' : (paper.supervisorName || paper.assignedSupervisorEmail)}
+                            </strong>
+                            {!isNoSup && (
+                              <span style={{ fontSize: '0.8rem', display: 'block' }}>
+                                ({paper.assignedSupervisorEmail})
+                              </span>
+                            )}
+                            <span style={{ fontSize: '0.8rem', fontWeight: 600, display: 'block', marginTop: '0.1rem' }}>
+                              {dateStr}
+                            </span>
+                          </span>
+                        );
+                      }
+
+                      if (tempSupervisorEmail) {
+                        const isNoSup = tempSupervisorEmail === 'No Supervisor Available';
+                        const isSame = tempSupervisorEmail === paper.stuRequestedSupervisorEmail;
+                        const displayColor = isSame ? '#16a34a' : '#dc2626';
+                        
+                        return (
+                          <span style={{ display: 'block', marginTop: '0.25rem' }}>
+                            <strong style={{ display: 'block', color: displayColor }}>
+                              {isNoSup ? 'No Supervisor Available' : tempSupervisorName}
+                            </strong>
+                            <span style={{ display: 'block', color: '#0f172a', fontWeight: 500, fontSize: '0.85rem', marginTop: '0.1rem' }}>
+                              Not Assigned Yet
+                            </span>
+                          </span>
+                        );
+                      }
+
+                      return (
+                        <span style={{ display: 'block', color: '#0f172a', fontWeight: 500, marginTop: '0.25rem' }}>
+                          Not Assigned Yet
                         </span>
-                      ) : (
-                        <span style={{ color: '#c2410c' }}>No Supervisor Assigned Yet</span>
-                      )}
-                    </p>
+                      );
+                    };
 
-                    {/* Alert message display inside layout */}
-                    {assignSupervisorAlert && (
-                      <div style={{ backgroundColor: '#fee2e2', border: '1px solid #fecaca', color: '#b91c1c', padding: '0.5rem', borderRadius: '4px', fontSize: '0.75rem', marginBottom: '0.75rem', fontWeight: 600 }}>
-                        {assignSupervisorAlert}
-                      </div>
-                    )}
-
-                    <div style={{ marginBottom: '1rem' }}>
-                      <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
-                        Select Supervisor:
-                      </label>
-                      <select
-                        onChange={handleSelectSupervisorChange}
-                        value={tempSupervisorEmail || paper.assignedSupervisorEmail || ""}
-                        disabled={isOriginalityConfirmed || originalityDecision === 'DUPLICATE DETECTED' || paper?.adminApprovalStatus === 'DUPLICATE DETECTED'}
-                        style={{
-                          width: '100%',
-                          padding: '0.5rem',
-                          borderRadius: '6px',
-                          border: '1px solid #cbd5e1',
-                          fontSize: '0.85rem'
+                    return (
+                      <div 
+                        style={{ 
+                          border: '1px solid #e2e8f0', 
+                          borderRadius: '8px', 
+                          padding: '1rem', 
+                          backgroundColor: '#fcfcfd',
+                          opacity: isAssignSupervisorEnabled ? 1 : 0.6,
+                          cursor: isAssignSupervisorEnabled ? 'default' : 'not-allowed'
                         }}
                       >
-                        <option value="">-- Choose Supervisor --</option>
-                        {supervisors.map(sup => (
-                          <option key={sup.id} value={sup.email} disabled={!sup.available}>
-                            {sup.fullName} ({sup.available ? "Available" : "Unavailable"})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                        <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1e293b', marginBottom: '0.5rem' }}>2. Assign Supervisor</h3>
+                        
+                        <div style={{ fontSize: '0.85rem', color: '#475569', lineHeight: '1.4', marginBottom: '1rem' }}>
+                          <p style={{ margin: '0 0 0.75rem 0' }}>
+                            <strong>Requested:</strong><br />
+                            {getRequestedSupervisorDisplay()}
+                          </p>
+                          <p style={{ margin: 0 }}>
+                            <strong>Assigned:</strong><br />
+                            {renderAssignedSupervisorSection()}
+                          </p>
+                        </div>
 
-                    <button
-                      onClick={handleAssignSupervisorClick}
-                      disabled={originalityDecision === 'DUPLICATE DETECTED' || !selectedSupervisor || paper?.assignedSupervisorEmail === selectedSupervisor.email}
-                      style={{
-                        width: '100%',
-                        backgroundColor: (originalityDecision === 'DUPLICATE DETECTED' || !selectedSupervisor || paper?.assignedSupervisorEmail === selectedSupervisor.email) ? '#cbd5e1' : '#1e293b',
-                        border: 'none',
-                        color: '#ffffff',
-                        padding: '0.6rem',
-                        borderRadius: '6px',
-                        fontWeight: 700,
-                        fontSize: '0.875rem',
-                        cursor: (originalityDecision === 'DUPLICATE DETECTED' || !selectedSupervisor || paper?.assignedSupervisorEmail === selectedSupervisor.email) ? 'not-allowed' : 'pointer'
-                      }}
-                    >
-                      Assign Supervisor
-                    </button>
-                  </div>
+                        <div style={{ marginBottom: '1rem' }}>
+                          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+                            Select Supervisor:
+                          </label>
+                          <select
+                            onChange={handleSelectSupervisorChange}
+                            value={tempSupervisorEmail || paper.assignedSupervisorEmail || ""}
+                            disabled={!isAssignSupervisorEnabled}
+                            style={{
+                              width: '100%',
+                              padding: '0.5rem',
+                              borderRadius: '6px',
+                              border: '1px solid #cbd5e1',
+                              fontSize: '0.85rem',
+                              cursor: isAssignSupervisorEnabled ? 'pointer' : 'not-allowed'
+                            }}
+                          >
+                            <option value="">-- Choose Supervisor --</option>
+                            {supervisors.map(sup => (
+                              <option key={sup.id} value={sup.email} disabled={!sup.available}>
+                                {sup.fullName} ({sup.available ? "Available" : "Unavailable"})
+                              </option>
+                            ))}
+                            <option value="No Supervisor Available">Not Available Supervisor</option>
+                          </select>
+                        </div>
+
+                        <button
+                          onClick={handleAssignSupervisorClick}
+                          disabled={!isAssignSupervisorEnabled || !selectedSupervisor || paper?.assignedSupervisorEmail === selectedSupervisor.email}
+                          style={{
+                            width: '100%',
+                            backgroundColor: (!isAssignSupervisorEnabled || !selectedSupervisor || paper?.assignedSupervisorEmail === selectedSupervisor.email) ? '#cbd5e1' : '#1e293b',
+                            border: 'none',
+                            color: '#ffffff',
+                            padding: '0.6rem',
+                            borderRadius: '6px',
+                            fontWeight: 700,
+                            fontSize: '0.875rem',
+                            cursor: (!isAssignSupervisorEnabled || !selectedSupervisor || paper?.assignedSupervisorEmail === selectedSupervisor.email) ? 'not-allowed' : 'pointer'
+                          }}
+                        >
+                          Assign Supervisor
+                        </button>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
@@ -640,31 +717,136 @@ Keywords: ${paper.keywords}
 
       {/* PDF Scrollable Preview Modal */}
       {showPdfPreview && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(8px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999 }}>
-          <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '1.5rem', width: '90%', maxWidth: '800px', height: '80vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-            <button 
-              onClick={() => setShowPdfPreview(false)}
-              style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', cursor: 'pointer', color: '#cbd5e1' }}
-            >
-              <X size={24} />
-            </button>
-            <h3 style={{ margin: '0 0 1rem 0' }}>PDF Manuscript Preview</h3>
-            <div style={{ flex: 1, overflowY: 'auto', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '1.5rem', backgroundColor: '#f8fafc', whiteSpace: 'pre-line', fontSize: '0.9rem', lineHeight: '1.6' }}>
-              <strong>Title:</strong> {paper.title}
-              <br/><br/>
-              <strong>Abstract:</strong> {paper.abstractText}
-              <br/><br/>
-              <strong>Research Gap:</strong> {paper.researchGap || 'Not Specified'}
-              <br/><br/>
-              <strong>Keywords:</strong> {paper.keywords}
-              <br/><br/>
-              <strong>Author:</strong> {paper.studentName} ({paper.studentEmail})
-              <br/><br/>
-              <strong>University:</strong> {paper.studentUniversity || 'University of Ruhuna'}
-              <br/><br/>
-              <p style={{ marginTop: '2rem', fontStyle: 'italic', color: '#64748b' }}>[Simulated PDF Document Content Viewer]</p>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(10px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999 }}>
+          <div style={{ backgroundColor: '#1e293b', borderRadius: '12px', width: '95%', maxWidth: '1000px', height: '88vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
+            
+            {/* PDF Viewer Toolbar */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1.5rem', borderBottom: '1px solid #334155', backgroundColor: '#0f172a', color: '#f8fafc' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <FileText size={20} style={{ color: '#38bdf8' }} />
+                <span style={{ fontSize: '0.9rem', fontWeight: 600, letterSpacing: '0.5px' }}>
+                  {paper.pdfFileName || `${paper.title.toLowerCase().replace(/[^a-z0-9]+/g, '_')}_manuscript.pdf`}
+                </span>
+              </div>
+
+              {/* Zoom and Page controls */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: '#1e293b', padding: '0.25rem 0.5rem', borderRadius: '6px' }}>
+                  <button 
+                    onClick={() => setPdfZoom(prev => Math.max(50, prev - 10))}
+                    style={{ background: 'none', border: 'none', color: '#cbd5e1', cursor: 'pointer', fontWeight: 'bold', width: '24px', height: '24px' }}
+                  >
+                    -
+                  </button>
+                  <span style={{ fontSize: '0.8rem', minWidth: '40px', textAlign: 'center', color: '#f8fafc' }}>{pdfZoom}%</span>
+                  <button 
+                    onClick={() => setPdfZoom(prev => Math.min(200, prev + 10))}
+                    style={{ background: 'none', border: 'none', color: '#cbd5e1', cursor: 'pointer', fontWeight: 'bold', width: '24px', height: '24px' }}
+                  >
+                    +
+                  </button>
+                </div>
+                <div style={{ fontSize: '0.85rem', color: '#cbd5e1', borderLeft: '1px solid #334155', paddingLeft: '1rem' }}>
+                  Page 1 of 1
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <button
+                  onClick={handleDownload}
+                  title="Download PDF"
+                  style={{ background: 'none', border: 'none', color: '#cbd5e1', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                >
+                  <Download size={18} />
+                </button>
+                <button 
+                  onClick={() => setShowPdfPreview(false)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', display: 'flex', alignItems: 'center' }}
+                >
+                  <X size={22} />
+                </button>
+              </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
+
+            {/* Document Content Pane (Simulating PDF canvas) */}
+            <div style={{ flex: 1, overflow: 'auto', backgroundColor: '#475569', padding: '2rem 1rem' }}>
+              <div 
+                style={{ 
+                  backgroundColor: '#ffffff', 
+                  width: '100%', 
+                  maxWidth: `${760 * (pdfZoom / 100)}px`, 
+                  minHeight: `${980 * (pdfZoom / 100)}px`,
+                  margin: '0 auto', 
+                  padding: `${3.5 * (pdfZoom / 100)}rem ${3 * (pdfZoom / 100)}rem`, 
+                  boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2)',
+                  fontFamily: 'Georgia, serif',
+                  color: '#0f172a',
+                  lineHeight: 1.6,
+                  fontSize: `${0.95 * (pdfZoom / 100)}rem`,
+                  transition: 'all 0.1s ease',
+                  boxSizing: 'border-box'
+                }}
+              >
+                {/* Header */}
+                <div style={{ borderBottom: '1px solid #cbd5e1', paddingBottom: '0.5rem', marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', fontSize: `${0.75 * (pdfZoom / 100)}rem`, color: '#64748b', fontStyle: 'italic' }}>
+                  <span>ResearchSphere Manuscript Submission</span>
+                  <span>ID: {paper.formattedPublicationId || `Pub-0${paper.id}`}</span>
+                </div>
+
+                {/* Document Title */}
+                <h1 style={{ fontSize: `${1.75 * (pdfZoom / 100)}rem`, fontWeight: 700, textAlign: 'center', marginBottom: '1.5rem', fontFamily: 'Times New Roman, serif', color: '#1e293b' }}>
+                  {paper.title}
+                </h1>
+
+                {/* Authors */}
+                <div style={{ textAlign: 'center', marginBottom: '2rem', fontSize: `${0.95 * (pdfZoom / 100)}rem` }}>
+                  <div style={{ fontWeight: 600 }}>{paper.studentName}</div>
+                  <div style={{ color: '#475569', fontStyle: 'italic', fontSize: `${0.85 * (pdfZoom / 100)}rem` }}>
+                    {paper.studentUniversity || 'University of Ruhuna'}
+                  </div>
+                  <div style={{ color: '#64748b', fontSize: `${0.8 * (pdfZoom / 100)}rem` }}>
+                    Email: {paper.studentEmail}
+                  </div>
+                </div>
+
+                {/* Abstract Section */}
+                <div style={{ borderTop: '2px double #cbd5e1', borderBottom: '2px double #cbd5e1', padding: '1.5rem 0', marginBottom: '2.5rem' }}>
+                  <h3 style={{ fontSize: `${1 * (pdfZoom / 100)}rem`, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'center', margin: '0 0 1rem 0' }}>
+                    Abstract
+                  </h3>
+                  <p style={{ textAlign: 'justify', margin: 0, textIndent: '1.5rem' }}>
+                    {paper.abstractText}
+                  </p>
+                  
+                  {paper.keywords && (
+                    <div style={{ marginTop: '1.5rem', fontSize: `${0.85 * (pdfZoom / 100)}rem` }}>
+                      <strong>Keywords: </strong> 
+                      <span style={{ fontStyle: 'italic' }}>{paper.keywords}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Research Gap Filled */}
+                {paper.researchGap && (
+                  <div style={{ marginBottom: '2.5rem' }}>
+                    <h3 style={{ fontSize: `${1.1 * (pdfZoom / 100)}rem`, fontWeight: 'bold', borderBottom: '1px solid #cbd5e1', paddingBottom: '0.25rem', marginBottom: '0.75rem' }}>
+                      1. Research Gap
+                    </h3>
+                    <p style={{ textAlign: 'justify', margin: 0 }}>
+                      {paper.researchGap}
+                    </p>
+                  </div>
+                )}
+
+                {/* Footer simulation */}
+                <div style={{ marginTop: 'auto', borderTop: '1px solid #e2e8f0', paddingTop: '1rem', display: 'flex', justifyContent: 'center', fontSize: `${0.7 * (pdfZoom / 100)}rem`, color: '#94a3b8', letterSpacing: '1px' }}>
+                  <span>CONFIDENTIAL RESEARCH MANUSCRIPT - FOR INTERNAL REVIEW ONLY</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Modal Footer */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', padding: '0.75rem 1.5rem', borderTop: '1px solid #334155', backgroundColor: '#0f172a' }}>
               <button 
                 onClick={() => {
                   const docInfo = `Title: ${paper.title}\nAuthor: ${paper.studentName}`;
@@ -672,13 +854,13 @@ Keywords: ${paper.keywords}
                   const url = URL.createObjectURL(blob);
                   window.open(url, '_blank');
                 }}
-                style={{ backgroundColor: '#ffffff', border: '1px solid #cbd5e1', padding: '0.5rem 1rem', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}
+                style={{ backgroundColor: '#1e293b', border: '1px solid #475569', color: '#cbd5e1', padding: '0.4rem 1rem', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}
               >
                 Open in New Tab
               </button>
               <button 
                 onClick={() => setShowPdfPreview(false)}
-                style={{ backgroundColor: '#0f172a', color: '#ffffff', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}
+                style={{ backgroundColor: '#2563eb', color: '#ffffff', border: 'none', padding: '0.4rem 1.25rem', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}
               >
                 Close Preview
               </button>
@@ -703,7 +885,7 @@ Keywords: ${paper.keywords}
               Please review the plagiarism detection report and declare your decision on this submission.
             </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '0.5rem' }}>
               <button
                 onClick={() => handleSaveOriginalityOption('VERIFIED')}
                 style={{
@@ -735,22 +917,6 @@ Keywords: ${paper.keywords}
                 Refuse / Duplicate Detected
               </button>
             </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
-              <button
-                onClick={() => setShowOriginalityPopup(false)}
-                style={{ padding: '0.5rem 1rem', border: '1px solid #cbd5e1', backgroundColor: '#ffffff', borderRadius: '6px', cursor: 'pointer', fontSize: '0.875rem' }}
-              >
-                Back to Selection
-              </button>
-              <button
-                onClick={handleConfirmOriginalityOption}
-                disabled={!tempDecision}
-                style={{ padding: '0.5rem 1rem', border: 'none', backgroundColor: '#2563eb', color: '#ffffff', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem' }}
-              >
-                Save Option
-              </button>
-            </div>
           </div>
         </div>
       )}
@@ -768,11 +934,8 @@ Keywords: ${paper.keywords}
             
             <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1e293b', marginBottom: '0.5rem' }}>Confirm Originality Check</h3>
             <p style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>
-              You are locking the originality decision for this paper as <strong>{originalityDecision}</strong>.
-              {tempSupervisorEmail && (
-                <span> Additionally, <strong>{tempSupervisorName}</strong> ({tempSupervisorEmail}) will be assigned as the supervisor.</span>
-              )}
-               An email and dashboard notification will be sent immediately.
+              You are locking the originality decision for this paper as <strong>{originalityDecision === 'VERIFIED' ? 'Verified / No Duplicate Found' : 'Refuse / Duplicate Detected'}</strong>.
+              An email and dashboard notification will be sent immediately.
             </p>
 
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
@@ -787,7 +950,7 @@ Keywords: ${paper.keywords}
                   await handleConfirmDuplicateWorkflow();
                   setShowConfirmOriginalityPopup(false);
                 }}
-                style={{ padding: '0.5rem 1.25rem', border: 'none', backgroundColor: '#2563eb', color: '#ffffff', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
+                style={{ padding: '0.5rem 1.25rem', border: 'none', backgroundColor: '#1e293b', color: '#ffffff', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
               >
                 Confirm
               </button>
@@ -809,7 +972,7 @@ Keywords: ${paper.keywords}
             
             <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1e293b', marginBottom: '0.5rem' }}>Confirm Supervisor Assignment</h3>
             <p style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>
-              You are assigning <strong>{selectedSupervisor.fullName}</strong> ({selectedSupervisor.email}) as the supervisor for this research paper. An email and dashboard notification will be sent immediately.
+              You are assigning <strong>{selectedSupervisor.fullName}</strong> {selectedSupervisor.email !== 'No Supervisor Available' && `(${selectedSupervisor.email})`} as the supervisor for this research paper. An email and dashboard notification will be sent immediately.
             </p>
 
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
