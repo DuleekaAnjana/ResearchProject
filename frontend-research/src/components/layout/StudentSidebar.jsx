@@ -80,15 +80,15 @@ const StudentSidebar = () => {
           </Link>
         </div>
 
-        {/* Publications Section */}
+        {/* Submissions Section */}
         <div className={styles.navGroup}>
-          <span className={styles.groupTitle}>Publications</span>
+          <span className={styles.groupTitle}>Submissions</span>
           <Link
             to="/student/publications"
             className={`${styles.navItem} ${isAllPublicationsActive ? styles.navItemActive : ''}`}
           >
             <Folder className={styles.navIcon} />
-            <span>All Publications</span>
+            <span>All Submissions</span>
           </Link>
           <Link
             to="/student/upload"

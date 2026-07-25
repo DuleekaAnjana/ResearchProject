@@ -43,6 +43,7 @@ const NewSubmissionPage = () => {
   const [comments, setComments] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [pages, setPages] = useState('');
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
 
   // ---- Feedback/UI State ----
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -150,10 +151,6 @@ const NewSubmissionPage = () => {
       setErrorMsg('Number of pages is required and must be greater than zero.');
       return;
     }
-    if (statusType === 'PENDING' && !keywords.trim()) {
-      setErrorMsg('Keywords are required for submitting for review.');
-      return;
-    }
 
     setLoading(true);
     try {
@@ -189,6 +186,14 @@ const NewSubmissionPage = () => {
       setLoading(false);
     }
   };
+  const confirmLeave = () => {
+    const isFormDirty = title.trim() || abstractText.trim() || researchGap.trim() || keywords.trim() || subcategory || comments.trim() || selectedFile;
+    if (isFormDirty) {
+      setShowLeaveModal(true);
+    } else {
+      navigate('/student/dashboard');
+    }
+  };
 
   return (
     <div className={dashboardStyles.dashboardLayout}>
@@ -218,7 +223,7 @@ const NewSubmissionPage = () => {
               <div className={styles.titleRow}>
                 <button
                   className={styles.backBtn}
-                  onClick={() => navigate('/student/dashboard')}
+                  onClick={confirmLeave}
                   title="Back to Dashboard"
                 >
                   <ArrowLeft size={16} />
@@ -282,22 +287,6 @@ const NewSubmissionPage = () => {
                   />
                 </div>
 
-                {/* Keywords */}
-                <div className={styles.formField}>
-                  <label htmlFor="submission-keywords" className={styles.label}>
-                    Keywords (comma separated) <span className={styles.labelRequired}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="submission-keywords"
-                    className={styles.input}
-                    placeholder="e.g., deep learning, healthcare, imaging"
-                    value={keywords}
-                    onChange={(e) => setKeywords(e.target.value)}
-                    required
-                  />
-                </div>
-
                 {/* Subcategory (Optional, custom placeholder based on user's category) */}
                 <div className={styles.formField}>
                   <label htmlFor="submission-subcategory" className={styles.label}>
@@ -310,7 +299,7 @@ const NewSubmissionPage = () => {
                     onChange={(e) => setSubcategory(e.target.value)}
                   >
                     <option value="">
-                      {`You're in ${studentCategory}. Select subcategory related to this submission`}
+                      {" --- Select subcategory relate Submission --- "}
                     </option>
                     {subcategoryOptions.map((sub) => (
                       <option key={sub} value={sub}>
@@ -318,12 +307,30 @@ const NewSubmissionPage = () => {
                       </option>
                     ))}
                   </select>
+                  <span style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.25rem', display: 'block' }}>
+                    *Selection are filtered to You regisered Resarch Category / path
+                  </span>
+                </div>
+
+                {/* Keywords (Optional) */}
+                <div className={styles.formField}>
+                  <label htmlFor="submission-keywords" className={styles.label}>
+                    Keywords (Optional / Comma Separated) <span className={styles.labelOptional}>(Optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="submission-keywords"
+                    className={styles.input}
+                    placeholder="Say whatever inaddition choosen Subcategory"
+                    value={keywords}
+                    onChange={(e) => setKeywords(e.target.value)}
+                  />
                 </div>
 
                 {/* Requested Supervisor */}
                 <div className={`${styles.formField} ${styles.fullWidth}`}>
                   <label htmlFor="submission-supervisor" className={styles.label}>
-                    Requested Supervisor <span className={styles.labelRequired}>*</span>
+                    Choose You Prefered Expert <span className={styles.labelRequired}>*</span>
                   </label>
                   <select
                     id="submission-supervisor"
@@ -338,6 +345,9 @@ const NewSubmissionPage = () => {
                       Prof. B. Perera — University of Colombo
                     </option>
                   </select>
+                  <span style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.25rem', display: 'block' }}>
+                    *Selection are filtered to You regisered Resarch Category / path
+                  </span>
                 </div>
 
                 {/* Additional comments */}
@@ -431,7 +441,7 @@ const NewSubmissionPage = () => {
                 <button
                   type="button"
                   className={styles.cancelBtn}
-                  onClick={() => navigate('/student/dashboard')}
+                  onClick={confirmLeave}
                   disabled={loading}
                 >
                   Cancel
@@ -450,6 +460,97 @@ const NewSubmissionPage = () => {
           </div>
         </div>
       </div>
+
+      {showLeaveModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.3)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999,
+        }}>
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: '12px',
+            padding: '2rem',
+            maxWidth: '480px',
+            width: '90%',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            position: 'relative',
+            border: '1px solid #e2e8f0',
+          }}>
+            {/* Close cross btn */}
+            <button
+              onClick={() => setShowLeaveModal(false)}
+              style={{
+                position: 'absolute',
+                top: '1rem',
+                right: '1rem',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#ef4444',
+                padding: '0.25rem',
+              }}
+              title="Close"
+            >
+              <X size={20} />
+            </button>
+
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1e293b', marginBottom: '0.75rem' }}>
+              Unsaved Changes
+            </h3>
+            <p style={{ color: '#64748b', fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '1.5rem' }}>
+              You have unsaved changes in your submission form. Do you want to discard them or go back to finish the submission?
+            </p>
+
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  setShowLeaveModal(false);
+                  navigate('/student/dashboard');
+                }}
+                style={{
+                  padding: '0.5rem 1.25rem',
+                  borderRadius: '6px',
+                  border: '1px solid #ef4444',
+                  backgroundColor: '#ef4444',
+                  color: '#ffffff',
+                  fontWeight: 600,
+                  fontSize: '0.875rem',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.2s',
+                }}
+              >
+                Discard
+              </button>
+              <button
+                onClick={() => setShowLeaveModal(false)}
+                autoFocus
+                style={{
+                  padding: '0.5rem 1.25rem',
+                  borderRadius: '6px',
+                  border: '1px solid #2563eb',
+                  backgroundColor: '#2563eb',
+                  color: '#ffffff',
+                  fontWeight: 600,
+                  fontSize: '0.875rem',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.2s',
+                }}
+              >
+                Back to Submission
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

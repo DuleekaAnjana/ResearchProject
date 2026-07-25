@@ -113,16 +113,48 @@ public class PaperController {
             );
         }
 
+        populateFormattedPublicationId(savedPaper);
         return ResponseEntity.ok(savedPaper);
+    }
+
+    private void populateFormattedPublicationId(Paper paper) {
+        if (paper == null || paper.getId() == null) return;
+        Long maxId = paperRepository.findMaxPublicationId();
+        if (maxId != null && maxId >= 100) {
+            paper.setFormattedPublicationId(String.format("PUB-%03d", paper.getId()));
+        } else {
+            paper.setFormattedPublicationId(String.format("PUB-%02d", paper.getId()));
+        }
+    }
+
+    private void populateFormattedPublicationIds(List<Paper> papers) {
+        if (papers == null || papers.isEmpty()) return;
+        Long maxId = paperRepository.findMaxPublicationId();
+        boolean useThreeDigits = maxId != null && maxId >= 100;
+        for (Paper paper : papers) {
+            if (paper.getId() != null) {
+                if (useThreeDigits) {
+                    paper.setFormattedPublicationId(String.format("PUB-%03d", paper.getId()));
+                } else {
+                    paper.setFormattedPublicationId(String.format("PUB-%02d", paper.getId()));
+                }
+            }
+        }
     }
 
     private void populateStudentName(Paper paper) {
         if (paper.getStudentEmail() != null) {
             studentRepository.findByEmail(paper.getStudentEmail())
-                    .ifPresent(student -> paper.setStudentName(student.getFullName()));
+                    .ifPresent(student -> {
+                        paper.setStudentName(student.getFullName());
+                        paper.setStudentUniversity(student.getUniversity());
+                    });
         }
         if (paper.getStudentName() == null) {
             paper.setStudentName("Registered Student");
+        }
+        if (paper.getStudentUniversity() == null) {
+            paper.setStudentUniversity("University of Colombo");
         }
     }
 
@@ -138,6 +170,7 @@ public class PaperController {
                 .filter(p -> p.getStudentEmail() != null && p.getStudentEmail().equalsIgnoreCase(email))
                 .peek(this::populateStudentName)
                 .toList();
+        populateFormattedPublicationIds(studentPapers);
         return ResponseEntity.ok(studentPapers);
     }
 
@@ -158,6 +191,7 @@ public class PaperController {
             p.setSupervisorName(name);
             populateStudentName(p);
         }
+        populateFormattedPublicationIds(papers);
         return ResponseEntity.ok(papers);
     }
 
@@ -175,6 +209,7 @@ public class PaperController {
                     .orElse("Prof. Ranjith Silva");
             paper.setSupervisorName(name);
             populateStudentName(paper);
+            populateFormattedPublicationId(paper);
             return ResponseEntity.ok(paper);
         }
         return ResponseEntity.notFound().build();
@@ -238,6 +273,7 @@ public class PaperController {
         );
 
         populateStudentName(saved);
+        populateFormattedPublicationId(saved);
         return ResponseEntity.ok(saved);
     }
 

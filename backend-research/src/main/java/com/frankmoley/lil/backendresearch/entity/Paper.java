@@ -118,6 +118,30 @@ public class Paper {
     private String studentName;
 
     @Transient
+    private String formattedPublicationId;
+
+    @Transient
+    private String studentUniversity;
+
+    @Transient
+    public String getStudentUniversity() {
+        return this.studentUniversity;
+    }
+
+    public void setStudentUniversity(String studentUniversity) {
+        this.studentUniversity = studentUniversity;
+    }
+
+    @Transient
+    public String getFormattedPublicationId() {
+        return this.formattedPublicationId;
+    }
+
+    public void setFormattedPublicationId(String formattedPublicationId) {
+        this.formattedPublicationId = formattedPublicationId;
+    }
+
+    @Transient
     public String getStudentName() {
         return this.studentName;
     }

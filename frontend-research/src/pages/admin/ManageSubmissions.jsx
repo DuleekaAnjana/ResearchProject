@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   ChevronRight,
   Search,
@@ -16,6 +16,7 @@ import AdminSidebar from '../../components/layout/AdminSidebar';
 import styles from './ManageSubmissions.module.css';
 
 const ManageSubmissions = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -26,6 +27,20 @@ const ManageSubmissions = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState(null);
+
+  const getStatusBadge = (paper) => {
+    const status = paper.adminApprovalStatus || paper.status;
+    if (status === 'APPROVED' || status === 'VERIFIED') {
+      return <span className={`${styles.statusBadge} ${styles.statusVerified}`}>VERIFIED</span>;
+    }
+    if (status === 'DUPLICATE DETECTED' || status === 'DUPLICATE_DETECTED') {
+      return <span className={`${styles.statusBadge} ${styles.statusDuplicate}`}>DUPLICATE DETECTED</span>;
+    }
+    if (status === 'SUPERVISOR NOT AVAILABLE' || status === 'SUPERVISOR_NOT_AVAILABLE') {
+      return <span className={`${styles.statusBadge} ${styles.statusNoSupervisor}`}>SUPERVISOR NOT AVAILABLE</span>;
+    }
+    return <span className={`${styles.statusBadge} ${styles.statusUnderApproval}`}>UNDER ADMIN APPROVAL</span>;
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -169,8 +184,9 @@ const ManageSubmissions = () => {
               <table className={styles.table}>
                 <thead>
                   <tr>
+                    <th>Publication ID</th>
                     <th>Title</th>
-                    <th>Student Name</th>
+                    <th>Author</th>
                     <th>Category</th>
                     <th>Submitted At</th>
                     <th>Status</th>
@@ -180,40 +196,31 @@ const ManageSubmissions = () => {
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan="6" style={{ textAlign: 'center', padding: '2rem' }}>
+                      <td colSpan="7" style={{ textAlign: 'center', padding: '2rem' }}>
                         Loading submissions...
                       </td>
                     </tr>
                   ) : filteredPapers.length === 0 ? (
                     <tr>
-                      <td colSpan="6" style={{ textAlign: 'center', padding: '2rem' }}>
+                      <td colSpan="7" style={{ textAlign: 'center', padding: '2rem' }}>
                         No submissions found.
                       </td>
                     </tr>
                   ) : (
                     filteredPapers.map((paper) => (
                       <tr key={paper.id}>
+                        <td style={{ fontWeight: 600, color: '#475569' }}>
+                          {paper.formattedPublicationId || `PUB-${paper.id}`}
+                        </td>
                         <td className={styles.paperTitleCell}>{paper.title}</td>
                         <td className={styles.studentNameCell}>{paper.studentName || 'Registered Student'}</td>
                         <td>{paper.category || 'Computer Science'}</td>
                         <td>{formatDate(paper.submittedAt)}</td>
-                        <td>
-                          <span
-                            className={`${styles.statusBadge} ${
-                              paper.status === 'APPROVED'
-                                ? styles.statusApproved
-                                : paper.status === 'PENDING'
-                                ? styles.statusPending
-                                : styles.statusRejected
-                            }`}
-                          >
-                            {paper.status}
-                          </span>
-                        </td>
+                        <td>{getStatusBadge(paper)}</td>
                         <td style={{ textAlign: 'right' }}>
                           <button
                             className={styles.reviewBtn}
-                            onClick={() => handleOpenReview(paper)}
+                            onClick={() => navigate(`/admin/review/${paper.id}`)}
                           >
                             Review
                           </button>
@@ -226,105 +233,7 @@ const ManageSubmissions = () => {
             </div>
           </div>
 
-          {/* Modal / Side drawer for Review details */}
-          {selectedPaper && (
-            <div className={styles.modalOverlay}>
-              <div className={styles.modalContent}>
-                <div className={styles.modalHeader}>
-                  <h3>Review Submission</h3>
-                  <button className={styles.closeBtn} onClick={handleCloseReview}>
-                    <X size={20} />
-                  </button>
-                </div>
-
-                <div className={styles.modalBody}>
-                  {message && (
-                    <div
-                      className={`${styles.alert} ${
-                        message.type === 'success' ? styles.alertSuccess : styles.alertError
-                      }`}
-                    >
-                      {message.type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
-                      <span>{message.text}</span>
-                    </div>
-                  )}
-
-                  <div className={styles.infoSection}>
-                    <h4 className={styles.sectionTitle}>Research Information</h4>
-                    <p><strong>Title:</strong> {selectedPaper.title}</p>
-                    <p><strong>Keywords:</strong> {selectedPaper.keywords}</p>
-                    <p><strong>Abstract:</strong> {selectedPaper.abstractText}</p>
-                    <p><strong>Category:</strong> {selectedPaper.category}</p>
-                  </div>
-
-                  <div className={styles.workflowSection}>
-                    <h4 className={styles.sectionTitle}>Verification Workflow</h4>
-
-                    {/* Step 1: Duplicate Check */}
-                    <div className={styles.workflowStep}>
-                      <div className={styles.stepInfo}>
-                        <h5>1. Duplicate / Plagiarism Check</h5>
-                        <p className={styles.stepSubtext}>
-                          {selectedPaper.duplicateCheckedAt ? (
-                            <span className={styles.textCompleted}>
-                              Completed at {formatDate(selectedPaper.duplicateCheckedAt)}
-                            </span>
-                          ) : (
-                            <span className={styles.textPending}>Not checked yet</span>
-                          )}
-                        </p>
-                      </div>
-                      <button
-                        className={styles.actionBtn}
-                        onClick={handleCheckDuplicate}
-                        disabled={actionLoading || selectedPaper.duplicateCheckedAt}
-                      >
-                        Check Duplicate
-                      </button>
-                    </div>
-
-                    {/* Step 2: Assign Supervisor */}
-                    <div className={styles.workflowStep}>
-                      <div className={styles.stepInfo}>
-                        <h5>2. Assign Supervisor</h5>
-                        <p className={styles.stepSubtext}>
-                          {selectedPaper.supervisorAssignedAt ? (
-                            <span className={styles.textCompleted}>
-                              Assigned to {selectedPaper.supervisorName || selectedPaper.assignedSupervisorEmail}
-                            </span>
-                          ) : (
-                            <span className={styles.textPending}>No supervisor assigned</span>
-                          )}
-                        </p>
-                        <div style={{ marginTop: '0.5rem' }}>
-                          <label className={styles.label}>Select Supervisor:</label>
-                          <select
-                            value={assignedSupervisorEmail}
-                            onChange={(e) => setAssignedSupervisorEmail(e.target.value)}
-                            className={styles.select}
-                          >
-                            <option value="">-- Choose Supervisor --</option>
-                            {supervisors.map((s) => (
-                              <option key={s.id} value={s.email}>
-                                {s.fullName} ({s.researchCategory || 'General'})
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                      <button
-                        className={styles.actionBtn}
-                        onClick={handleAssignSupervisor}
-                        disabled={actionLoading || !assignedSupervisorEmail}
-                      >
-                        Assign Supervisor
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Drawer removed – using review page instead */}
         </main>
       </div>
     </div>

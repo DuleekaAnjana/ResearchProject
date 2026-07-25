@@ -13,4 +13,7 @@ public interface PaperRepository extends JpaRepository<Paper, Long> {
     List<Paper> findByStuRequestedSupervisorEmailOrderBySubmittedAtDesc(String email);
     long countByAssignedSupervisorEmail(String email);
     long countByAssignedSupervisorEmailAndSupervisorApprovalStatus(String email, String status);
+
+    @org.springframework.data.jpa.repository.Query("SELECT COALESCE(MAX(p.publicationId), 0) FROM Paper p")
+    Long findMaxPublicationId();
 }

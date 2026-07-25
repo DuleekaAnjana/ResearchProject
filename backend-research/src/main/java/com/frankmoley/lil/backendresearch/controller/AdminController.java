@@ -53,6 +53,8 @@ public class AdminController {
             }
         }
 
+        populateFormattedPublicationIds(latestSubmissions);
+
         Map<String, Object> response = new HashMap<>();
         response.put("totalPublications", totalPublications);
         response.put("approved", approved);
@@ -61,6 +63,31 @@ public class AdminController {
         response.put("latestSubmissions", latestSubmissions);
 
         return ResponseEntity.ok(response);
+    }
+
+    private void populateFormattedPublicationId(Paper paper) {
+        if (paper == null || paper.getId() == null) return;
+        Long maxId = paperRepository.findMaxPublicationId();
+        if (maxId != null && maxId >= 100) {
+            paper.setFormattedPublicationId(String.format("PUB-%03d", paper.getId()));
+        } else {
+            paper.setFormattedPublicationId(String.format("PUB-%02d", paper.getId()));
+        }
+    }
+
+    private void populateFormattedPublicationIds(List<Paper> papers) {
+        if (papers == null || papers.isEmpty()) return;
+        Long maxId = paperRepository.findMaxPublicationId();
+        boolean useThreeDigits = maxId != null && maxId >= 100;
+        for (Paper paper : papers) {
+            if (paper.getId() != null) {
+                if (useThreeDigits) {
+                    paper.setFormattedPublicationId(String.format("PUB-%03d", paper.getId()));
+                } else {
+                    paper.setFormattedPublicationId(String.format("PUB-%02d", paper.getId()));
+                }
+            }
+        }
     }
 
     @GetMapping("/supervisors")
@@ -75,7 +102,6 @@ public class AdminController {
             return ResponseEntity.notFound().build();
         }
 
-        Paper paper = paperOpt.get();
         paper.setDuplicateCheckedAt(LocalDateTime.now());
         Paper saved = paperRepository.save(paper);
 
@@ -87,6 +113,42 @@ public class AdminController {
                 "SUBMISSION"
         );
 
+        populateFormattedPublicationId(saved);
+        return ResponseEntity.ok(saved);
+    }
+
+    @PostMapping("/papers/{id}/confirm-originality")
+    public ResponseEntity<?> confirmOriginality(@PathVariable Long id, @RequestBody Map<String, String> request) {
+        Optional<Paper> paperOpt = paperRepository.findById(id);
+        if (paperOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        String decision = request.get("decision");
+        if (decision == null || decision.isBlank()) {
+            return ResponseEntity.badRequest().body("Decision is required.");
+        }
+
+        Paper paper = paperOpt.get();
+        paper.setDuplicateCheckedAt(LocalDateTime.now());
+        
+        if ("DUPLICATE DETECTED".equalsIgnoreCase(decision) || "DUPLICATE_DETECTED".equalsIgnoreCase(decision)) {
+            paper.setAdminApprovalStatus("DUPLICATE DETECTED");
+            paper.setStatus("REJECTED");
+        } else {
+            paper.setAdminApprovalStatus("VERIFIED");
+        }
+        
+        Paper saved = paperRepository.save(paper);
+        
+        notificationService.createNotification(
+                paper.getStudentEmail(),
+                "Originality Verification Complete",
+                "Your submission '" + paper.getTitle() + "' has been verified: " + paper.getAdminApprovalStatus() + ".",
+                "SUBMISSION"
+        );
+
+        populateFormattedPublicationId(saved);
         return ResponseEntity.ok(saved);
     }
 
@@ -109,11 +171,17 @@ public class AdminController {
 
         Supervisor supervisor = supervisorOpt.get();
         Paper paper = paperOpt.get();
+
+        if ("DUPLICATE DETECTED".equalsIgnoreCase(paper.getAdminApprovalStatus())) {
+            return ResponseEntity.badRequest().body("you have already rejected since Detecting Duplicate. can not assign Supervisor");
+        }
+
         paper.setAssignedSupervisorEmail(supervisor.getEmail());
         paper.setSupervisorName(supervisor.getFullName());
         paper.setSupervisorAssignedAt(LocalDateTime.now());
         paper.setStatus("PENDING");
         Paper saved = paperRepository.save(paper);
+        populateFormattedPublicationId(saved);
 
         // Notify student that supervisor has been assigned
         notificationService.createNotification(

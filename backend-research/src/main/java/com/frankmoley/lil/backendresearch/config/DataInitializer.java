@@ -30,10 +30,37 @@ public class DataInitializer implements CommandLineRunner {
     private final PaperRepository paperRepository;
     private final NotificationRepository notificationRepository;
     private final AdminRepository adminRepository;
+    private final com.frankmoley.lil.backendresearch.repository.SupervisorRepository supervisorRepository;
 
     @Override
     public void run(String... args) throws Exception {
         String defaultHashedPassword = hashPassword("password123");
+
+        // Seed supervisors if not exists
+        if (!supervisorRepository.existsByEmail("demo@researchsphere.edu")) {
+            com.frankmoley.lil.backendresearch.entity.Supervisor supervisor = new com.frankmoley.lil.backendresearch.entity.Supervisor();
+            supervisor.setFullName("Prof. R. Silva");
+            supervisor.setEmail("demo@researchsphere.edu");
+            supervisor.setPassword(defaultHashedPassword);
+            supervisor.setUniversity("University of Colombo");
+            supervisor.setResearchCategory("Computer Science");
+            supervisor.setResearchSubcategoriesJson("Artificial Intelligence");
+            supervisor.setRole("supervisor");
+            supervisor.setAvailable(true); // Available
+            supervisorRepository.save(supervisor);
+        }
+
+        if (!supervisorRepository.existsByEmail("supervisor@researchsphere.edu")) {
+            com.frankmoley.lil.backendresearch.entity.Supervisor supervisor = new com.frankmoley.lil.backendresearch.entity.Supervisor();
+            supervisor.setFullName("Prof. B. Perera");
+            supervisor.setEmail("supervisor@researchsphere.edu");
+            supervisor.setPassword(defaultHashedPassword);
+            supervisor.setUniversity("University of Colombo");
+            supervisor.setResearchCategory("Computer Science");
+            supervisor.setRole("supervisor");
+            supervisor.setAvailable(false); // Unavailable
+            supervisorRepository.save(supervisor);
+        }
 
         // Seed repository admin if not exists
         if (!adminRepository.existsByEmail("repoadmin@researchsphere.edu")) {

@@ -29,6 +29,7 @@ import AdminDashboard from '../pages/admin/AdminDashboard';
 import ManageSubmissions from '../pages/admin/ManageSubmissions';
 import AdminNotificationsPage from '../pages/admin/AdminNotificationsPage';
 import AdminProfilePage from '../pages/admin/AdminProfilePage';
+import AdminReviewPage from '../pages/admin/AdminReviewPage';
 
 /**
  * Application routes configuration
@@ -89,6 +90,7 @@ const AppRoutes = () => {
       <Route path="/admin/submissions" element={<ProtectedRoute allowedRole="repositary admin"><ManageSubmissions /></ProtectedRoute>} />
       <Route path="/admin/notifications" element={<ProtectedRoute allowedRole="repositary admin"><AdminNotificationsPage /></ProtectedRoute>} />
       <Route path="/admin/profile" element={<ProtectedRoute allowedRole="repositary admin"><AdminProfilePage /></ProtectedRoute>} />
+      <Route path="/admin/review/:id" element={<ProtectedRoute allowedRole="repositary admin"><AdminReviewPage /></ProtectedRoute>} />
 
       {/* ====== 404 ====== */}
       <Route path="*" element={<NotFound />} />

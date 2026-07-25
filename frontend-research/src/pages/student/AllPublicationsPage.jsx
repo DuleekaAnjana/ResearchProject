@@ -254,12 +254,12 @@ ${paper.comments || ''}
           <div className={styles.breadcrumbs}>
             <Link to="/student/dashboard" className={styles.breadcrumbLink}>Home</Link>
             <ChevronRight size={14} className={styles.breadcrumbDivider} />
-            <span className={styles.breadcrumbCurrent}>Publications</span>
+            <span className={styles.breadcrumbCurrent}>Submissions</span>
           </div>
 
           {/* Page Header */}
           <div className={styles.pageHeader}>
-            <h1 className={styles.pageTitle}>All publications</h1>
+            <h1 className={styles.pageTitle}>All Submissions</h1>
             <p className={styles.pageSubtitle}>
               Every paper you've authored — drafts, submissions, and approvals.
             </p>
@@ -321,7 +321,7 @@ ${paper.comments || ''}
           ) : filteredPapers.length === 0 ? (
             <div className={styles.emptyState}>
               <FileText size={48} className={styles.emptyIcon} />
-              <h3>No publications found</h3>
+              <h3>No submissions found</h3>
               <p>You haven't submitted any papers matching these filters.</p>
               <Link to="/student/upload" className={styles.submitNewBtn}>
                 Submit a new paper
@@ -342,7 +342,14 @@ ${paper.comments || ''}
                   <div key={paper.id} className={styles.pubCard}>
                     <div className={styles.cardHeader}>
                       <span className={styles.categoryLabel}>{combinedCategory}</span>
-                      {getStatusBadge(paper.status)}
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        {paper.formattedPublicationId && (
+                          <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#f1f5f9', color: '#475569', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
+                            {paper.formattedPublicationId}
+                          </span>
+                        )}
+                        {getStatusBadge(paper.status)}
+                      </div>
                     </div>
 
                     <h3 className={styles.pubTitle}>{paper.title}</h3>

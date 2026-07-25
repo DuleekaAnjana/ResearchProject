@@ -58,6 +58,20 @@ const AdminDashboard = () => {
     });
   };
 
+  const getStatusBadge = (paper) => {
+    const status = paper.adminApprovalStatus || paper.status;
+    if (status === 'APPROVED' || status === 'VERIFIED') {
+      return <span className={`${styles.statusBadge} ${styles.statusVerified}`}>VERIFIED</span>;
+    }
+    if (status === 'DUPLICATE DETECTED' || status === 'DUPLICATE_DETECTED') {
+      return <span className={`${styles.statusBadge} ${styles.statusDuplicate}`}>DUPLICATE DETECTED</span>;
+    }
+    if (status === 'SUPERVISOR NOT AVAILABLE' || status === 'SUPERVISOR_NOT_AVAILABLE') {
+      return <span className={`${styles.statusBadge} ${styles.statusNoSupervisor}`}>SUPERVISOR NOT AVAILABLE</span>;
+    }
+    return <span className={`${styles.statusBadge} ${styles.statusUnderApproval}`}>UNDER ADMIN APPROVAL</span>;
+  };
+
   return (
     <div className={styles.dashboardLayout}>
       {sidebarOpen && <AdminSidebar />}
@@ -152,45 +166,46 @@ const AdminDashboard = () => {
               <table className={styles.table}>
                 <thead>
                   <tr>
+                    <th>Publication ID</th>
                     <th>Title</th>
                     <th>Author</th>
                     <th>Category</th>
                     <th>Submitted at</th>
                     <th>Status</th>
+                    <th style={{ textAlign: 'right' }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan="5" style={{ textAlign: 'center', padding: '2rem' }}>
+                      <td colSpan="7" style={{ textAlign: 'center', padding: '2rem' }}>
                         Loading submissions...
                       </td>
                     </tr>
                   ) : dashboardData.latestSubmissions.length === 0 ? (
                     <tr>
-                      <td colSpan="5" style={{ textAlign: 'center', padding: '2rem' }}>
+                      <td colSpan="7" style={{ textAlign: 'center', padding: '2rem' }}>
                         No submissions found.
                       </td>
                     </tr>
                   ) : (
                     dashboardData.latestSubmissions.map((paper) => (
                       <tr key={paper.id}>
+                        <td style={{ fontWeight: 600, color: '#475569' }}>
+                          {paper.formattedPublicationId || `PUB-${paper.id}`}
+                        </td>
                         <td className={styles.paperTitleCell}>{paper.title}</td>
                         <td className={styles.studentNameCell}>{paper.studentName || 'Amara Perera'}</td>
                         <td>{paper.category || 'Computer Science'}</td>
                         <td>{formatDate(paper.submittedAt)}</td>
-                        <td>
-                          <span
-                            className={`${styles.statusBadge} ${
-                              paper.status === 'APPROVED'
-                                ? styles.statusApproved
-                                : paper.status === 'PENDING'
-                                ? styles.statusPending
-                                : styles.statusRejected
-                            }`}
+                        <td>{getStatusBadge(paper)}</td>
+                        <td style={{ textAlign: 'right' }}>
+                          <button
+                            className={styles.reviewBtn}
+                            onClick={() => navigate(`/admin/review/${paper.id}`)}
                           >
-                            {paper.status}
-                          </span>
+                            Review
+                          </button>
                         </td>
                       </tr>
                     ))
