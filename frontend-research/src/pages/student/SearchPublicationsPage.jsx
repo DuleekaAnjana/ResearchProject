@@ -18,6 +18,10 @@ import {
   LayoutDashboard,
   BarChart3,
   X,
+  Calendar,
+  Eye,
+  Download,
+  File
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
@@ -26,6 +30,7 @@ import StudentSidebar from '../../components/layout/StudentSidebar';
 import StudentFooter from '../../components/layout/StudentFooter';
 import styles from './SearchPublicationsPage.module.css';
 import dashboardStyles from './StudentDashboard.module.css';
+import pubCardStyles from './AllPublicationsPage.module.css';
 
 /**
  * SearchPublicationsPage – Displays all approved publications with search/filter.
@@ -40,6 +45,7 @@ const SearchPublicationsPage = () => {
   const [query, setQuery] = useState(initialQuery);
   const [papers, setPapers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [previewPaper, setPreviewPaper] = useState(null);
 
   const searchInputRef = useRef(null);
 
@@ -92,34 +98,108 @@ const SearchPublicationsPage = () => {
     }
   }, [searchParams]);
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      addToHistory(query);
+    }
+  };
+
   // ---- Fetch papers ----
   useEffect(() => {
     const fetchPapers = async () => {
       setLoading(true);
       try {
-        // Reuse supervisor endpoint to get all papers; filter approved ones
-        const data = await api.get('/supervisor/dashboard');
-        const allPapers = data?.recentReviews || [];
-        setPapers(allPapers);
+        const data = await api.get('/papers');
+        const allPapers = data || [];
+        const publishedPapers = allPapers.filter(p => p.isPublished);
+        setPapers(publishedPapers);
       } catch (err) {
-        console.warn('Failed to fetch papers, using fallback data:', err);
-        // Fallback static data for offline/dev
-        setPapers([
-          { id: 1, title: 'Transformer-Based Approaches for Low-Resource Sinhala NLP', student: 'Amara Perera', studentName: 'Amara Perera', status: 'APPROVED', category: 'Computer Science' },
-          { id: 2, title: 'Federated Learning for Privacy-Preserving Medical Imaging', student: 'Amara Perera', studentName: 'Amara Perera', status: 'APPROVED', category: 'Medicine' },
-          { id: 3, title: 'A Bayesian Framework for Rainfall Prediction in South Asia', student: 'Amara Perera', studentName: 'Amara Perera', status: 'APPROVED', category: 'Statistics' },
-          { id: 4, title: 'Blockchain-Backed Digital Credentials for University Certifications', student: 'Amara Perera', studentName: 'Amara Perera', status: 'APPROVED', category: 'Computer Science' },
-          { id: 5, title: 'Deep Reinforcement Learning for Autonomous Warehouse Robotics', student: 'Amara Perera', studentName: 'Amara Perera', status: 'APPROVED', category: 'Engineering' },
-          { id: 6, title: 'Solar-Powered Micro-Irrigation Systems for Smallholder Farms', student: 'Amara Perera', studentName: 'Amara Perera', status: 'APPROVED', category: 'Engineering' },
-          { id: 7, title: 'Multi-Modal Sentiment Analysis for Code-Switched Social Media', student: 'Kasun Fernando', studentName: 'Kasun Fernando', status: 'PENDING', category: 'Computer Science' },
-          { id: 8, title: 'Energy-Efficient Edge Computing in IoT Healthcare Systems', student: 'Nipuni Silva', studentName: 'Nipuni Silva', status: 'REJECTED', category: 'Medicine' },
-        ]);
+        console.warn('Failed to fetch papers:', err);
+        setPapers([]);
       } finally {
         setLoading(false);
       }
     };
     fetchPapers();
   }, []);
+
+  const handleDownload = (paper) => {
+    const docInfo = `
+%PDF-1.4
+% ResearchSphere Manuscript PDF File
+Title: ${paper.title}
+Author: ${paper.studentName || 'Registered Student'}
+Category: ${paper.category || 'General'}
+Subcategory: ${paper.subcategory || 'General'}
+Pages: ${paper.pages || 0}
+Views: ${paper.views || 0}
+Downloads: ${paper.downloads || 0}
+Submitted At: ${paper.submittedAt || 'N/A'}
+Status: ${paper.status}
+--------------------------------------------------
+Abstract:
+${paper.abstractText}
+
+Research Gap:
+${paper.researchGap || 'Not specified.'}
+
+Keywords:
+${paper.keywords || ''}
+`;
+    const blob = new Blob([docInfo], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = paper.pdfFileName || `${paper.title.toLowerCase().replace(/[^a-z0-9]+/g, '_')}_manuscript.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'N/A';
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    return date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  const getCategoryBadge = (category) => {
+    const cat = category || 'Computer Science';
+    let bg = '#e0f2fe';
+    let fg = '#0369a1';
+    if (cat.toLowerCase().includes('computer')) {
+      bg = '#ecfdf5';
+      fg = '#047857';
+    } else if (cat.toLowerCase().includes('medicine')) {
+      bg = '#fdf2f8';
+      fg = '#be185d';
+    } else if (cat.toLowerCase().includes('engineering')) {
+      bg = '#fff7ed';
+      fg = '#c2410c';
+    } else if (cat.toLowerCase().includes('statistics')) {
+      bg = '#f5f3ff';
+      fg = '#6d28d9';
+    }
+    return (
+      <span style={{
+        fontSize: '0.75rem',
+        fontWeight: 700,
+        backgroundColor: bg,
+        color: fg,
+        padding: '0.25rem 0.75rem',
+        borderRadius: '9999px',
+        textTransform: 'uppercase',
+        letterSpacing: '0.025em'
+      }}>
+        {cat}
+      </span>
+    );
+  };
 
   // ---- Filter papers by query ----
   const filteredPapers = papers.filter((p) => {
@@ -131,13 +211,6 @@ const SearchPublicationsPage = () => {
       p.category?.toLowerCase().includes(q)
     );
   });
-
-  const getStatusClass = (status) => {
-    if (status === 'APPROVED') return styles.statusApproved;
-    if (status === 'PENDING') return styles.statusPending;
-    if (status === 'REJECTED') return styles.statusRejected;
-    return '';
-  };
 
   return (
     <div className={dashboardStyles.dashboardLayout}>
@@ -234,20 +307,74 @@ const SearchPublicationsPage = () => {
                 </p>
               </div>
             ) : (
-              <div className={styles.resultsList}>
+              <div className={pubCardStyles.publicationsGrid}>
                 {filteredPapers.map((paper) => (
-                  <div key={paper.id} className={styles.paperCard}>
-                    <div className={styles.paperTitle}>{paper.title}</div>
-                    <div className={styles.paperMeta}>
-                      <span className={styles.paperAuthor}>
-                        {paper.student || paper.studentName || 'Unknown Author'}
+                  <div key={paper.id} className={pubCardStyles.pubCard}>
+                    <div className={pubCardStyles.cardHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#f1f5f9', color: '#475569', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
+                        {paper.formattedPublicationId || `PUB-${paper.id}`}
                       </span>
-                      {paper.category && (
-                        <span className={styles.paperCategory}>{paper.category}</span>
-                      )}
-                      <span className={`${styles.paperStatus} ${getStatusClass(paper.status)}`}>
-                        {paper.status}
+                      {getCategoryBadge(paper.category)}
+                    </div>
+
+                    <h3 className={pubCardStyles.pubTitle}>{paper.title}</h3>
+                    
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.25rem', marginBottom: '0.75rem', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 600, backgroundColor: '#e0f2fe', color: '#0369a1', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
+                        {paper.subcategory || 'General'}
                       </span>
+                      {paper.keywords && paper.keywords.trim() && paper.keywords.split(',').map((kw, idx) => (
+                        <span key={idx} style={{ fontSize: '0.65rem', fontWeight: 600, backgroundColor: '#e0f2fe', color: '#0369a1', padding: '0.15rem 0.35rem', borderRadius: '4px' }}>
+                          {kw.trim()}
+                        </span>
+                      ))}
+                    </div>
+
+                    <p className={pubCardStyles.pubAbstract}>
+                      {paper.abstractText && paper.abstractText.length > 150 
+                        ? `${paper.abstractText.substring(0, 150)}......` 
+                        : paper.abstractText}
+                    </p>
+
+                    <div className={pubCardStyles.pubMeta}>
+                      <span className={pubCardStyles.metaItem}>
+                        <Calendar size={14} />
+                        {formatDate(paper.submittedAt || paper.reviewedAt)}
+                      </span>
+                      <span className={pubCardStyles.metaItem}>
+                        <FileText size={14} />
+                        {paper.pages || 0} pages
+                      </span>
+                      <span className={pubCardStyles.metaItem}>
+                        <Eye size={14} />
+                        {paper.views || 0}
+                      </span>
+                      <span className={pubCardStyles.metaItem}>
+                        <Download size={14} />
+                        {paper.downloads || 0}
+                      </span>
+                    </div>
+
+                    <div className={pubCardStyles.cardActions}>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewPaper(paper)}
+                        className={`${pubCardStyles.actionBtn} ${pubCardStyles.previewBtn}`}
+                        title="Preview manuscript"
+                      >
+                        <Eye size={14} />
+                        Preview
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDownload(paper)}
+                        className={`${pubCardStyles.actionBtn} ${pubCardStyles.downloadBtn}`}
+                        title="Download PDF"
+                      >
+                        <Download size={14} />
+                        Download
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -257,6 +384,93 @@ const SearchPublicationsPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Preview Modal */}
+      {previewPaper && (
+        <div className={pubCardStyles.modalOverlay} onClick={() => setPreviewPaper(null)}>
+          <div className={pubCardStyles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={pubCardStyles.modalHeader}>
+              <div className={pubCardStyles.modalTitleArea}>
+                <File size={20} className={pubCardStyles.modalFileIcon} />
+                <h3>Document Preview</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewPaper(null)}
+                className={pubCardStyles.modalCloseBtn}
+                title="Close preview"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className={pubCardStyles.modalBody}>
+              <div className={pubCardStyles.pdfPaperFrame}>
+                <div className={pubCardStyles.pdfHeader}>
+                  <div className={pubCardStyles.pdfHeaderBrand}>ResearchSphere Repository</div>
+                  <div className={pubCardStyles.pdfHeaderMeta}>
+                    Pages: {previewPaper.pages || 0}
+                  </div>
+                </div>
+
+                <div className={pubCardStyles.pdfContent}>
+                  <h1 className={pubCardStyles.pdfTitle}>{previewPaper.title}</h1>
+                  
+                  <div className={pubCardStyles.pdfAuthorLine}>
+                    By {previewPaper.studentName || 'Registered Student'}
+                  </div>
+                  <div className={pubCardStyles.pdfCategoryLine}>
+                    Subject Area: {previewPaper.category} {previewPaper.subcategory ? `(${previewPaper.subcategory})` : ''}
+                  </div>
+
+                  <div className={pubCardStyles.pdfSection}>
+                    <h2 className={pubCardStyles.pdfSectionTitle}>Abstract</h2>
+                    <p className={pubCardStyles.pdfParagraph}>{previewPaper.abstractText}</p>
+                  </div>
+
+                  {previewPaper.researchGap && (
+                    <div className={pubCardStyles.pdfSection}>
+                      <h2 className={pubCardStyles.pdfSectionTitle}>Research Gap</h2>
+                      <p className={pubCardStyles.pdfParagraph}>{previewPaper.researchGap}</p>
+                    </div>
+                  )}
+
+                  {previewPaper.keywords && (
+                    <div className={pubCardStyles.pdfSection}>
+                      <h2 className={pubCardStyles.pdfSectionTitle}>Keywords</h2>
+                      <p className={pubCardStyles.pdfKeywords}>{previewPaper.keywords}</p>
+                    </div>
+                  )}
+
+                  <div className={pubCardStyles.pdfFooter}>
+                    Simulated PDF View. Generated on {new Date().toLocaleDateString()}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className={pubCardStyles.modalFooter}>
+              <button
+                type="button"
+                className={pubCardStyles.modalCloseBtnSecondary}
+                onClick={() => setPreviewPaper(null)}
+              >
+                Close Preview
+              </button>
+              <button
+                type="button"
+                className={pubCardStyles.modalDownloadBtn}
+                onClick={() => {
+                  handleDownload(previewPaper);
+                  setPreviewPaper(null);
+                }}
+              >
+                <Download size={14} /> Download PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

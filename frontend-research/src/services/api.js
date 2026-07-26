@@ -41,7 +41,9 @@ const api = {
   },
 
   delete: async (endpoint) => {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`);
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'DELETE'
+    });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
       throw new Error(data.message || `DELETE ${endpoint} failed with status ${response.status}`);

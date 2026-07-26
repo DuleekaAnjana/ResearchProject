@@ -171,6 +171,16 @@ public class PaperController {
         }
     }
 
+    @GetMapping
+    public ResponseEntity<List<Paper>> getAllPapers() {
+        List<Paper> all = paperRepository.findAll();
+        for (Paper p : all) {
+            populateStudentName(p);
+        }
+        populateFormattedPublicationIds(all);
+        return ResponseEntity.ok(all);
+    }
+
     /**
      * GET /api/papers/student
      * Retrieves all papers (drafts, pending, approved, rejected) for a specific student.
@@ -298,6 +308,26 @@ public class PaperController {
         populateStudentName(saved);
         populateFormattedPublicationId(saved);
         return ResponseEntity.ok(saved);
+    }
+
+    @PostMapping("/{id}/publish")
+    public ResponseEntity<?> publishPaper(@PathVariable Long id) {
+        try {
+            Optional<Paper> paperOpt = paperRepository.findById(id);
+            if (paperOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            Paper paper = paperOpt.get();
+            paper.setIsPublished(true);
+            paper.setPublishedAt(LocalDateTime.now());
+            Paper saved = paperRepository.save(paper);
+            populateStudentName(saved);
+            populateFormattedPublicationId(saved);
+            return ResponseEntity.ok(saved);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(java.util.Map.of("message", "Error: " + e.getMessage()));
+        }
     }
 
     /**

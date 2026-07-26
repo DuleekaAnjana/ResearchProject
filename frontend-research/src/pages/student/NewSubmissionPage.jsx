@@ -341,7 +341,7 @@ const NewSubmissionPage = () => {
                     ))}
                   </select>
                   <span style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.25rem', display: 'block' }}>
-                    *Selection are filtered to You regisered Resarch Category / path
+                    * Available selections are filtered according to your registered research category and specialization.
                   </span>
                 </div>
 
@@ -378,11 +378,11 @@ const NewSubmissionPage = () => {
                        </option>
                      ))}
                    </select>
-                   <span style={{ color: '#64748b', fontSize: '0.8rem', marginTop: '0.25rem', display: 'block', lineHeight: '1.4' }}>
-                     * Choose Preferred Expert
-                     <br />
-                     * Available selections are filtered according to your registered research category and specialization.
-                   </span>
+                    <span style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.25rem', display: 'block', lineHeight: '1.4' }}>
+                      * Choose Preferred Expert
+                      <br />
+                      * Available selections are filtered according to your registered research category and specialization.
+                    </span>
                  </div>
 
                 {/* Additional comments */}
