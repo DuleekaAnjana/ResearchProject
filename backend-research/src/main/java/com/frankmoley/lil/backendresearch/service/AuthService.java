@@ -277,6 +277,57 @@ public class AuthService {
                 .build();
     }
 
+    public Optional<Student> getStudentProfile(String email) {
+        return studentRepository.findByEmail(email);
+    }
+
+    public boolean changePassword(String email, String currentPassword, String newPassword) {
+        String hashedCurrent = hashPassword(currentPassword);
+        String hashedNew = hashPassword(newPassword);
+
+        Optional<Student> studentOpt = studentRepository.findByEmail(email);
+        if (studentOpt.isPresent()) {
+            Student student = studentOpt.get();
+            if (student.getPassword().equals(hashedCurrent) || student.getPassword().equals(currentPassword)) {
+                student.setPassword(hashedNew);
+                studentRepository.save(student);
+                return true;
+            }
+        }
+
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            if (user.getPassword().equals(hashedCurrent) || user.getPassword().equals(currentPassword)) {
+                user.setPassword(hashedNew);
+                userRepository.save(user);
+                return true;
+            }
+        }
+
+        Optional<Supervisor> supervisorOpt = supervisorRepository.findByEmail(email);
+        if (supervisorOpt.isPresent()) {
+            Supervisor supervisor = supervisorOpt.get();
+            if (supervisor.getPassword().equals(hashedCurrent) || supervisor.getPassword().equals(currentPassword)) {
+                supervisor.setPassword(hashedNew);
+                supervisorRepository.save(supervisor);
+                return true;
+            }
+        }
+
+        Optional<Admin> adminOpt = adminRepository.findByEmail(email);
+        if (adminOpt.isPresent()) {
+            Admin admin = adminOpt.get();
+            if (admin.getPassword().equals(hashedCurrent) || admin.getPassword().equals(currentPassword)) {
+                admin.setPassword(hashedNew);
+                adminRepository.save(admin);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public boolean isNicRegistered(String nic) {
         if (nic == null || nic.trim().isEmpty()) return false;
         String cleanNic = nic.trim();

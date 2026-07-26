@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Check, ChevronDown, Plus, X, AlertCircle, Info } from 'lucide-react';
+import { ArrowLeft, Check, ChevronDown, Plus, X, AlertCircle, Info, Eye, EyeOff } from 'lucide-react';
 import Button from '../../components/common/Button';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
@@ -81,6 +81,8 @@ const NewStudentRegister = () => {
   const [userClosedGuide, setUserClosedGuide] = useState(false);
   const [showCustomSubcategoryInput, setShowCustomSubcategoryInput] = useState(false);
   const [customSubcategoryVal, setCustomSubcategoryVal] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const validateField = (name, value, currentFormData = formData) => {
     switch (name) {
@@ -877,7 +879,7 @@ const NewStudentRegister = () => {
               {/* Password Field with Arrowed Guidance Tooltip */}
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Password *</label>
-                <div className={styles.passwordGuidanceWrapper}>
+                <div className={styles.passwordGuidanceWrapper} style={{ position: 'relative' }}>
                   {showPasswordGuide && (
                     <div className={styles.passwordGuideBox}>
                       <div className={styles.passwordGuideHeader}>
@@ -900,15 +902,37 @@ const NewStudentRegister = () => {
                     </div>
                   )}
 
-                  <input
-                    type="password"
-                    name="password"
-                    placeholder="••••••••"
-                    value={formData.password}
-                    onFocus={handlePasswordFocus}
-                    onChange={handleChange}
-                    className={`${styles.input} ${errors.password ? styles.inputError : ''}`}
-                  />
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      placeholder="••••••••"
+                      value={formData.password}
+                      onFocus={handlePasswordFocus}
+                      onChange={handleChange}
+                      className={`${styles.input} ${errors.password ? styles.inputError : ''}`}
+                      style={{ paddingRight: '2.5rem' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      style={{
+                        position: 'absolute',
+                        right: '0.75rem',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: '#64748b',
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: 0
+                      }}
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
                 </div>
                 {errors.password && <span className={styles.errorText}>{errors.password}</span>}
               </div>
@@ -916,14 +940,36 @@ const NewStudentRegister = () => {
               {/* Confirm Password */}
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Confirm Password *</label>
-                <input 
-                  type="password"
-                  name="confirmPassword"
-                  placeholder="••••••••"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className={`${styles.input} ${errors.confirmPassword ? styles.inputError : ''}`}
-                />
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="confirmPassword"
+                    placeholder="••••••••"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    className={`${styles.input} ${errors.confirmPassword ? styles.inputError : ''}`}
+                    style={{ paddingRight: '2.5rem' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '0.75rem',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#64748b',
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: 0
+                    }}
+                  >
+                    {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
                 {errors.confirmPassword && (
                   <span className={styles.errorText}>{errors.confirmPassword}</span>
                 )}

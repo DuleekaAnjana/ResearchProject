@@ -57,6 +57,8 @@ const renderStatIcon = (iconName) => {
       return <Download size={20} />;
     case 'Trophy':
       return <Trophy size={20} />;
+    case '📢':
+      return <span style={{ fontSize: '1.25rem' }}>📢</span>;
     default:
       return <BookOpen size={20} />;
   }
@@ -108,6 +110,7 @@ const StudentDashboard = () => {
     const approvedCount = papers.filter(p => p.status === 'APPROVED').length;
     const pendingCount = papers.filter(p => p.status === 'PENDING' || p.status === 'UNDER REVIEW').length;
     const rejectedCount = papers.filter(p => p.status === 'REJECTED').length;
+    const publishedCount = papers.filter(p => p.isPublished).length;
     const totalViews = papers.reduce((sum, p) => sum + (p.views || 0), 0);
     const totalDownloads = papers.reduce((sum, p) => sum + (p.downloads || 0), 0);
 
@@ -141,11 +144,11 @@ const StudentDashboard = () => {
         variant: 'red',
       },
       {
-        id: 'drafts',
-        label: 'DRAFTS',
-        value: '0',
-        icon: 'FileText',
-        variant: 'blue-light',
+        id: 'published',
+        label: 'PUBLISHED',
+        value: publishedCount.toString(),
+        icon: '📢',
+        variant: 'teal',
       },
       {
         id: 'total_views',
@@ -288,6 +291,9 @@ const StudentDashboard = () => {
             <div className={styles.submissionsCard}>
               <div className={styles.chartHeader}>
                 <h3 className={styles.chartTitle}>Recent activity</h3>
+                <Link to="/student/notifications" className={styles.viewAllLink}>
+                  View all
+                </Link>
               </div>
 
               <div className={styles.activityFeed}>
