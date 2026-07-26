@@ -199,6 +199,7 @@ public class AdminController {
             paper.setAssignedSupervisorEmail("No Supervisor Available");
             paper.setSupervisorName("No Supervisor Available");
             paper.setSupervisorAssignedAt(LocalDateTime.now());
+            paper.setUnderReviewAt(LocalDateTime.now());
             paper.setStatus("SUPERVISOR NOT AVAILABLE");
             paper.setAdminApprovalStatus("SUPERVISOR NOT AVAILABLE");
             Paper saved = paperRepository.save(paper);
@@ -224,6 +225,7 @@ public class AdminController {
         paper.setAssignedSupervisorEmail(supervisor.getEmail());
         paper.setSupervisorName(supervisor.getFullName());
         paper.setSupervisorAssignedAt(LocalDateTime.now());
+        paper.setUnderReviewAt(LocalDateTime.now());
         paper.setStatus("PENDING");
         paper.setAdminApprovalStatus("VERIFIED");
         Paper saved = paperRepository.save(paper);
