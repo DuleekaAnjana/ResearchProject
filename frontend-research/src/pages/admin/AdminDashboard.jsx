@@ -3,8 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   FileText,
   CheckCircle2,
-  Eye,
-  Download,
+  Clock,
+  Files,
+  UserX,
   ChevronRight,
   ArrowRight
 } from 'lucide-react';
@@ -21,10 +22,11 @@ const AdminDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState({
-    totalPublications: 0,
-    approved: 0,
-    totalViews: 0,
-    downloads: 0,
+    totalSubmissions: 0,
+    underAdminApproval: 0,
+    verified: 0,
+    duplicateDetected: 0,
+    supervisorUnavailable: 0,
     latestSubmissions: []
   });
 
@@ -96,7 +98,7 @@ const AdminDashboard = () => {
 
           {/* Page Title & Subtitle */}
           <div className={styles.pageHeader}>
-            <h1 className={styles.pageTitle}>Repository administration</h1>
+            <h1 className={styles.pageTitle}>Repository Administration</h1>
             <p className={styles.pageSubtext}>
               Curate the research library and monitor publication health.
             </p>
@@ -104,51 +106,64 @@ const AdminDashboard = () => {
 
           {/* Stat Cards Grid */}
           <div className={styles.statGrid}>
-            {/* Card 1: Total Publications */}
+            {/* Card 1: Total Submissions */}
             <div className={styles.statCard}>
               <div className={styles.statInfo}>
-                <span className={styles.statLabel}>TOTAL PUBLICATIONS</span>
-                <span className={styles.statValue}>{loading ? '...' : dashboardData.totalPublications}</span>
+                <span className={styles.statLabel}>TOTAL SUBMISSIONS</span>
+                <span className={styles.statValue}>{loading ? '...' : (dashboardData.totalSubmissions || 0)}</span>
               </div>
               <div className={`${styles.statIconWrapper} ${styles.iconYellow}`}>
                 <FileText size={20} />
               </div>
             </div>
 
-            {/* Card 2: Approved */}
+            {/* Card 2: Under Admin Approval */}
             <div className={styles.statCard}>
               <div className={styles.statInfo}>
-                <span className={styles.statLabel}>APPROVED</span>
-                <span className={styles.statValue}>{loading ? '...' : dashboardData.approved}</span>
+                <span className={styles.statLabel}>UNDER ADMIN APPROVAL</span>
+                <span className={styles.statValue}>{loading ? '...' : (dashboardData.underAdminApproval || 0)}</span>
+              </div>
+              <div className={`${styles.statIconWrapper} ${styles.iconBlue}`}>
+                <Clock size={20} />
+              </div>
+            </div>
+
+            {/* Card 3: Verified */}
+            <div className={styles.statCard}>
+              <div className={styles.statInfo}>
+                <span className={styles.statLabel}>VERIFIED</span>
+                <span className={styles.statValue}>
+                  {loading ? '...' : Number(dashboardData.verified || 0).toLocaleString()}
+                </span>
               </div>
               <div className={`${styles.statIconWrapper} ${styles.iconGreen}`}>
                 <CheckCircle2 size={20} />
               </div>
             </div>
 
-            {/* Card 3: Total Views */}
+            {/* Card 4: Duplicate Detected */}
             <div className={styles.statCard}>
               <div className={styles.statInfo}>
-                <span className={styles.statLabel}>TOTAL VIEWS</span>
+                <span className={styles.statLabel}>DUPLICATE DETECTED</span>
                 <span className={styles.statValue}>
-                  {loading ? '...' : Number(dashboardData.totalViews).toLocaleString()}
-                </span>
-              </div>
-              <div className={`${styles.statIconWrapper} ${styles.iconBlue}`}>
-                <Eye size={20} />
-              </div>
-            </div>
-
-            {/* Card 4: Downloads */}
-            <div className={styles.statCard}>
-              <div className={styles.statInfo}>
-                <span className={styles.statLabel}>DOWNLOADS</span>
-                <span className={styles.statValue}>
-                  {loading ? '...' : Number(dashboardData.downloads).toLocaleString()}
+                  {loading ? '...' : Number(dashboardData.duplicateDetected || 0).toLocaleString()}
                 </span>
               </div>
               <div className={`${styles.statIconWrapper} ${styles.iconOrange}`}>
-                <Download size={20} />
+                <Files size={20} />
+              </div>
+            </div>
+
+            {/* Card 5: Not Available Supervisor */}
+            <div className={styles.statCard}>
+              <div className={styles.statInfo}>
+                <span className={styles.statLabel}>NOT AVAILABLE SUPERVISOR</span>
+                <span className={styles.statValue}>
+                  {loading ? '...' : Number(dashboardData.supervisorUnavailable || 0).toLocaleString()}
+                </span>
+              </div>
+              <div className={`${styles.statIconWrapper} ${styles.iconOrange}`} style={{ backgroundColor: '#fee2e2', color: '#ef4444' }}>
+                <UserX size={20} />
               </div>
             </div>
           </div>

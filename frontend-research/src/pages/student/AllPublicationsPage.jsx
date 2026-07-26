@@ -340,20 +340,31 @@ ${paper.comments || ''}
 
                 return (
                   <div key={paper.id} className={styles.pubCard}>
-                    <div className={styles.cardHeader}>
-                      <span className={styles.categoryLabel}>{combinedCategory}</span>
-                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                        {paper.formattedPublicationId && (
-                          <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#f1f5f9', color: '#475569', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
-                            {paper.formattedPublicationId}
-                          </span>
-                        )}
-                        {getStatusBadge(paper.status)}
-                      </div>
+                    <div className={styles.cardHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#f1f5f9', color: '#475569', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
+                        {paper.formattedPublicationId || `PUB-${paper.id}`}
+                      </span>
+                      {getStatusBadge(paper.status)}
                     </div>
 
                     <h3 className={styles.pubTitle}>{paper.title}</h3>
-                    <p className={styles.pubAbstract}>{paper.abstractText}</p>
+                    
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.25rem', marginBottom: '0.75rem', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 600, backgroundColor: '#e0f2fe', color: '#0369a1', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
+                        {paper.subcategory || 'General'}
+                      </span>
+                      {paper.keywords && paper.keywords.trim() && paper.keywords.split(',').map((kw, idx) => (
+                        <span key={idx} style={{ fontSize: '0.65rem', fontWeight: 600, backgroundColor: '#e0f2fe', color: '#0369a1', padding: '0.15rem 0.35rem', borderRadius: '4px' }}>
+                          {kw.trim()}
+                        </span>
+                      ))}
+                    </div>
+
+                    <p className={styles.pubAbstract}>
+                      {paper.abstractText && paper.abstractText.length > 150 
+                        ? `${paper.abstractText.substring(0, 150)}......` 
+                        : paper.abstractText}
+                    </p>
 
                     <div className={styles.pubMeta}>
                       <span className={styles.metaItem}>

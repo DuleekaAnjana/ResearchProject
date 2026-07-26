@@ -59,6 +59,26 @@ public class DataInitializer implements CommandLineRunner {
             supervisor.setResearchCategory("Computer Science");
             supervisor.setRole("supervisor");
             supervisor.setAvailable(false); // Unavailable
+        }
+
+        if (!supervisorRepository.existsByEmail("amara.perera@researchsphere.edu")) {
+            com.frankmoley.lil.backendresearch.entity.Supervisor supervisor = new com.frankmoley.lil.backendresearch.entity.Supervisor();
+            supervisor.setFullName("Amara Perera");
+            supervisor.setNicNumber("2001082596");
+            supervisor.setEmail("amara.perera@researchsphere.edu");
+            supervisor.setPhoneNumber("+94 706300027");
+            supervisor.setPassword(defaultHashedPassword);
+            supervisor.setUniversity("University of Colombo");
+            supervisor.setEmployeeId("2024/CS/1000");
+            supervisor.setHighestQualification("BSc Honours in Computer Science");
+            supervisor.setAcademicPosition("Master");
+            supervisor.setPreviouslyCompletedDegreesJson("Diploma in Software Engineering");
+            supervisor.setFaculty("SLIIT");
+            supervisor.setResearchCategory("Computer Science");
+            supervisor.setResearchSubcategoriesJson("Artificial Intelligence");
+            supervisor.setProfessionalBiography("Passionate researcher focused on applying artificial intelligence to real-world problems in healthcare, education, and sustainability.");
+            supervisor.setRole("supervisor");
+            supervisor.setAvailable(true);
             supervisorRepository.save(supervisor);
         }
 
@@ -95,6 +115,17 @@ public class DataInitializer implements CommandLineRunner {
             supervisor.setRole("supervisor");
             supervisor.setUniversity("University of Colombo");
             supervisor.setResearchCategory("Computer Science");
+        }
+
+        if (!userRepository.existsByEmail("amara.perera@researchsphere.edu")) {
+            User supervisor = new User();
+            supervisor.setFullName("Amara Perera");
+            supervisor.setEmail("amara.perera@researchsphere.edu");
+            supervisor.setPassword(defaultHashedPassword);
+            supervisor.setRole("supervisor");
+            supervisor.setUniversity("University of Colombo");
+            supervisor.setResearchCategory("Computer Science");
+            supervisor.setResearchSubcategory("Artificial Intelligence");
             userRepository.save(supervisor);
         }
 

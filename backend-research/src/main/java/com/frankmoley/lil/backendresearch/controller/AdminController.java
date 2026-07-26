@@ -26,18 +26,33 @@ public class AdminController {
     public ResponseEntity<?> getDashboardData() {
         List<Paper> allPapers = paperRepository.findAll();
 
-        long totalPublications = allPapers.size();
-        long approved = allPapers.stream()
-                .filter(p -> "APPROVED".equalsIgnoreCase(p.getStatus()))
+        long totalSubmissions = allPapers.size();
+        long underAdminApproval = allPapers.stream()
+                .filter(p -> p.getAdminApprovalStatus() == null || 
+                        "PENDING".equalsIgnoreCase(p.getAdminApprovalStatus()) || 
+                        "UNDER ADMIN APPROVAL".equalsIgnoreCase(p.getAdminApprovalStatus()) || 
+                        "UNDER_ADMIN_APPROVAL".equalsIgnoreCase(p.getAdminApprovalStatus()))
                 .count();
 
-        long totalViews = allPapers.stream()
-                .mapToLong(p -> p.getViews() != null ? p.getViews() : 0L)
-                .sum();
+        long verified = allPapers.stream()
+                .filter(p -> p.getAdminApprovalStatus() != null && 
+                        ("VERIFIED".equalsIgnoreCase(p.getAdminApprovalStatus()) || 
+                         "APPROVED".equalsIgnoreCase(p.getAdminApprovalStatus())))
+                .count();
 
-        long downloads = allPapers.stream()
-                .mapToLong(p -> p.getDownloads() != null ? p.getDownloads() : 0L)
-                .sum();
+        long duplicateDetected = allPapers.stream()
+                .filter(p -> p.getAdminApprovalStatus() != null && 
+                        ("DUPLICATE DETECTED".equalsIgnoreCase(p.getAdminApprovalStatus()) || 
+                         "DUPLICATE_DETECTED".equalsIgnoreCase(p.getAdminApprovalStatus())))
+                .count();
+
+        long supervisorUnavailable = allPapers.stream()
+                .filter(p -> p.getAdminApprovalStatus() != null && 
+                        ("SUPERVISOR UNAVAILABLE".equalsIgnoreCase(p.getAdminApprovalStatus()) || 
+                         "SUPERVISOR_UNAVAILABLE".equalsIgnoreCase(p.getAdminApprovalStatus()) || 
+                         "SUPERVISOR NOT AVAILABLE".equalsIgnoreCase(p.getAdminApprovalStatus()) || 
+                         "SUPERVISOR_NOT_AVAILABLE".equalsIgnoreCase(p.getAdminApprovalStatus())))
+                .count();
 
         // Get latest 10 submissions (ordered by submittedAt desc)
         List<Paper> latestSubmissions = allPapers.stream()
@@ -56,10 +71,11 @@ public class AdminController {
         populateFormattedPublicationIds(latestSubmissions);
 
         Map<String, Object> response = new HashMap<>();
-        response.put("totalPublications", totalPublications);
-        response.put("approved", approved);
-        response.put("totalViews", totalViews);
-        response.put("downloads", downloads);
+        response.put("totalSubmissions", totalSubmissions);
+        response.put("underAdminApproval", underAdminApproval);
+        response.put("verified", verified);
+        response.put("duplicateDetected", duplicateDetected);
+        response.put("supervisorUnavailable", supervisorUnavailable);
         response.put("latestSubmissions", latestSubmissions);
 
         return ResponseEntity.ok(response);
