@@ -69,18 +69,30 @@ const SupervisorDashboard = () => {
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   };
 
+  const formatPubId = (id) => {
+    if (!id) return 'pub-000';
+    return `pub-${String(id).padStart(3, '0')}`;
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'N/A';
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    return date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
   const reviewsList = dashboardData.recentReviews && dashboardData.recentReviews.length > 0
     ? dashboardData.recentReviews
     : [
-        { id: 1, title: 'Transformer-Based Approaches for Low-Resource Sinhala NLP', student: 'Amara Perera', status: 'APPROVED' },
-        { id: 2, title: 'Federated Learning for Privacy-Preserving Medical Imaging', student: 'Amara Perera', status: 'APPROVED' },
-        { id: 3, title: 'A Bayesian Framework for Rainfall Prediction in South Asia', student: 'Amara Perera', status: 'APPROVED' },
-        { id: 4, title: 'Blockchain-Backed Digital Credentials for University Certifications', student: 'Amara Perera', status: 'APPROVED' },
-        { id: 5, title: 'Deep Reinforcement Learning for Autonomous Warehouse Robotics', student: 'Amara Perera', status: 'APPROVED' },
-        { id: 6, title: 'Solar-Powered Micro-Irrigation Systems for Smallholder Farms', student: 'Amara Perera', status: 'APPROVED' },
+        { id: 1, title: 'Transformer-Based Approaches for Sinhala NLP', student: 'Amara Perera', status: 'APPROVED', formattedPublicationId: 'PUB-24', submittedAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString() },
+        { id: 2, title: 'Federated Learning for Privacy-Preserving Medical Imaging', student: 'Amara Perera', status: 'APPROVED', formattedPublicationId: 'PUB-25', submittedAt: new Date(Date.now() - 4 * 3600 * 1000).toISOString() },
+        { id: 3, title: 'A Bayesian Framework for Rainfall Prediction', student: 'Amara Perera', status: 'APPROVED', formattedPublicationId: 'PUB-26', submittedAt: new Date(Date.now() - 6 * 3600 * 1000).toISOString() }
       ];
 
-  const workloadData = dashboardData.weeklyWorkload || { Mon: 3, Tue: 5, Wed: 2, Thu: 6, Fri: 4, Sat: 1, Sun: 0 };
   const maxWorkload = 8; // Max tick height for Y-axis
 
   return (
@@ -172,12 +184,12 @@ const SupervisorDashboard = () => {
             </div>
           </div>
 
-          {/* Main 2-Column Section */}
-          <div className={styles.mainGrid}>
-            {/* Left Card: Recent Reviews Table */}
+          {/* Main 1-Column Section */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
+            {/* Recent Reviews Table */}
             <div className={styles.card}>
               <div className={styles.cardHeader}>
-                <h2 className={styles.cardTitle}>Recent reviews</h2>
+                <h2 className={styles.cardTitle}>for Recent Reviews</h2>
                 <Link to="/supervisor/assigned" className={styles.viewAllLink}>
                   View all <ArrowRight size={14} />
                 </Link>
@@ -187,79 +199,49 @@ const SupervisorDashboard = () => {
                 <table className={styles.table}>
                   <thead>
                     <tr>
+                      <th>Publication ID</th>
                       <th>Title</th>
-                      <th>Student</th>
+                      <th>AUTHOR</th>
+                      <th>SUBMITTED AT</th>
                       <th>Status</th>
                       <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {reviewsList.map((review) => (
-                      <tr key={review.id}>
-                        <td className={styles.paperTitleCell}>{review.title}</td>
-                        <td className={styles.studentNameCell}>{review.student || 'Amara Perera'}</td>
-                        <td>
-                          <span
-                            className={`${styles.statusBadge} ${
-                              review.status === 'APPROVED'
-                                ? styles.statusApproved
-                                : review.status === 'PENDING'
-                                ? styles.statusPending
-                                : styles.statusRejected
-                            }`}
-                          >
-                            {review.status}
-                          </span>
-                        </td>
-                        <td>
-                          <button
-                            className={styles.reviewBtn}
-                            onClick={() => navigate(`/supervisor/review/${review.id}`)}
-                          >
-                            Review
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Right Card: Weekly Workload Bar Chart */}
-            <div className={styles.card}>
-              <div className={styles.cardHeader}>
-                <h2 className={styles.cardTitle}>Weekly workload</h2>
-              </div>
-
-              <div className={styles.chartContainer}>
-                <div className={styles.chartWrapper}>
-                  {/* Y-Axis Ticks */}
-                  <div className={styles.yAxis}>
-                    <span>8</span>
-                    <span>6</span>
-                    <span>4</span>
-                    <span>2</span>
-                    <span>0</span>
-                  </div>
-
-                  {/* Bars */}
-                  <div className={styles.chartGrid}>
-                    {Object.entries(workloadData).map(([day, val]) => {
-                      const heightPercent = Math.min(100, (val / maxWorkload) * 100);
+                    {reviewsList.map((review) => {
+                      const pubIdStr = review.formattedPublicationId || formatPubId(review.id);
                       return (
-                        <div key={day} className={styles.barCol}>
-                          <div
-                            className={styles.barFill}
-                            style={{ height: `${heightPercent}%` }}
-                            title={`${day}: ${val} papers`}
-                          />
-                          <span className={styles.dayLabel}>{day}</span>
-                        </div>
+                        <tr key={review.id}>
+                          <td style={{ fontWeight: 600, color: '#0f172a' }}>{pubIdStr}</td>
+                          <td className={styles.paperTitleCell}>{review.title}</td>
+                          <td className={styles.studentNameCell}>{review.student || 'Amara Perera'}</td>
+                          <td>{formatDate(review.submittedAt)}</td>
+                          <td>
+                            <span
+                              className={`${styles.statusBadge} ${
+                                review.status === 'APPROVED'
+                                  ? styles.statusApproved
+                                  : review.status === 'PENDING' || review.status === 'SUBMITTED' || review.status === 'UNDER_REVIEW'
+                                  ? styles.statusPending
+                                  : styles.statusRejected
+                              }`}
+                            >
+                              {review.status === 'PENDING' || review.status === 'SUBMITTED' ? 'UNDER REVIEW' : review.status}
+                            </span>
+                          </td>
+                          <td>
+                            <button
+                              className={styles.reviewBtn}
+                              onClick={() => navigate(`/supervisor/review/${pubIdStr.toLowerCase()}`)}
+                            >
+                              Review
+                            </button>
+                          </td>
+                        </tr>
                       );
                     })}
-                  </div>
-                </div>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>

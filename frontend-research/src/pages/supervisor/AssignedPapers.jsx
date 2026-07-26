@@ -7,7 +7,7 @@ import DashboardHeader from '../../components/layout/DashboardHeader';
 import SupervisorSidebar from '../../components/layout/SupervisorSidebar';
 import styles from './AssignedPapers.module.css';
 
-const AssignedPapers = () => {
+const AssignedPapers = ({ filterStatus }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -91,6 +91,16 @@ const AssignedPapers = () => {
   // Filtering & Sorting logic
   const filteredPapers = papers
     .filter((paper) => {
+      // Status Filter based on filterStatus prop
+      if (filterStatus === 'PENDING') {
+        const isPending = paper.status === 'PENDING' || paper.status === 'SUBMITTED' || paper.status === 'UNDER_REVIEW';
+        if (!isPending) return false;
+      } else if (filterStatus === 'APPROVED') {
+        if (paper.status !== 'APPROVED') return false;
+      } else if (filterStatus === 'REJECTED') {
+        if (paper.status !== 'REJECTED') return false;
+      }
+
       // 1. Search Query Filter (Keyword, Title, or Student Name)
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
@@ -143,14 +153,18 @@ const AssignedPapers = () => {
             <ChevronRight size={14} />
             <span className={styles.breadcrumbItem}>Supervisor</span>
             <ChevronRight size={14} />
-            <span className={styles.breadcrumbActive}>Assigned</span>
+            <span className={styles.breadcrumbActive}>
+              {filterStatus === 'PENDING' ? 'Pending Reviews' : filterStatus === 'APPROVED' ? 'Approved' : filterStatus === 'REJECTED' ? 'Rejected' : 'Assigned'}
+            </span>
           </div>
 
           {/* Page Header */}
           <div className={styles.pageHeader}>
-            <h1 className={styles.pageTitle}>Assigned papers</h1>
+            <h1 className={styles.pageTitle}>
+              {filterStatus === 'PENDING' ? 'Pending Reviews' : filterStatus === 'APPROVED' ? 'Approved Papers' : filterStatus === 'REJECTED' ? 'Rejected Papers' : 'Assigned papers'}
+            </h1>
             <p className={styles.pageSubtext}>
-              Every paper currently in your queue.
+              {filterStatus === 'PENDING' ? 'Papers currently under your review.' : filterStatus === 'APPROVED' ? 'Your approved research papers.' : filterStatus === 'REJECTED' ? 'Your rejected research papers.' : 'Every paper currently in your queue.'}
             </p>
           </div>
 
@@ -207,18 +221,20 @@ const AssignedPapers = () => {
                 <table className={styles.table}>
                   <thead>
                     <tr>
+                      <th>Publication ID</th>
                       <th>Title</th>
-                      <th>Student</th>
-                      <th>Submitted</th>
+                      <th>AUTHOR</th>
+                      <th>SUBMITTED AT</th>
                       <th>Status</th>
                       <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredPapers.map((paper) => {
-                      const pubIdStr = formatPubId(paper.publicationId || paper.id);
+                      const pubIdStr = paper.formattedPublicationId || formatPubId(paper.publicationId || paper.id);
                       return (
                         <tr key={paper.publicationId || paper.id}>
+                          <td style={{ fontWeight: 600, color: '#0f172a' }}>{pubIdStr}</td>
                           <td className={styles.paperTitleCell}>{paper.title}</td>
                           <td className={styles.studentNameCell}>{paper.studentName || 'Amara Perera'}</td>
                           <td>{formatDate(paper.submittedAt)}</td>
@@ -238,7 +254,7 @@ const AssignedPapers = () => {
                           <td>
                             <button
                               className={styles.reviewBtn}
-                              onClick={() => navigate(`/supervisor/review/${pubIdStr}`)}
+                              onClick={() => navigate(`/supervisor/review/${pubIdStr.toLowerCase()}`)}
                             >
                               Review
                             </button>

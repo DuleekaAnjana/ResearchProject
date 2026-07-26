@@ -64,13 +64,7 @@ const StudentSidebar = () => {
             <LayoutDashboard className={styles.navIcon} />
             <span>Dashboard</span>
           </Link>
-          <Link
-            to="/student/dashboard?tab=analytics"
-            className={`${styles.navItem} ${isAnalyticsActive ? styles.navItemActive : ''}`}
-          >
-            <BarChart3 className={styles.navIcon} />
-            <span>Analytics</span>
-          </Link>
+
           <Link
             to="/student/notifications"
             className={`${styles.navItem} ${isNotificationsActive ? styles.navItemActive : ''}`}

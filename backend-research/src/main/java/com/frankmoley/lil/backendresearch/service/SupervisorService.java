@@ -44,7 +44,9 @@ public class SupervisorService {
         // Calculate average review time (mocked constant since reviewTimeDays is removed)
         double avgDays = 2.4;
 
+        java.time.LocalDateTime twentyFourHoursAgo = java.time.LocalDateTime.now().minusHours(24);
         List<PaperDTO> recentReviews = papers.stream()
+                .filter(p -> p.getSupervisorAssignedAt() != null && p.getSupervisorAssignedAt().isAfter(twentyFourHoursAgo))
                 .map(p -> PaperDTO.builder()
                         .id(p.getId())
                         .title(p.getTitle())
@@ -53,6 +55,8 @@ public class SupervisorService {
                         .status(p.getStatus())
                         .category(p.getCategory())
                         .reviewTimeDays(2.4)
+                        .formattedPublicationId(p.getFormattedPublicationId())
+                        .submittedAt(p.getSubmittedAt())
                         .build())
                 .toList();
 

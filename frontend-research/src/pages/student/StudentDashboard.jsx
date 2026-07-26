@@ -153,12 +153,7 @@ const StudentDashboard = () => {
                     Submissions vs. engagement over the last 6 months.
                   </p>
                 </div>
-                <button
-                  className={styles.analyticsLinkBtn}
-                  onClick={() => setActiveTab('analytics')}
-                >
-                  Go to Analytics <ArrowRight size={14} />
-                </button>
+
               </div>
 
               {/* Line SVG Chart */}

@@ -82,13 +82,7 @@ const SupervisorSidebar = () => {
             <span>Rejected</span>
           </Link>
 
-          <Link
-            to="/supervisor/analytics"
-            className={`${styles.navItem} ${isAnalyticsActive ? styles.navItemActive : ''}`}
-          >
-            <Sliders className={styles.navIcon} />
-            <span>Analytics</span>
-          </Link>
+
 
           <Link
             to="/supervisor/notifications"
