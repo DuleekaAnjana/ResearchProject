@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Sparkles,
@@ -105,8 +105,46 @@ const disciplines = [
   'Statistics',
 ];
 
+const ROLE_CARD_THEMES = {
+  student: {
+    background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+    textColor: '#1e3a8a',
+    descriptionColor: '#1e40af',
+    btnColor: '#2563eb',
+    iconBg: '#2563eb',
+    borderColor: '#bfdbfe'
+  },
+  supervisor: {
+    background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+    textColor: '#14532d',
+    descriptionColor: '#166534',
+    btnColor: '#10b981',
+    iconBg: '#10b981',
+    borderColor: '#bbf7d0'
+  },
+  admin: {
+    background: 'linear-gradient(135deg, #fef9c3 0%, #fef08a 100%)',
+    textColor: '#713f12',
+    descriptionColor: '#a16207',
+    btnColor: '#ca8a04',
+    iconBg: '#ca8a04',
+    borderColor: '#fef08a'
+  }
+};
+
 const Home = () => {
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    if (window.location.hash === '#signin') {
+      setTimeout(() => {
+        const el = document.getElementById('signin');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    }
+  }, []);
 
   const handleSearch = (query) => {
     // TODO: Navigate to search results page with query
@@ -126,14 +164,14 @@ const Home = () => {
         <div className={styles.heroLeft}>
           {/* Trusted Badge */}
           <div className={styles.trustedBadge}>
-            <Sparkles size={16} className={styles.sparkleIcon} />
+            <Sparkles size={16} className={styles.sparkleIcon} style={{ color: '#5c061a' }} />
             <span>Trusted by 42 universities</span>
           </div>
 
           {/* Heading */}
           <h1 className={styles.heading}>
             A modern home for{' '}
-            <span className={styles.headingAccent}>student research.</span>
+            <span className={styles.headingAccent} style={{ color: '#5c061a' }}>student research.</span>
           </h1>
 
           {/* Subtext */}
@@ -155,6 +193,7 @@ const Home = () => {
               variant="primary"
               size="lg"
               iconRight={<ArrowRight size={16} />}
+              style={{ backgroundColor: '#5c061a', borderColor: '#5c061a' }}
             >
               Choose your sign-in
             </Button>
@@ -162,6 +201,7 @@ const Home = () => {
               to="/register"
               variant="outline"
               size="lg"
+              style={{ color: '#5c061a', borderColor: '#5c061a' }}
             >
               Create an account
             </Button>
@@ -205,7 +245,7 @@ const Home = () => {
       {/* ====== Get Started / Role Cards Section ====== */}
       <section id="signin" className={styles.rolesSection}>
         <div className={styles.sectionInner}>
-          <span className={styles.sectionLabel}>GET STARTED</span>
+          <span className={styles.sectionLabel} style={{ color: '#5c061a' }}>GET STARTED</span>
           <h2 className={styles.sectionHeading}>Choose your sign-in</h2>
           <p className={styles.sectionSubtext}>
             Different responsibilities, one repository. Select the portal that matches you and your role..
@@ -215,14 +255,15 @@ const Home = () => {
         <div className={styles.rolesGrid}>
           {roles.map((role) => {
             const RoleIcon = role.icon;
+            const rTheme = ROLE_CARD_THEMES[role.id];
             return (
-              <div key={role.id} className={styles.roleCard}>
-                <div className={styles.roleIcon}>
-                  <RoleIcon size={20} className={styles.roleIconInner} />
+              <div key={role.id} className={styles.roleCard} style={{ background: rTheme.background, borderColor: rTheme.borderColor }}>
+                <div className={styles.roleIcon} style={{ backgroundColor: rTheme.iconBg }}>
+                  <RoleIcon size={20} className={styles.roleIconInner} style={{ color: '#ffffff' }} />
                 </div>
-                <h3 className={styles.roleTitle}>{role.title}</h3>
-                <p className={styles.roleDescription}>{role.description}</p>
-                <Link to={role.link} className={styles.roleLink}>
+                <h3 className={styles.roleTitle} style={{ color: rTheme.textColor }}>{role.title}</h3>
+                <p className={styles.roleDescription} style={{ color: rTheme.descriptionColor }}>{role.description}</p>
+                <Link to={role.link} className={styles.roleLink} style={{ color: rTheme.btnColor }}>
                   Continue <ArrowRight size={14} />
                 </Link>
               </div>

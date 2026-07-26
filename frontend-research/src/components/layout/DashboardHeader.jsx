@@ -125,7 +125,7 @@ const DashboardHeader = ({ onSidebarToggle, notificationsRoute = null }) => {
   const handleLogout = () => {
     setProfileOpen(false);
     logout();
-    navigate('/login');
+    navigate('/');
   };
 
   const handleNotifClick = (notif) => {

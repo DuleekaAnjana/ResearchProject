@@ -29,6 +29,30 @@ const ROLE_CONFIGS = {
   },
 };
 
+const ROLE_THEMES = {
+  student: {
+    background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+    textColor: '#1e3a8a',
+    quoteColor: '#1e40af',
+    authorColor: '#3b82f6',
+    logoBg: '#2563eb'
+  },
+  supervisor: {
+    background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+    textColor: '#14532d',
+    quoteColor: '#166534',
+    authorColor: '#10b981',
+    logoBg: '#10b981'
+  },
+  admin: {
+    background: 'linear-gradient(135deg, #fefdf0 0%, #fef9c3 100%)',
+    textColor: '#713f12',
+    quoteColor: '#a16207',
+    authorColor: '#ca8a04',
+    logoBg: '#ca8a04'
+  }
+};
+
 const Login = ({ roleProp }) => {
   const { role: routeRole } = useParams();
   const [searchParams] = useSearchParams();
@@ -38,6 +62,7 @@ const Login = ({ roleProp }) => {
   // Determine role from props, route params, or search query (default: student)
   const roleKey = roleProp || routeRole || searchParams.get('role') || 'student';
   const roleConfig = ROLE_CONFIGS[roleKey] || ROLE_CONFIGS.student;
+  const theme = ROLE_THEMES[roleKey] || ROLE_THEMES.student;
 
   const registeredSuccess = searchParams.get('registered') === 'true';
 
@@ -59,7 +84,7 @@ const Login = ({ roleProp }) => {
     setError('');
 
     try {
-      const response = await login(email, password, rememberMe);
+      const response = await login(email, password, rememberMe, roleKey);
       const userRole = response?.role || roleKey;
       if (userRole === 'repositary admin' && roleKey !== 'admin') {
         logout();
@@ -85,7 +110,7 @@ const Login = ({ roleProp }) => {
   return (
     <div className={styles.container}>
       {/* Left Branding / Testimonial Side */}
-      <div className={styles.leftPanel}>
+      <div className={styles.leftPanel} style={{ background: theme.background, borderRight: '1px solid rgba(226, 232, 240, 0.8)' }}>
         <div className={styles.leftHeader}>
           <Link to="/" className={styles.logo}>
             <svg
@@ -95,7 +120,7 @@ const Login = ({ roleProp }) => {
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
             >
-              <circle cx="16" cy="16" r="16" fill="#2563eb" />
+              <circle cx="16" cy="16" r="16" fill={theme.logoBg} />
               <path
                 d="M10 12C10 10.8954 10.8954 10 12 10H20C21.1046 10 22 10.8954 22 12V20C22 21.1046 21.1046 22 20 22H12C10.8954 22 10 21.1046 10 20V12Z"
                 fill="white"
@@ -121,18 +146,18 @@ const Login = ({ roleProp }) => {
                 strokeLinecap="round"
               />
             </svg>
-            <span className={styles.logoTitle}>ResearchSphere</span>
+            <span className={styles.logoTitle} style={{ color: theme.textColor }}>ResearchSphere</span>
           </Link>
         </div>
 
         <div className={styles.leftBody}>
-          <p className={styles.heroText}>{roleConfig.heroText}</p>
+          <p className={styles.heroText} style={{ color: theme.textColor, opacity: 1 }}>{roleConfig.heroText}</p>
 
           <div className={styles.testimonial}>
-            <p className={styles.quote}>
+            <p className={styles.quote} style={{ color: theme.quoteColor }}>
               &ldquo;ResearchSphere transformed how our department manages student publications.&rdquo;
             </p>
-            <p className={styles.author}>
+            <p className={styles.author} style={{ color: theme.authorColor }}>
               PROF. R. SILVA, UNIVERSITY OF SRI JAYAWARDENAPURA
             </p>
           </div>
@@ -141,14 +166,17 @@ const Login = ({ roleProp }) => {
 
       {/* Right Form Side */}
       <div className={styles.rightPanel}>
-        <div className={styles.topNav}>
+        <div className={styles.topNav} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Link to="/#signin" className={styles.backLink} style={{ color: theme.logoBg }}>
+            <ArrowLeft size={16} /> Back to Select Role
+          </Link>
           <Link to="/" className={styles.backLink}>
-            <ArrowLeft size={16} /> Back to home
+            Back to home
           </Link>
         </div>
 
         <div className={styles.formContainer}>
-          <h1 className={styles.title}>{roleConfig.title}</h1>
+          <h1 className={styles.title} style={{ color: theme.textColor }}>{roleConfig.title}</h1>
           <p className={styles.subtitle}>{roleConfig.subtitle}</p>
 
           {registeredSuccess && (
@@ -177,6 +205,7 @@ const Login = ({ roleProp }) => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={roleConfig.demoEmail || "demo@researchsphere.edu"}
                 className={styles.input}
+                style={{ borderColor: 'rgba(226, 232, 240, 0.8)' }}
                 required
               />
             </div>
@@ -185,7 +214,7 @@ const Login = ({ roleProp }) => {
             <div className={styles.fieldGroup}>
               <div className={styles.labelRow}>
                 <label className={styles.label}>Password</label>
-                <Link to="/forgot-password" className={styles.forgotLink}>
+                <Link to="/forgot-password" className={styles.forgotLink} style={{ color: theme.logoBg }}>
                   Forgot password?
                 </Link>
               </div>
@@ -196,7 +225,7 @@ const Login = ({ roleProp }) => {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   className={styles.input}
-                  style={{ paddingRight: '2.5rem' }}
+                  style={{ paddingRight: '2.5rem', borderColor: 'rgba(226, 232, 240, 0.8)' }}
                   required
                 />
                 <button
@@ -229,7 +258,7 @@ const Login = ({ roleProp }) => {
                 onChange={(e) => setRememberMe(e.target.checked)}
                 className={styles.checkboxInput}
               />
-              <span className={styles.customCheckbox}>
+              <span className={styles.customCheckbox} style={{ borderColor: theme.logoBg, backgroundColor: rememberMe ? theme.logoBg : 'transparent' }}>
                 {rememberMe && <Check size={12} />}
               </span>
               <span>Remember me on this device</span>
@@ -242,6 +271,7 @@ const Login = ({ roleProp }) => {
               size="lg"
               fullWidth
               disabled={isSubmitting}
+              style={{ backgroundColor: theme.logoBg, borderColor: theme.logoBg }}
             >
               Sign in
             </Button>
@@ -250,7 +280,7 @@ const Login = ({ roleProp }) => {
           {/* Footer Link */}
           <p className={styles.footerText}>
             New to ResearchSphere?{' '}
-            <Link to={`/register?role=${roleKey}`} className={styles.footerLink}>
+            <Link to={`/register?role=${roleKey}`} className={styles.footerLink} style={{ color: theme.logoBg }}>
               Create an account
             </Link>
           </p>

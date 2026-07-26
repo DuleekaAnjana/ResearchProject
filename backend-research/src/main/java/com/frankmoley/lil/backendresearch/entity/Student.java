@@ -52,5 +52,8 @@ public class Student {
     private String researchSubcategoriesJson;
 
     @Column(nullable = false)
+    private String role = "student";
+
+    @Column(nullable = false)
     private String password;
 }

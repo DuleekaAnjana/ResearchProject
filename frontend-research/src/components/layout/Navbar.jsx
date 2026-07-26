@@ -125,7 +125,10 @@ const Navbar = () => {
                   Dashboard
                 </Button>
                 <button
-                  onClick={logout}
+                  onClick={() => {
+                    logout();
+                    navigate('/');
+                  }}
                   style={{
                     background: 'none',
                     border: 'none',
@@ -149,6 +152,7 @@ const Navbar = () => {
               <button
                 className={styles.signInBtn}
                 onClick={() => scrollToHomeSection(navigate, location, 'signin')}
+                style={{ backgroundColor: '#5c061a' }}
               >
                 Sign in <ArrowRight size={16} />
               </button>
@@ -200,6 +204,7 @@ const Navbar = () => {
                   setMobileMenuOpen(false);
                   scrollToHomeSection(navigate, location, 'signin');
                 }}
+                style={{ backgroundColor: '#5c061a' }}
               >
                 Sign in <ArrowRight size={16} />
               </button>

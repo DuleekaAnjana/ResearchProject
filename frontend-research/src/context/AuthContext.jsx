@@ -35,10 +35,10 @@ export const AuthProvider = ({ children }) => {
   /**
    * Login function calling Spring Boot backend POST /api/auth/login
    */
-  const login = useCallback(async (email, password, rememberMe = true) => {
+  const login = useCallback(async (email, password, rememberMe = true, role = null) => {
     setLoading(true);
     try {
-      const response = await api.post('/auth/login', { email, password });
+      const response = await api.post('/auth/login', { email, password, role });
       if (response.success) {
         const loggedUser = {
           id: response.id,
