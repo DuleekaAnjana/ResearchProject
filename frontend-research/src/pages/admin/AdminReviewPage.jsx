@@ -267,16 +267,67 @@ const AdminReviewPage = () => {
     );
   }
 
-  const submittedYear = paper.submittedAt ? new Date(paper.submittedAt).getFullYear() : 2026;
+  const formatStatusDate = (dateStr) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    const day = d.getDate();
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const month = monthNames[d.getMonth()];
+    const year = d.getFullYear();
+    return `${day} ${month} ${year}`;
+  };
 
-  // Timeline variables
-  const isSubmitted = !!paper.submittedAt;
-  const isAdminValidated = !!paper.adminValidatedAt || !!paper.duplicateCheckedAt;
-  const isDuplicateCheckedStep = !!paper.duplicateCheckedAt;
-  const isSupervisorAssigned = !!paper.supervisorAssignedAt;
-  const isUnderReview = !!paper.underReviewAt;
-  const isApproved = paper.status === 'APPROVED';
-  const isPublished = paper.isPublished || paper.status === 'APPROVED';
+  const getTopRightStatusBadge = () => {
+    const status = paper.adminApprovalStatus || paper.status;
+    let label = 'UNDER ADMIN APPROVAL';
+    let bg = '#dbeafe';
+    let color = '#1e40af';
+    let timeVal = paper.submittedAt;
+
+    if (status === 'APPROVED' || status === 'VERIFIED') {
+      label = 'VERIFIED';
+      bg = '#d1fae5';
+      color = '#065f46';
+      timeVal = paper.supervisorAssignedAt || paper.duplicateCheckedAt || paper.submittedAt;
+    } else if (status === 'DUPLICATE DETECTED' || status === 'DUPLICATE_DETECTED') {
+      label = 'DUPLICATE DETECTED';
+      bg = '#fee2e2';
+      color = '#991b1b';
+      timeVal = paper.duplicateCheckedAt || paper.submittedAt;
+    } else if (status === 'SUPERVISOR UNAVAILABLE' || status === 'SUPERVISOR_UNAVAILABLE' || status === 'SUPERVISOR NOT AVAILABLE') {
+      label = 'SUPERVISOR UNAVAILABLE';
+      bg = '#ffedd5';
+      color = '#c2410c';
+      timeVal = paper.supervisorAssignedAt || paper.submittedAt;
+    }
+
+    const formattedDate = formatStatusDate(timeVal);
+
+    return (
+      <span style={{
+        position: 'absolute',
+        top: '1.5rem',
+        right: '1.5rem',
+        padding: '0.35rem 0.75rem',
+        borderRadius: '6px',
+        fontSize: '0.75rem',
+        fontWeight: 700,
+        backgroundColor: bg,
+        color: color,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.4rem',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+      }}>
+        {label}
+        {formattedDate && (
+          <span style={{ fontWeight: 500, opacity: 0.9, fontSize: '0.7rem', borderLeft: `1px solid ${color}`, paddingLeft: '0.4rem', marginLeft: '0.2rem' }}>
+            AT: {formattedDate}
+          </span>
+        )}
+      </span>
+    );
+  };
 
   const getSupervisorNameByEmail = (email) => {
     if (!email) return 'None';
@@ -314,9 +365,17 @@ const AdminReviewPage = () => {
             </button>
             <div>
               <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>{paper.title}</h1>
-              <p style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.25rem' }}>
-                {paper.category} &middot; {paper.subcategory || 'General'}
-              </p>
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                <span style={{ backgroundColor: '#eff6ff', color: '#1e40af', border: '1px solid #bfdbfe', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600 }}>
+                  Publication ID: {paper.formattedPublicationId || `PUB-${paper.id}`}
+                </span>
+                <span style={{ backgroundColor: '#eff6ff', color: '#1e40af', border: '1px solid #bfdbfe', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600 }}>
+                  {paper.category || 'General'}
+                </span>
+                <span style={{ backgroundColor: '#eff6ff', color: '#1e40af', border: '1px solid #bfdbfe', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600 }}>
+                  {paper.subcategory || 'General'}
+                </span>
+              </div>
             </div>
             
             {/* Download and Preview actions */}
@@ -377,25 +436,29 @@ const AdminReviewPage = () => {
             {/* Left Column */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               {/* Abstract details card */}
-              <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1.5rem' }}>
+              <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1.5rem', position: 'relative' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                    <span 
-                      style={{
-                        padding: '0.25rem 0.75rem',
-                        borderRadius: '9999px',
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
-                        ...getStatusBadgeStyle(paper.adminApprovalStatus || paper.status)
-                      }}
-                    >
-                      {getStatusText(paper.adminApprovalStatus || paper.status)}
-                    </span>
-                    <span style={{ fontSize: '0.875rem', fontWeight: 600, backgroundColor: '#f1f5f9', color: '#475569', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
-                      {submittedYear}
+                  <div>
+                    <span style={{
+                      padding: '0.35rem 0.75rem',
+                      borderRadius: '6px',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      backgroundColor: '#dbeafe',
+                      color: '#1e40af',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                    }}>
+                      SUBMITTED AT : {formatStatusDate(paper.submittedAt)}
                     </span>
                   </div>
+                  <div>
+                    {getTopRightStatusBadge()}
+                  </div>
                 </div>
+
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', marginBottom: '1.25rem' }}>Submission Details</h3>
 
                 {paper.abstractText && paper.abstractText.trim() !== '' && (
                   <div style={{ marginBottom: '1.5rem' }}>
@@ -446,12 +509,6 @@ const AdminReviewPage = () => {
                   <div>
                     <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Author Email</span>
                     <p style={{ fontSize: '0.9rem', fontWeight: 600, color: '#0f172a', margin: '0.1rem 0 0 0' }}>{paper.studentEmail}</p>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Submitted At</span>
-                    <p style={{ fontSize: '0.9rem', fontWeight: 600, color: '#0f172a', margin: '0.1rem 0 0 0' }}>
-                      {paper.submittedAt ? new Date(paper.submittedAt).toLocaleString() : 'N/A'}
-                    </p>
                   </div>
                 </div>
               </div>
@@ -836,8 +893,9 @@ const AdminReviewPage = () => {
 
                 {/* 2.2 Supervisor Assigned (Sub-section) */}
                 {(() => {
-                  const active = !!paper.submittedAt;
                   const isAssigned = !!paper.supervisorAssignedAt;
+                  const active = isAssigned;
+                  const hasSubmission = !!paper.submittedAt;
                   
                   // Color logic for supervisor name
                   const getAssignedColor = () => {
@@ -873,7 +931,7 @@ const AdminReviewPage = () => {
                           </span>
                         )}
                         <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: active ? '#854d0e' : '#64748b', margin: 0 }}>Supervisor Assigned</h4>
-                        {active ? (
+                        {hasSubmission ? (
                           <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: '0.1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                             <div>
                               <strong>Requested:</strong>{' '}
