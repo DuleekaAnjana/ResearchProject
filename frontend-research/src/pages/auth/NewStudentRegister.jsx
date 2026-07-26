@@ -916,7 +916,7 @@ const NewStudentRegister = () => {
               {/* Confirm Password */}
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Confirm Password *</label>
-                <input in 
+                <input 
                   type="password"
                   name="confirmPassword"
                   placeholder="••••••••"

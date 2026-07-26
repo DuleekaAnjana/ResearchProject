@@ -200,8 +200,8 @@ public class AdminController {
             paper.setSupervisorName("No Supervisor Available");
             paper.setSupervisorAssignedAt(LocalDateTime.now());
             paper.setUnderReviewAt(LocalDateTime.now());
-            paper.setStatus("SUPERVISOR NOT AVAILABLE");
-            paper.setAdminApprovalStatus("SUPERVISOR NOT AVAILABLE");
+            paper.setStatus("SUPERVISOR UNAVAILABLE");
+            paper.setAdminApprovalStatus("SUPERVISOR UNAVAILABLE");
             Paper saved = paperRepository.save(paper);
             populateFormattedPublicationId(saved);
             

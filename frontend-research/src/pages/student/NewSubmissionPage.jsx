@@ -64,9 +64,6 @@ const NewSubmissionPage = () => {
           const filtered = data.filter(
             (sup) => sup.researchCategory && sup.researchCategory.toLowerCase() === studentCategory.toLowerCase()
           );
-          if (filtered.length > 0) {
-            setSupervisorEmail(filtered[0].email);
-          }
         }
       } catch (err) {
         console.error('Failed to fetch supervisors:', err);
@@ -363,28 +360,30 @@ const NewSubmissionPage = () => {
                   />
                 </div>
 
-                {/* Requested Supervisor */}
-                <div className={`${styles.formField} ${styles.fullWidth}`}>
-                  <label htmlFor="submission-supervisor" className={styles.label}>
-                    Choose You Prefered Expert <span className={styles.labelRequired}>*</span>
-                  </label>
-                  <select
-                    id="submission-supervisor"
-                    className={styles.select}
-                    value={supervisorEmail}
-                    onChange={(e) => setSupervisorEmail(e.target.value)}
-                  >
-                    <option value="">-- Choose Preferred Expert --</option>
-                    {filteredSupervisors.map((sup) => (
-                      <option key={sup.id || sup.email} value={sup.email}>
-                        {sup.fullName} — {sup.university || 'University of Colombo'}
-                      </option>
-                    ))}
-                  </select>
-                  <span style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.25rem', display: 'block' }}>
-                    *Selection are filtered to You regisered Resarch Category / path
-                  </span>
-                </div>
+                 {/* Requested Supervisor */}
+                 <div className={`${styles.formField} ${styles.fullWidth}`}>
+                   <label htmlFor="submission-supervisor" className={styles.label}>
+                     Choose You Prefered Expert <span className={styles.labelOptional}>(Optional)</span>
+                   </label>
+                   <select
+                     id="submission-supervisor"
+                     className={styles.select}
+                     value={supervisorEmail}
+                     onChange={(e) => setSupervisorEmail(e.target.value)}
+                   >
+                     <option value="">Not Requested Specific Expert</option>
+                     {filteredSupervisors.map((sup) => (
+                       <option key={sup.id || sup.email} value={sup.email}>
+                         {sup.fullName} — {sup.university || 'University of Colombo'}
+                       </option>
+                     ))}
+                   </select>
+                   <span style={{ color: '#64748b', fontSize: '0.8rem', marginTop: '0.25rem', display: 'block', lineHeight: '1.4' }}>
+                     * Choose Preferred Expert
+                     <br />
+                     * Available selections are filtered according to your registered research category and specialization.
+                   </span>
+                 </div>
 
                 {/* Additional comments */}
                 <div className={`${styles.formField} ${styles.fullWidth}`}>

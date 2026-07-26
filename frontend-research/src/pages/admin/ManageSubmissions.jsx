@@ -36,8 +36,8 @@ const ManageSubmissions = () => {
     if (status === 'DUPLICATE DETECTED' || status === 'DUPLICATE_DETECTED') {
       return <span className={`${styles.statusBadge} ${styles.statusDuplicate}`}>DUPLICATE DETECTED</span>;
     }
-    if (status === 'SUPERVISOR NOT AVAILABLE' || status === 'SUPERVISOR_NOT_AVAILABLE') {
-      return <span className={`${styles.statusBadge} ${styles.statusNoSupervisor}`}>SUPERVISOR NOT AVAILABLE</span>;
+    if (status === 'SUPERVISOR NOT AVAILABLE' || status === 'SUPERVISOR_NOT_AVAILABLE' || status === 'SUPERVISOR UNAVAILABLE' || status === 'SUPERVISOR_UNAVAILABLE') {
+      return <span className={`${styles.statusBadge} ${styles.statusNoSupervisor}`}>SUPERVISOR UNAVAILABLE</span>;
     }
     return <span className={`${styles.statusBadge} ${styles.statusUnderApproval}`}>UNDER ADMIN APPROVAL</span>;
   };
