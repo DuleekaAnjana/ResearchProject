@@ -784,7 +784,7 @@ const AdminReviewPage = () => {
                       {/* Check/tick box */}
                       <div style={{ 
                         position: 'absolute', left: '-37px', top: '12px', width: '24px', height: '24px', borderRadius: '50%', 
-                        backgroundColor: active ? '#ca8a04' : '#ffffff', border: '2px solid #ca8a04', display: 'flex', alignItems: 'center', justifyContent: 'center', color: active ? '#ffffff' : '#ca8a04', zIndex: 1 
+                        backgroundColor: active ? '#2563eb' : '#ffffff', border: '2px solid #2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', color: active ? '#ffffff' : '#2563eb', zIndex: 1 
                       }}>
                         {active ? <Check size={14} /> : <Clock size={14} />}
                       </div>
@@ -792,18 +792,18 @@ const AdminReviewPage = () => {
                       {/* Card Box */}
                       <div style={{ 
                         backgroundColor: active ? '#ffffff' : '#f8fafc', 
-                        border: `1px solid ${active ? '#ca8a04' : '#e2e8f0'}`, 
-                        borderLeft: `4px solid ${active ? '#ca8a04' : '#cbd5e1'}`, 
+                        border: `1px solid ${active ? '#2563eb' : '#e2e8f0'}`, 
+                        borderLeft: `4px solid ${active ? '#2563eb' : '#cbd5e1'}`, 
                         borderRadius: '8px', padding: '0.75rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem',
                         boxShadow: active ? '0 1px 3px rgba(0,0,0,0.05)' : 'none',
                         position: 'relative'
                       }}>
                         {active && paper.submittedAt && (
-                          <span style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', backgroundColor: '#fef3c7', color: '#78350f', padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 600, border: '1px solid #fde68a' }}>
+                          <span style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', backgroundColor: '#eff6ff', color: '#1e40af', padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 600, border: '1px solid #bfdbfe' }}>
                             At {new Date(paper.submittedAt).toLocaleString('en-GB')}
                           </span>
                         )}
-                        <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: active ? '#854d0e' : '#64748b', margin: 0 }}>Submitted</h4>
+                        <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: active ? '#1e40af' : '#64748b', margin: 0 }}>Submitted</h4>
                         {active ? (
                           <p style={{ fontSize: '0.8rem', color: '#475569', margin: '0.1rem 0 0 0' }}>
                             By {paper.studentName}
@@ -983,19 +983,19 @@ const AdminReviewPage = () => {
                     <div style={{ position: 'relative', width: '100%' }}>
                       <div style={{ 
                         position: 'absolute', left: '-37px', top: '12px', width: '24px', height: '24px', borderRadius: '50%', 
-                        backgroundColor: active ? '#ca8a04' : '#ffffff', border: '2px solid #ca8a04', display: 'flex', alignItems: 'center', justifyContent: 'center', color: active ? '#ffffff' : '#ca8a04', zIndex: 1 
+                        backgroundColor: active ? '#10b981' : '#ffffff', border: '2px solid #10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', color: active ? '#ffffff' : '#10b981', zIndex: 1 
                       }}>
                         {active ? <Check size={14} /> : <Clock size={14} />}
                       </div>
                       
                       <div style={{ 
                         backgroundColor: active ? '#ffffff' : '#f8fafc', 
-                        border: `1px solid ${active ? '#ca8a04' : '#e2e8f0'}`, 
-                        borderLeft: `4px solid ${active ? '#ca8a04' : '#cbd5e1'}`, 
+                        border: `1px solid ${active ? '#10b981' : '#e2e8f0'}`, 
+                        borderLeft: `4px solid ${active ? '#10b981' : '#cbd5e1'}`, 
                         borderRadius: '8px', padding: '0.75rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem',
                         boxShadow: active ? '0 1px 3px rgba(0,0,0,0.05)' : 'none'
                       }}>
-                        <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: active ? '#854d0e' : '#64748b', margin: 0 }}>Under Supervisor Review</h4>
+                        <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: active ? '#047857' : '#64748b', margin: 0 }}>Under Supervisor Review</h4>
                         {active ? (
                           <p style={{ fontSize: '0.8rem', color: '#475569', margin: '0.1rem 0 0 0' }}>
                             By {paper.supervisorName || getSupervisorNameByEmail(paper.assignedSupervisorEmail)}
@@ -1028,29 +1028,29 @@ const AdminReviewPage = () => {
 
                   return (
                     <div style={{ position: 'relative', width: 'calc(100% - 2rem)', marginLeft: '2rem' }}>
-                      <div style={{ position: 'absolute', left: '-2rem', top: '22px', width: '2rem', height: '2px', backgroundColor: isAssigned ? '#ca8a04' : '#e2e8f0', zIndex: 0 }}></div>
+                      <div style={{ position: 'absolute', left: '-2rem', top: '22px', width: '2rem', height: '2px', backgroundColor: isAssigned ? '#10b981' : '#e2e8f0', zIndex: 0 }}></div>
                       
                       <div style={{ 
                         position: 'absolute', left: '-10px', top: '12px', width: '20px', height: '20px', borderRadius: '50%', 
-                        backgroundColor: active ? '#ca8a04' : '#ffffff', border: '2px solid #ca8a04', display: 'flex', alignItems: 'center', justifyContent: 'center', color: active ? '#ffffff' : '#ca8a04', zIndex: 1 
+                        backgroundColor: active ? '#10b981' : '#ffffff', border: '2px solid #10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', color: active ? '#ffffff' : '#10b981', zIndex: 1 
                       }}>
                         {active ? <Check size={12} /> : <Clock size={12} />}
                       </div>
                       
                       <div style={{ 
                         backgroundColor: isAssigned ? '#ffffff' : '#f8fafc', 
-                        border: `1px solid ${isAssigned ? '#ca8a04' : '#e2e8f0'}`, 
-                        borderLeft: `4px solid ${active ? '#ca8a04' : '#cbd5e1'}`, 
+                        border: `1px solid ${isAssigned ? '#10b981' : '#e2e8f0'}`, 
+                        borderLeft: `4px solid ${active ? '#10b981' : '#cbd5e1'}`, 
                         borderRadius: '8px', padding: '0.75rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem',
                         boxShadow: isAssigned ? '0 1px 3px rgba(0,0,0,0.05)' : 'none',
                         position: 'relative'
                       }}>
                         {active && paper.adminReviewedAt && (
-                          <span style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', backgroundColor: '#fef3c7', color: '#78350f', padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 600, border: '1px solid #fde68a' }}>
+                          <span style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', backgroundColor: '#f0fdf4', color: '#047857', padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 600, border: '1px solid #a7f3d0' }}>
                             At {new Date(paper.adminReviewedAt).toLocaleString('en-GB')}
                           </span>
                         )}
-                        <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: isAssigned ? '#854d0e' : '#64748b', margin: 0 }}>Supervisor Decision</h4>
+                        <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: isAssigned ? '#047857' : '#64748b', margin: 0 }}>Supervisor Decision</h4>
                         {isAssigned ? (
                           <span style={{
                             alignSelf: 'flex-start',
@@ -1079,25 +1079,25 @@ const AdminReviewPage = () => {
                     <div style={{ position: 'relative', width: '100%' }}>
                       <div style={{ 
                         position: 'absolute', left: '-37px', top: '12px', width: '24px', height: '24px', borderRadius: '50%', 
-                        backgroundColor: active ? '#ca8a04' : '#ffffff', border: '2px solid #ca8a04', display: 'flex', alignItems: 'center', justifyContent: 'center', color: active ? '#ffffff' : '#ca8a04', zIndex: 1 
+                        backgroundColor: active ? '#2563eb' : '#ffffff', border: '2px solid #2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', color: active ? '#ffffff' : '#2563eb', zIndex: 1 
                       }}>
                         {active ? <Check size={14} /> : <Clock size={14} />}
                       </div>
                       
                       <div style={{ 
                         backgroundColor: active ? '#ffffff' : '#f8fafc', 
-                        border: `1px solid ${active ? '#ca8a04' : '#e2e8f0'}`, 
-                        borderLeft: `4px solid ${active ? '#ca8a04' : '#cbd5e1'}`, 
+                        border: `1px solid ${active ? '#2563eb' : '#e2e8f0'}`, 
+                        borderLeft: `4px solid ${active ? '#2563eb' : '#cbd5e1'}`, 
                         borderRadius: '8px', padding: '0.75rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem',
                         boxShadow: active ? '0 1px 3px rgba(0,0,0,0.05)' : 'none',
                         position: 'relative'
                       }}>
                         {active && (paper.publishedAt || paper.adminReviewedAt) && (
-                          <span style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', backgroundColor: '#fef3c7', color: '#78350f', padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 600, border: '1px solid #fde68a' }}>
+                          <span style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', backgroundColor: '#eff6ff', color: '#1e40af', padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 600, border: '1px solid #bfdbfe' }}>
                             At {new Date(paper.publishedAt || paper.adminReviewedAt).toLocaleString('en-GB')}
                           </span>
                         )}
-                        <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: active ? '#854d0e' : '#64748b', margin: 0 }}>Published</h4>
+                        <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: active ? '#1e40af' : '#64748b', margin: 0 }}>Published</h4>
                         {active ? (
                           <p style={{ fontSize: '0.8rem', color: '#475569', margin: '0.1rem 0 0 0' }}>
                             By {paper.studentName}
