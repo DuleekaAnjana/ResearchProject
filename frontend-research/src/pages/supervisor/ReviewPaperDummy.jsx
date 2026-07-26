@@ -14,6 +14,7 @@ const ReviewPaperDummy = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
   const [paper, setPaper] = useState(null);
+  const [supervisors, setSupervisors] = useState([]);
 
   // Form State
   const [researchDirection, setResearchDirection] = useState('');
@@ -34,6 +35,15 @@ const ReviewPaperDummy = () => {
   useEffect(() => {
     const fetchPaperDetails = async () => {
       setLoading(true);
+      try {
+        const supsData = await api.get('/admin/supervisors');
+        if (supsData) {
+          setSupervisors(supsData);
+        }
+      } catch (err) {
+        console.error('Failed to fetch supervisors:', err);
+      }
+
       try {
         const numericId = getNumericId(id);
         const data = await api.get(`/papers/${numericId}`);
@@ -78,6 +88,27 @@ const ReviewPaperDummy = () => {
 
     fetchPaperDetails();
   }, [id, user]);
+
+  const formatFullDateTime = (dateStr) => {
+    if (!dateStr) return 'N/A';
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    const pad = (num) => num.toString().padStart(2, '0');
+    const day = pad(date.getDate());
+    const month = pad(date.getMonth() + 1);
+    const year = date.getFullYear();
+    const hours = pad(date.getHours());
+    const minutes = pad(date.getMinutes());
+    const seconds = pad(date.getSeconds());
+    return `${day}/${month}/${year}, ${hours}:${minutes}:${seconds}`;
+  };
+
+  const getSupervisorNameByEmail = (email) => {
+    if (!email) return 'N/A';
+    if (email === 'No Supervisor Available') return 'No Supervisor Available';
+    const sup = supervisors.find(s => s.email === email);
+    return sup ? sup.fullName : email;
+  };
 
   // Date Formatting Helper
   const formatDateTime = (dateStr) => {
@@ -173,6 +204,50 @@ const ReviewPaperDummy = () => {
     );
   }
 
+  const getTopRightStatusBadge = () => {
+    const status = paper.status;
+    let label = 'UNDER REVIEW';
+    let bg = '#eff6ff';
+    let textCol = '#1e40af';
+    let borderCol = '#bfdbfe';
+
+    if (status === 'APPROVED') {
+      label = 'APPROVED';
+      bg = '#f0fdf4';
+      textCol = '#047857';
+      borderCol = '#a7f3d0';
+    } else if (status === 'REJECTED') {
+      label = 'REJECTED';
+      bg = '#fee2e2';
+      textCol = '#991b1b';
+      borderCol = '#fca5a5';
+    }
+
+    const timeStr = paper.supervisorDecideAt ? ` | AT: ${formatFullDateTime(paper.supervisorDecideAt)}` : '';
+
+    return (
+      <span style={{
+        padding: '0.35rem 0.75rem',
+        borderRadius: '6px',
+        fontSize: '0.75rem',
+        fontWeight: 700,
+        backgroundColor: bg,
+        color: textCol,
+        border: `1px solid ${borderCol}`,
+        display: 'inline-flex',
+        alignItems: 'center',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+      }}>
+        {label}{timeStr}
+      </span>
+    );
+  };
+
+  const handleOpenPdf = () => {
+    const numericId = getNumericId(id);
+    window.open(`${api.defaults.baseURL || '/api'}/papers/${numericId}/pdf`, '_blank');
+  };
+
   // Derive timeline status states
   const isApproved = paper.status === 'APPROVED';
   const isRejected = paper.status === 'REJECTED';
@@ -212,16 +287,17 @@ const ReviewPaperDummy = () => {
             </button>
             <div>
               <h1 className={styles.pageTitle}>{paper.title}</h1>
-              <p className={styles.pageSubtext} style={{ marginTop: '0.25rem' }}>
-                <span style={{ backgroundColor: '#f1f5f9', color: '#475569', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 600, marginRight: '0.5rem' }}>
-                  {paper.category}
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                <span style={{ backgroundColor: '#f0fdf4', color: '#047857', border: '1px solid #a7f3d0', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600 }}>
+                  Publication ID: {paper.formattedPublicationId || `PUB-${paper.id}`}
                 </span>
-                {paper.subcategory && (
-                  <span style={{ backgroundColor: '#f1f5f9', color: '#475569', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 600 }}>
-                    {paper.subcategory}
-                  </span>
-                )}
-              </p>
+                <span style={{ backgroundColor: '#f0fdf4', color: '#047857', border: '1px solid #a7f3d0', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600 }}>
+                  {paper.category || 'General'}
+                </span>
+                <span style={{ backgroundColor: '#f0fdf4', color: '#047857', border: '1px solid #a7f3d0', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600 }}>
+                  {paper.subcategory || 'General'}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -231,94 +307,116 @@ const ReviewPaperDummy = () => {
             {/* Left Column */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               
-              {/* Manuscript Box */}
-              <div className={styles.card} style={{ position: 'relative' }}>
-                <div style={{ display: 'flex', justifyContent: 'between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                  <h2 className={styles.cardTitle} style={{ margin: 0 }}>Manuscript</h2>
-                  
-                  {/* Status Label + Assigned Time moved to top right corner next to title */}
-                  <span 
-                    className={`${styles.statusBadge} ${
-                      isApproved ? styles.statusApproved : isRejected ? styles.statusRejected : styles.statusPending
-                    }`}
-                    style={{ position: 'absolute', right: '1.5rem', top: '1.5rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
-                  >
-                    {paper.status === 'PENDING' || paper.status === 'SUBMITTED' ? 'UNDER REVIEW' : paper.status}
+              {/* Submission Details Card */}
+              <div className={styles.card} style={{ position: 'relative', padding: '1.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <span style={{
+                      padding: '0.35rem 0.75rem',
+                      borderRadius: '6px',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      backgroundColor: '#eff6ff',
+                      color: '#1e40af',
+                      border: '1px solid #bfdbfe',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                    }}>
+                      SUBMITTED AT : {formatFullDateTime(paper.submittedAt)}
+                    </span>
                     {paper.supervisorAssignedAt && (
-                      <span style={{ fontWeight: 400, opacity: 0.85, fontSize: '0.7rem', borderLeft: '1px solid currentColor', paddingLeft: '0.4rem', marginLeft: '0.2rem' }}>
-                        Assigned: {formatDateTime(paper.supervisorAssignedAt).split(' - ')[0]}
+                      <span style={{
+                        padding: '0.35rem 0.75rem',
+                        borderRadius: '6px',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        backgroundColor: '#eff6ff',
+                        color: '#1e40af',
+                        border: '1px solid #bfdbfe',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                      }}>
+                        ASSIGNED AT : {formatFullDateTime(paper.supervisorAssignedAt)}
                       </span>
                     )}
-                  </span>
+                  </div>
+                  <div>
+                    {getTopRightStatusBadge()}
+                  </div>
                 </div>
 
-                <div style={{ border: '2px dashed #cbd5e1', borderRadius: '8px', padding: '2.5rem', textAlign: 'center', backgroundColor: '#f8fafc' }}>
-                  <FileText size={40} style={{ color: '#94a3b8', marginBottom: '0.75rem', marginLeft: 'auto', marginRight: 'auto' }} />
-                  <p style={{ fontWeight: 600, fontSize: '0.9rem', color: '#334155', margin: '0 0 0.25rem 0' }}>
-                    {paper.pdfFileName || 'manuscript.pdf'}
-                  </p>
-                  <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '0 0 1rem 0' }}>
-                    {paper.pages || 15} pages &bull; PDF document format
-                  </p>
-                  <button 
-                    type="button"
-                    style={{
-                      backgroundColor: '#ffffff',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '6px',
-                      padding: '0.4rem 1rem',
-                      fontSize: '0.8rem',
-                      fontWeight: 600,
-                      color: '#475569',
-                      cursor: 'pointer'
-                    }}
-                    onClick={() => {
-                      alert('Opening PDF viewer helper...');
-                    }}
-                  >
-                    Open in new tab
-                  </button>
-                </div>
-              </div>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', marginBottom: '1.25rem' }}>Submission Details</h3>
 
-              {/* Submission details */}
-              <div className={styles.card}>
-                <h2 className={styles.cardTitle} style={{ marginBottom: '1.25rem' }}>Submission details</h2>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Student</span>
-                    <p style={{ fontSize: '0.9rem', fontWeight: 600, color: '#1e293b', margin: '0.1rem 0 0 0' }}>
-                      {paper.studentName} &mdash; University of Colombo
-                    </p>
+                {paper.abstractText && paper.abstractText.trim() !== '' && (
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Abstract</h3>
+                    <p style={{ fontSize: '0.95rem', color: '#334155', lineHeight: '1.6' }}>{paper.abstractText}</p>
                   </div>
+                )}
 
-                  <div>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Abstract</span>
-                    <p style={{ fontSize: '0.85rem', color: '#475569', lineHeight: '1.6', margin: '0.2rem 0 0 0' }}>
-                      {paper.abstractText}
-                    </p>
+                {paper.researchGap && paper.researchGap.trim() !== '' && (
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Research Gap Found</h3>
+                    <p style={{ fontSize: '0.95rem', color: '#334155', lineHeight: '1.6' }}>{paper.researchGap}</p>
                   </div>
+                )}
 
-                  {paper.researchGap && (
-                    <div>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Research gap</span>
-                      <p style={{ fontSize: '0.85rem', color: '#475569', lineHeight: '1.6', margin: '0.2rem 0 0 0' }}>
-                        {paper.researchGap}
-                      </p>
-                    </div>
-                  )}
-
-                  {paper.keywords && (
-                    <div>
-                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
-                        {paper.keywords.split(',').map((kw) => (
-                          <span key={kw} style={{ backgroundColor: '#2563eb', color: '#ffffff', fontSize: '0.75rem', fontWeight: 600, padding: '0.2rem 0.6rem', borderRadius: '12px' }}>
-                            {kw.trim()}
+                {paper.keywords && paper.keywords.trim() !== '' && (
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Keywords</h3>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                      {paper.keywords.split(',').map((kw) => {
+                        const trimmed = kw.trim();
+                        return trimmed && (
+                          <span key={trimmed} style={{ fontSize: '0.8rem', backgroundColor: '#e2e8f0', color: '#475569', padding: '0.25rem 0.75rem', borderRadius: '9999px', fontWeight: 500 }}>
+                            {trimmed}
                           </span>
-                        ))}
-                      </div>
+                        );
+                      })}
                     </div>
-                  )}
+                  </div>
+                )}
+
+                {paper.comments && paper.comments.trim() !== '' && (
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Comment from Author</h3>
+                    <p style={{ fontSize: '0.95rem', color: '#334155', lineHeight: '1.6' }}>{paper.comments}</p>
+                  </div>
+                )}
+
+                <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '1.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', alignItems: 'end' }}>
+                  <div>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Author</span>
+                    <p style={{ fontSize: '0.9rem', fontWeight: 600, color: '#0f172a', margin: '0.1rem 0 0 0' }}>{paper.studentName}</p>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>University</span>
+                    <p style={{ fontSize: '0.9rem', fontWeight: 600, color: '#0f172a', margin: '0.1rem 0 0 0' }}>{paper.studentUniversity || 'University of Ruhuna'}</p>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Author Email</span>
+                    <p style={{ fontSize: '0.9rem', fontWeight: 600, color: '#0f172a', margin: '0.1rem 0 0 0' }}>{paper.studentEmail}</p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <button 
+                      type="button"
+                      style={{
+                        backgroundColor: '#ffffff',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '6px',
+                        padding: '0.5rem 1rem',
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                        color: '#475569',
+                        cursor: 'pointer'
+                      }}
+                      onClick={handleOpenPdf}
+                    >
+                      Open in new tab
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -430,146 +528,321 @@ const ReviewPaperDummy = () => {
 
             </div>
 
-            {/* Right Column: Review history */}
-            <div className={styles.card}>
-              <h2 className={styles.cardTitle} style={{ marginBottom: '1.5rem' }}>Review history</h2>
+            {/* Right Column: Review History */}
+            <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1.5rem' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', marginBottom: '1.5rem' }}>Review History</h3>
               
-              {/* Timeline Container */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', position: 'relative', paddingLeft: '1.5rem', borderLeft: '2px solid #cbd5e1' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', position: 'relative', paddingLeft: '2.5rem' }}>
+                {/* Main vertical connector line */}
+                <div style={{ position: 'absolute', left: '15px', top: '10px', bottom: '10px', width: '2px', backgroundColor: '#e2e8f0', zIndex: 0 }}></div>
                 
                 {/* 1. Submitted */}
-                <div style={{ position: 'relative' }}>
-                  <div style={{ position: 'absolute', left: '-2.15rem', top: '0.1rem', backgroundColor: '#2563eb', color: '#ffffff', borderRadius: '50%', width: '1.25rem', height: '1.25rem', display: 'flex', alignItems: 'center', justify: 'center' }}>
-                    <Check size={10} style={{ color: '#ffffff', strokeWidth: 4 }} />
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                    <div>
-                      <h4 style={{ margin: '0 0 0.15rem 0', fontSize: '0.85rem', fontWeight: 700, color: '#1e293b' }}>Submitted</h4>
+                {(() => {
+                  const active = !!paper.submittedAt;
+                  return (
+                    <div style={{ position: 'relative', width: '100%' }}>
+                      <div style={{ 
+                        position: 'absolute', left: '-37px', top: '12px', width: '24px', height: '24px', borderRadius: '50%', 
+                        backgroundColor: active ? '#2563eb' : '#ffffff', border: '2px solid #2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', color: active ? '#ffffff' : '#2563eb', zIndex: 1 
+                      }}>
+                        {active ? <Check size={14} /> : <Clock size={14} />}
+                      </div>
+                      
+                      <div style={{ 
+                        backgroundColor: active ? '#ffffff' : '#f8fafc', 
+                        border: `1px solid ${active ? '#2563eb' : '#e2e8f0'}`, 
+                        borderLeft: `4px solid ${active ? '#2563eb' : '#cbd5e1'}`, 
+                        borderRadius: '8px', padding: '0.75rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem',
+                        boxShadow: active ? '0 1px 3px rgba(0,0,0,0.05)' : 'none',
+                        position: 'relative'
+                      }}>
+                        {active && paper.submittedAt && (
+                          <span style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', backgroundColor: '#eff6ff', color: '#1e40af', padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 600, border: '1px solid #bfdbfe' }}>
+                            At {new Date(paper.submittedAt).toLocaleString('en-GB')}
+                          </span>
+                        )}
+                        <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: active ? '#1e40af' : '#64748b', margin: 0 }}>Submitted</h4>
+                        {active ? (
+                          <p style={{ fontSize: '0.8rem', color: '#475569', margin: '0.1rem 0 0 0' }}>
+                            By {paper.studentName}
+                          </p>
+                        ) : (
+                          <span style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.8rem' }}>Pending submission</span>
+                        )}
+                      </div>
                     </div>
-                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{formatDateTime(paper.submittedAt)}</span>
-                  </div>
-                </div>
+                  );
+                })()}
 
                 {/* 2. Administrator Validation */}
-                <div style={{ position: 'relative' }}>
-                  <div style={{ position: 'absolute', left: '-2.15rem', top: '0.1rem', backgroundColor: '#2563eb', color: '#ffffff', borderRadius: '50%', width: '1.25rem', height: '1.25rem', display: 'flex', alignItems: 'center', justify: 'center' }}>
-                    <Check size={10} style={{ color: '#ffffff', strokeWidth: 4 }} />
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                    <div>
-                      <h4 style={{ margin: '0 0 0.15rem 0', fontSize: '0.85rem', fontWeight: 700, color: '#1e293b' }}>Administrator Validation</h4>
-                      <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b' }}>By Repository Administrator</p>
+                {(() => {
+                  const active = !!paper.submittedAt;
+                  return (
+                    <div style={{ position: 'relative', width: '100%' }}>
+                      <div style={{ 
+                        position: 'absolute', left: '-37px', top: '12px', width: '24px', height: '24px', borderRadius: '50%', 
+                        backgroundColor: active ? '#ca8a04' : '#ffffff', border: '2px solid #ca8a04', display: 'flex', alignItems: 'center', justifyContent: 'center', color: active ? '#ffffff' : '#ca8a04', zIndex: 1 
+                      }}>
+                        {active ? <Check size={14} /> : <Clock size={14} />}
+                      </div>
+                      
+                      <div style={{ 
+                        backgroundColor: active ? '#ffffff' : '#f8fafc', 
+                        border: `1px solid ${active ? '#ca8a04' : '#e2e8f0'}`, 
+                        borderLeft: `4px solid ${active ? '#ca8a04' : '#cbd5e1'}`, 
+                        borderRadius: '8px', padding: '0.75rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem',
+                        boxShadow: active ? '0 1px 3px rgba(0,0,0,0.05)' : 'none'
+                      }}>
+                        <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: active ? '#854d0e' : '#64748b', margin: 0 }}>Administrator Validation</h4>
+                        {active ? (
+                          <p style={{ fontSize: '0.8rem', color: '#475569', margin: '0.1rem 0 0 0' }}>
+                            By Repository Administrator
+                          </p>
+                        ) : (
+                          <span style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.8rem' }}>Pending validation</span>
+                        )}
+                      </div>
                     </div>
-                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{formatDateTime(paper.adminValidatedAt)}</span>
-                  </div>
-                </div>
+                  );
+                })()}
 
-                {/* 3. Duplicate Check */}
-                <div style={{ position: 'relative' }}>
-                  <div style={{ position: 'absolute', left: '-2.15rem', top: '0.1rem', backgroundColor: '#2563eb', color: '#ffffff', borderRadius: '50%', width: '1.25rem', height: '1.25rem', display: 'flex', alignItems: 'center', justify: 'center' }}>
-                    <Check size={10} style={{ color: '#ffffff', strokeWidth: 4 }} />
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                    <div>
-                      <h4 style={{ margin: '0 0 0.15rem 0', fontSize: '0.85rem', fontWeight: 700, color: '#1e293b' }}>Duplicate Check</h4>
+                {/* 2.1 Duplicate Check (Sub-section) */}
+                {(() => {
+                  const active = !!paper.duplicateCheckedAt;
+                  const isDuplicate = paper.adminApprovalStatus === 'DUPLICATE DETECTED';
+                  return (
+                    <div style={{ position: 'relative', width: 'calc(100% - 2rem)', marginLeft: '2rem' }}>
+                      <div style={{ position: 'absolute', left: '-2rem', top: '22px', width: '2rem', height: '2px', backgroundColor: active ? '#ca8a04' : '#e2e8f0', zIndex: 0 }}></div>
+                      
+                      <div style={{ 
+                        position: 'absolute', left: '-10px', top: '12px', width: '20px', height: '20px', borderRadius: '50%', 
+                        backgroundColor: active ? '#ca8a04' : '#ffffff', border: '2px solid #ca8a04', display: 'flex', alignItems: 'center', justifyContent: 'center', color: active ? '#ffffff' : '#ca8a04', zIndex: 1 
+                      }}>
+                        {active ? <Check size={12} /> : <Clock size={12} />}
+                      </div>
+                      
+                      <div style={{ 
+                        backgroundColor: active ? '#ffffff' : '#f8fafc', 
+                        border: `1px solid ${active ? '#ca8a04' : '#e2e8f0'}`, 
+                        borderLeft: `4px solid ${active ? '#ca8a04' : '#cbd5e1'}`, 
+                        borderRadius: '8px', padding: '0.75rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem',
+                        boxShadow: active ? '0 1px 3px rgba(0,0,0,0.05)' : 'none',
+                        position: 'relative'
+                      }}>
+                        {active && paper.duplicateCheckedAt && (
+                          <span style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', backgroundColor: '#fef3c7', color: '#78350f', padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 600, border: '1px solid #fde68a' }}>
+                            At {new Date(paper.duplicateCheckedAt).toLocaleString('en-GB')}
+                          </span>
+                        )}
+                        <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: active ? '#854d0e' : '#64748b', margin: 0 }}>Duplicate Check</h4>
+                        {active ? (
+                          <span style={{
+                            alignSelf: 'flex-start',
+                            marginTop: '0.25rem',
+                            padding: '0.15rem 0.5rem',
+                            fontSize: '0.7rem',
+                            fontWeight: '700',
+                            borderRadius: '4px',
+                            backgroundColor: isDuplicate ? '#fee2e2' : '#d1fae5',
+                            color: isDuplicate ? '#991b1b' : '#065f46'
+                          }}>
+                            {isDuplicate ? 'Refuse / Duplicate Detected' : 'Verified / No Duplicate Found'}
+                          </span>
+                        ) : (
+                          <span style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.75rem' }}>Pending Duplicate Check</span>
+                        )}
+                      </div>
                     </div>
-                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{formatDateTime(paper.duplicateCheckedAt)}</span>
-                  </div>
-                </div>
+                  );
+                })()}
 
-                {/* 4. Supervisor Assigned */}
-                <div style={{ position: 'relative' }}>
-                  <div style={{ position: 'absolute', left: '-2.15rem', top: '0.1rem', backgroundColor: '#2563eb', color: '#ffffff', borderRadius: '50%', width: '1.25rem', height: '1.25rem', display: 'flex', alignItems: 'center', justify: 'center' }}>
-                    <Check size={10} style={{ color: '#ffffff', strokeWidth: 4 }} />
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                    <div>
-                      <h4 style={{ margin: '0 0 0.15rem 0', fontSize: '0.85rem', fontWeight: 700, color: '#1e293b' }}>Supervisor Assigned</h4>
+                {/* 2.2 Supervisor Assigned (Sub-section) */}
+                {(() => {
+                  const isAssigned = !!paper.supervisorAssignedAt;
+                  const active = isAssigned;
+                  const hasSubmission = !!paper.submittedAt;
+                  
+                  return (
+                    <div style={{ position: 'relative', width: 'calc(100% - 2rem)', marginLeft: '2rem' }}>
+                      <div style={{ position: 'absolute', left: '-2rem', top: '22px', width: '2rem', height: '2px', backgroundColor: active ? '#ca8a04' : '#e2e8f0', zIndex: 0 }}></div>
+                      
+                      <div style={{ 
+                        position: 'absolute', left: '-10px', top: '12px', width: '20px', height: '20px', borderRadius: '50%', 
+                        backgroundColor: isAssigned ? '#ca8a04' : '#ffffff', border: '2px solid #ca8a04', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isAssigned ? '#ffffff' : '#ca8a04', zIndex: 1 
+                      }}>
+                        {isAssigned ? <Check size={12} /> : <Clock size={12} />}
+                      </div>
+                      
+                      <div style={{ 
+                        backgroundColor: active ? '#ffffff' : '#f8fafc', 
+                        border: `1px solid ${active ? '#ca8a04' : '#e2e8f0'}`, 
+                        borderLeft: `4px solid ${isAssigned ? '#ca8a04' : '#cbd5e1'}`, 
+                        borderRadius: '8px', padding: '0.75rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem',
+                        boxShadow: active ? '0 1px 3px rgba(0,0,0,0.05)' : 'none',
+                        position: 'relative'
+                      }}>
+                        {isAssigned && paper.supervisorAssignedAt && (
+                          <span style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', backgroundColor: '#fef3c7', color: '#78350f', padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 600, border: '1px solid #fde68a' }}>
+                            At {new Date(paper.supervisorAssignedAt).toLocaleString('en-GB')}
+                          </span>
+                        )}
+                        <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: active ? '#854d0e' : '#64748b', margin: 0 }}>Supervisor Assigned</h4>
+                        {hasSubmission ? (
+                          <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: '0.1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                            <div>
+                              <strong>Assigned Supervisor:</strong>{' '}
+                              <span style={{ fontWeight: 600 }}>
+                                {getSupervisorNameByEmail(paper.assignedSupervisorEmail)}
+                              </span>
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: '#475569', margin: '0.1rem 0 0 0' }}>
+                              By Repository Administrator
+                            </div>
+                          </div>
+                        ) : (
+                          <span style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.75rem' }}>Pending Assignment</span>
+                        )}
+                      </div>
                     </div>
-                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{formatDateTime(paper.supervisorAssignedAt)}</span>
-                  </div>
-                </div>
+                  );
+                })()}
 
-                {/* 5. Under Review */}
-                <div style={{ position: 'relative' }}>
-                  <div style={{ position: 'absolute', left: '-2.15rem', top: '0.1rem', backgroundColor: '#2563eb', color: '#ffffff', borderRadius: '50%', width: '1.25rem', height: '1.25rem', display: 'flex', alignItems: 'center', justify: 'center' }}>
-                    <Check size={10} style={{ color: '#ffffff', strokeWidth: 4 }} />
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                    <div>
-                      <h4 style={{ margin: '0 0 0.15rem 0', fontSize: '0.85rem', fontWeight: 700, color: '#1e293b' }}>Under Review</h4>
-                      <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b' }}>By {supervisorDisplayName}</p>
+                {/* 3. Under Supervisor Review */}
+                {(() => {
+                  const active = !!paper.supervisorAssignedAt;
+                  return (
+                    <div style={{ position: 'relative', width: '100%' }}>
+                      <div style={{ 
+                        position: 'absolute', left: '-37px', top: '12px', width: '24px', height: '24px', borderRadius: '50%', 
+                        backgroundColor: active ? '#10b981' : '#ffffff', border: '2px solid #10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', color: active ? '#ffffff' : '#10b981', zIndex: 1 
+                      }}>
+                        {active ? <Check size={14} /> : <Clock size={14} />}
+                      </div>
+                      
+                      <div style={{ 
+                        backgroundColor: active ? '#ffffff' : '#f8fafc', 
+                        border: `1px solid ${active ? '#10b981' : '#e2e8f0'}`, 
+                        borderLeft: `4px solid ${active ? '#10b981' : '#cbd5e1'}`, 
+                        borderRadius: '8px', padding: '0.75rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem',
+                        boxShadow: active ? '0 1px 3px rgba(0,0,0,0.05)' : 'none'
+                      }}>
+                        <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: active ? '#047857' : '#64748b', margin: 0 }}>Under Supervisor Review</h4>
+                        {active ? (
+                          <p style={{ fontSize: '0.8rem', color: '#475569', margin: '0.1rem 0 0 0' }}>
+                            By {paper.supervisorName || getSupervisorNameByEmail(paper.assignedSupervisorEmail)}
+                          </p>
+                        ) : (
+                          <span style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.8rem' }}>Pending Review</span>
+                        )}
+                      </div>
                     </div>
-                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{formatDateTime(paper.underReviewAt || paper.supervisorAssignedAt)}</span>
-                  </div>
-                </div>
+                  );
+                })()}
 
-                {/* 6. Approved */}
-                <div style={{ position: 'relative' }}>
-                  <div style={{ 
-                    position: 'absolute', 
-                    left: '-2.15rem', 
-                    top: '0.1rem', 
-                    backgroundColor: isApproved ? '#2563eb' : '#cbd5e1', 
-                    color: '#ffffff', 
-                    borderRadius: '50%', 
-                    width: '1.25rem', 
-                    height: '1.25rem', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center' 
-                  }}>
-                    {isApproved ? (
-                      <Check size={10} style={{ color: '#ffffff', strokeWidth: 4 }} />
-                    ) : (
-                      <Clock size={10} style={{ color: '#ffffff' }} />
-                    )}
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', opacity: isApproved ? 1 : 0.55 }}>
-                    <div>
-                      <h4 style={{ margin: '0 0 0.15rem 0', fontSize: '0.85rem', fontWeight: 700, color: '#1e293b' }}>
-                        {isRejected ? 'Rejected' : 'Approved'}
-                      </h4>
-                      <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b' }}>By {supervisorDisplayName}</p>
-                    </div>
-                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{formatDateTime(paper.reviewedAt)}</span>
-                  </div>
-                </div>
+                {/* 3.1 Supervisor Decision (Sub-section) */}
+                {(() => {
+                  const isAssigned = !!paper.supervisorAssignedAt;
+                  const active = isAssigned && (paper.status === 'APPROVED' || paper.status === 'REJECTED');
+                  const approvalStatus = paper.status;
+                  
+                  const getDecisionBadge = () => {
+                    if (approvalStatus === 'APPROVED') {
+                      return { text: 'Approved', bg: '#d1fae5', color: '#065f46' };
+                    }
+                    if (approvalStatus === 'REJECTED') {
+                      return { text: 'REJECTED', bg: '#fee2e2', color: '#991b1b' };
+                    }
+                    return { text: 'UNDER REVIEW', bg: '#dbeafe', color: '#1e40af' };
+                  };
+                  
+                  const badge = getDecisionBadge();
 
-                {/* 7. Published */}
-                <div style={{ position: 'relative' }}>
-                  <div style={{ 
-                    position: 'absolute', 
-                    left: '-2.15rem', 
-                    top: '0.1rem', 
-                    backgroundColor: paper.status === 'PUBLISHED' ? '#2563eb' : '#cbd5e1', 
-                    color: '#ffffff', 
-                    borderRadius: '50%', 
-                    width: '1.25rem', 
-                    height: '1.25rem', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center' 
-                  }}>
-                    {paper.status === 'PUBLISHED' ? (
-                      <Check size={10} style={{ color: '#ffffff', strokeWidth: 4 }} />
-                    ) : (
-                      <Clock size={10} style={{ color: '#ffffff' }} />
-                    )}
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', opacity: paper.status === 'PUBLISHED' ? 1 : 0.55 }}>
-                    <div>
-                      <h4 style={{ margin: '0 0 0.15rem 0', fontSize: '0.85rem', fontWeight: 700, color: '#1e293b' }}>Published</h4>
-                      <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748b' }}>By {paper.studentName}</p>
+                  return (
+                    <div style={{ position: 'relative', width: 'calc(100% - 2rem)', marginLeft: '2rem' }}>
+                      <div style={{ position: 'absolute', left: '-2rem', top: '22px', width: '2rem', height: '2px', backgroundColor: isAssigned ? '#10b981' : '#e2e8f0', zIndex: 0 }}></div>
+                      
+                      <div style={{ 
+                        position: 'absolute', left: '-10px', top: '12px', width: '20px', height: '20px', borderRadius: '50%', 
+                        backgroundColor: active ? '#10b981' : '#ffffff', border: '2px solid #10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', color: active ? '#ffffff' : '#10b981', zIndex: 1 
+                      }}>
+                        {active ? <Check size={12} /> : <Clock size={12} />}
+                      </div>
+                      
+                      <div style={{ 
+                        backgroundColor: isAssigned ? '#ffffff' : '#f8fafc', 
+                        border: `1px solid ${isAssigned ? '#10b981' : '#e2e8f0'}`, 
+                        borderLeft: `4px solid ${active ? '#10b981' : '#cbd5e1'}`, 
+                        borderRadius: '8px', padding: '0.75rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem',
+                        boxShadow: isAssigned ? '0 1px 3px rgba(0,0,0,0.05)' : 'none',
+                        position: 'relative'
+                      }}>
+                        {active && paper.supervisorDecideAt && (
+                          <span style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', backgroundColor: '#f0fdf4', color: '#047857', padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 600, border: '1px solid #a7f3d0' }}>
+                            At {new Date(paper.supervisorDecideAt).toLocaleString('en-GB')}
+                          </span>
+                        )}
+                        <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: isAssigned ? '#047857' : '#64748b', margin: 0 }}>Supervisor Decision</h4>
+                        {isAssigned ? (
+                          <span style={{
+                            alignSelf: 'flex-start',
+                            marginTop: '0.25rem',
+                            padding: '0.15rem 0.5rem',
+                            fontSize: '0.7rem',
+                            fontWeight: '700',
+                            borderRadius: '4px',
+                            backgroundColor: badge.bg,
+                            color: badge.color
+                          }}>
+                            {badge.text}
+                          </span>
+                        ) : (
+                          <span style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.75rem' }}>Pending Decision</span>
+                        )}
+                      </div>
                     </div>
-                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{formatDateTime(paper.publishedAt)}</span>
-                  </div>
-                </div>
+                  );
+                })()}
+
+                {/* 4. Published */}
+                {(() => {
+                  const active = paper.status === 'PUBLISHED' || paper.isPublished;
+                  return (
+                    <div style={{ position: 'relative', width: '100%' }}>
+                      <div style={{ 
+                        position: 'absolute', left: '-37px', top: '12px', width: '24px', height: '24px', borderRadius: '50%', 
+                        backgroundColor: active ? '#2563eb' : '#ffffff', border: '2px solid #2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', color: active ? '#ffffff' : '#2563eb', zIndex: 1 
+                      }}>
+                        {active ? <Check size={14} /> : <Clock size={14} />}
+                      </div>
+                      
+                      <div style={{ 
+                        backgroundColor: active ? '#ffffff' : '#f8fafc', 
+                        border: `1px solid ${active ? '#2563eb' : '#e2e8f0'}`, 
+                        borderLeft: `4px solid ${active ? '#2563eb' : '#cbd5e1'}`, 
+                        borderRadius: '8px', padding: '0.75rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem',
+                        boxShadow: active ? '0 1px 3px rgba(0,0,0,0.05)' : 'none',
+                        position: 'relative'
+                      }}>
+                        {active && paper.publishedAt && (
+                          <span style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', backgroundColor: '#eff6ff', color: '#1e40af', padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 600, border: '1px solid #bfdbfe' }}>
+                            At {new Date(paper.publishedAt).toLocaleString('en-GB')}
+                          </span>
+                        )}
+                        <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: active ? '#1e40af' : '#64748b', margin: 0 }}>Published</h4>
+                        {active ? (
+                          <p style={{ fontSize: '0.8rem', color: '#475569', margin: '0.1rem 0 0 0' }}>
+                            By {paper.studentName}
+                          </p>
+                        ) : (
+                          <span style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.8rem' }}>Pending Publication</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
 
               </div>
-
             </div>
-
           </div>
         </main>
       </div>

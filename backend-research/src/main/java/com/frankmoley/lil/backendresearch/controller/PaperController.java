@@ -271,6 +271,7 @@ public class PaperController {
         paper.setComments(reviewData.getComments());
         paper.setSatisfactionLevel(reviewData.getSatisfactionLevel());
         paper.setReviewedAt(LocalDateTime.now());
+        paper.setSupervisorDecideAt(LocalDateTime.now());
         if (paper.getUnderReviewAt() == null) {
             paper.setUnderReviewAt(LocalDateTime.now().minusDays(1));
         }
