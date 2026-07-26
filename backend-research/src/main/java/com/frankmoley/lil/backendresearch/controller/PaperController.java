@@ -271,7 +271,7 @@ public class PaperController {
         paper.setComments(reviewData.getComments());
         paper.setSatisfactionLevel(reviewData.getSatisfactionLevel());
         paper.setReviewedAt(LocalDateTime.now());
-        paper.setSupervisorDecideAt(LocalDateTime.now());
+        paper.setSupervisorDesignedAt(LocalDateTime.now());
         if (paper.getUnderReviewAt() == null) {
             paper.setUnderReviewAt(LocalDateTime.now().minusDays(1));
         }
@@ -279,12 +279,21 @@ public class PaperController {
         Paper saved = paperRepository.save(paper);
 
         // Notify the student
-        notificationService.createNotification(
-            paper.getStudentEmail(),
-            "Paper review complete",
-            "Your paper '" + paper.getTitle() + "' has been " + paper.getStatus().toLowerCase() + " by supervisor.",
-            "FEEDBACK"
-        );
+        if ("APPROVED".equalsIgnoreCase(paper.getStatus())) {
+            notificationService.createNotification(
+                paper.getStudentEmail(),
+                "Research Approved",
+                "Your research paper '" + paper.getTitle() + "' has been approved by your supervisor. You are now permitted to publish it.",
+                "FEEDBACK"
+            );
+        } else if ("REJECTED".equalsIgnoreCase(paper.getStatus())) {
+            notificationService.createNotification(
+                paper.getStudentEmail(),
+                "Research Rejected",
+                "Your research paper '" + paper.getTitle() + "' was not approved by your supervisor. We encourage you to address the feedback and make a new submission.",
+                "FEEDBACK"
+            );
+        }
 
         populateStudentName(saved);
         populateFormattedPublicationId(saved);

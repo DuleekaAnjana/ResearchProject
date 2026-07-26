@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ChevronRight, ArrowLeft, Send, AlertCircle, FileText, Check, Clock } from 'lucide-react';
+import { ChevronRight, ArrowLeft, Send, AlertCircle, FileText, Check, Clock, ExternalLink, Download } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import DashboardHeader from '../../components/layout/DashboardHeader';
@@ -21,8 +21,10 @@ const ReviewPaperDummy = () => {
   const [researchGapFeedback, setResearchGapFeedback] = useState('');
   const [missingFindings, setMissingFindings] = useState('');
   const [comments, setComments] = useState('');
-  const [satisfactionLevel, setSatisfactionLevel] = useState(4);
+  const [satisfactionLevel, setSatisfactionLevel] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [showConfirmPopup, setShowConfirmPopup] = useState(false);
+  const [pendingDecision, setPendingDecision] = useState(null);
 
   // Parse numeric ID from "pub-001" or fallback
   const getNumericId = (pubId) => {
@@ -49,11 +51,12 @@ const ReviewPaperDummy = () => {
         const data = await api.get(`/papers/${numericId}`);
         if (data) {
           setPaper(data);
-          setResearchDirection(data.researchDirection || '');
-          setResearchGapFeedback(data.researchGapFeedback || '');
-          setMissingFindings(data.missingFindings || '');
-          setComments(data.comments || '');
-          setSatisfactionLevel(data.satisfactionLevel || 4);
+          const isReviewed = data.status === 'APPROVED' || data.status === 'REJECTED';
+          setResearchDirection(isReviewed ? (data.researchDirection || '') : '');
+          setResearchGapFeedback(isReviewed ? (data.researchGapFeedback || '') : '');
+          setMissingFindings(isReviewed ? (data.missingFindings || '') : '');
+          setComments(isReviewed ? (data.comments || '') : '');
+          setSatisfactionLevel(isReviewed ? (data.satisfactionLevel || 0) : 0);
         }
       } catch (err) {
         console.error('Failed to fetch paper details, falling back to mock:', err);
@@ -79,7 +82,8 @@ const ReviewPaperDummy = () => {
           supervisorAssignedAt: '2026-07-12T15:26:00',
           underReviewAt: '2026-07-14T15:26:00',
           reviewedAt: null,
-          publishedAt: null
+          publishedAt: null,
+          supervisorDesignedAt: null
         });
       } finally {
         setLoading(false);
@@ -127,9 +131,7 @@ const ReviewPaperDummy = () => {
     return `${formattedDate} - ${formattedTime}`;
   };
 
-  const handleAction = async (actionType) => {
-    if (submitting) return;
-
+  const handleAction = (actionType) => {
     // Reject validation
     if (actionType === 'REJECTED') {
       const hasReason = researchDirection.trim() || researchGapFeedback.trim() || missingFindings.trim() || comments.trim();
@@ -147,10 +149,17 @@ const ReviewPaperDummy = () => {
       }
     }
 
+    setPendingDecision(actionType);
+    setShowConfirmPopup(true);
+  };
+
+  const handleConfirmDecision = async () => {
+    if (!pendingDecision) return;
     setSubmitting(true);
+    setShowConfirmPopup(false);
     try {
       const payload = {
-        status: actionType,
+        status: pendingDecision,
         researchDirection,
         researchGapFeedback,
         missingFindings,
@@ -163,7 +172,6 @@ const ReviewPaperDummy = () => {
       
       if (updatedPaper) {
         setPaper(updatedPaper);
-        alert(`Successfully ${actionType === 'APPROVED' ? 'approved' : 'rejected'} this research paper!`);
         navigate('/supervisor/assigned');
       }
     } catch (err) {
@@ -172,13 +180,14 @@ const ReviewPaperDummy = () => {
       // Local simulated update
       setPaper(prev => ({
         ...prev,
-        status: actionType,
+        status: pendingDecision,
         researchDirection,
         researchGapFeedback,
         missingFindings,
         comments,
         satisfactionLevel,
-        reviewedAt: new Date().toISOString()
+        reviewedAt: new Date().toISOString(),
+        supervisorDecideAt: new Date().toISOString()
       }));
       navigate('/supervisor/assigned');
     } finally {
@@ -223,7 +232,7 @@ const ReviewPaperDummy = () => {
       borderCol = '#fca5a5';
     }
 
-    const timeStr = paper.supervisorDecideAt ? ` | AT: ${formatFullDateTime(paper.supervisorDecideAt)}` : '';
+    const timeStr = paper.supervisorDesignedAt ? ` | AT ${formatFullDateTime(paper.supervisorDesignedAt)}` : '';
 
     return (
       <span style={{
@@ -246,6 +255,26 @@ const ReviewPaperDummy = () => {
   const handleOpenPdf = () => {
     const numericId = getNumericId(id);
     window.open(`${api.defaults.baseURL || '/api'}/papers/${numericId}/pdf`, '_blank');
+  };
+
+  const handleDownload = async () => {
+    if (!paper) return;
+    try {
+      const response = await fetch(`${api.defaults.baseURL || '/api'}/papers/${getNumericId(id)}/pdf`);
+      if (!response.ok) throw new Error('PDF download failed');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = paper.pdfFileName || `${paper.title.toLowerCase().replace(/[^a-z0-9]+/g, '_')}_manuscript.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to download PDF:', err);
+      alert('Failed to download PDF.');
+    }
   };
 
   // Derive timeline status states
@@ -302,7 +331,7 @@ const ReviewPaperDummy = () => {
           </div>
 
           {/* Left Column (Details & Form) and Right Column (History) */}
-          <div style={{ display: 'grid', gridTemplateColumns: '2.1fr 1fr', gap: '1.5rem', alignItems: 'start' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1.4fr', gap: '1.5rem', alignItems: 'start' }}>
             
             {/* Left Column */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -386,35 +415,59 @@ const ReviewPaperDummy = () => {
                   </div>
                 )}
 
-                <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '1.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', alignItems: 'end' }}>
-                  <div>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Author</span>
-                    <p style={{ fontSize: '0.9rem', fontWeight: 600, color: '#0f172a', margin: '0.1rem 0 0 0' }}>{paper.studentName}</p>
+                <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '1.5rem', display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1rem', alignItems: 'end' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.75rem' }}>
+                    <div>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Author</span>
+                      <p style={{ fontSize: '0.9rem', fontWeight: 600, color: '#0f172a', margin: '0.1rem 0 0 0' }}>{paper.studentName}</p>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>University</span>
+                      <p style={{ fontSize: '0.9rem', fontWeight: 600, color: '#0f172a', margin: '0.1rem 0 0 0' }}>{paper.studentUniversity || 'University of Ruhuna'}</p>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Author Email</span>
+                      <p style={{ fontSize: '0.9rem', fontWeight: 600, color: '#0f172a', margin: '0.1rem 0 0 0' }}>{paper.studentEmail}</p>
+                    </div>
                   </div>
-                  <div>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>University</span>
-                    <p style={{ fontSize: '0.9rem', fontWeight: 600, color: '#0f172a', margin: '0.1rem 0 0 0' }}>{paper.studentUniversity || 'University of Ruhuna'}</p>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Author Email</span>
-                    <p style={{ fontSize: '0.9rem', fontWeight: 600, color: '#0f172a', margin: '0.1rem 0 0 0' }}>{paper.studentEmail}</p>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
+                  <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                     <button 
                       type="button"
                       style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
                         backgroundColor: '#ffffff',
-                        border: '1px solid #cbd5e1',
+                        border: '1px solid #0f172a',
+                        color: '#0f172a',
+                        padding: '0.5rem 0.8rem',
                         borderRadius: '6px',
-                        padding: '0.5rem 1rem',
-                        fontSize: '0.8rem',
                         fontWeight: 600,
-                        color: '#475569',
+                        fontSize: '0.75rem',
                         cursor: 'pointer'
                       }}
                       onClick={handleOpenPdf}
                     >
-                      Open in new tab
+                      <ExternalLink size={14} /> Preview PDF
+                    </button>
+                    <button 
+                      type="button"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        backgroundColor: '#0f172a',
+                        border: 'none',
+                        color: '#ffffff',
+                        padding: '0.5rem 0.8rem',
+                        borderRadius: '6px',
+                        fontWeight: 600,
+                        fontSize: '0.75rem',
+                        cursor: 'pointer'
+                      }}
+                      onClick={handleDownload}
+                    >
+                      <Download size={14} /> Download PDF
                     </button>
                   </div>
                 </div>
@@ -422,7 +475,7 @@ const ReviewPaperDummy = () => {
 
               {/* Your decision */}
               <div className={styles.card}>
-                <h2 className={styles.cardTitle} style={{ marginBottom: '1.25rem' }}>Your decision</h2>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#10b981', marginBottom: '1.5rem' }}>Your Decision</h2>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                   <div>
@@ -433,7 +486,8 @@ const ReviewPaperDummy = () => {
                       placeholder="Advice the student on where to take this next."
                       value={researchDirection}
                       onChange={(e) => setResearchDirection(e.target.value)}
-                      style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.6rem', width: '100%', resize: 'none', background: '#ffffff' }}
+                      disabled={isApproved || isRejected}
+                      style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.6rem', width: '100%', resize: 'none', background: (isApproved || isRejected) ? '#f1f5f9' : '#ffffff', cursor: (isApproved || isRejected) ? 'not-allowed' : 'text' }}
                     />
                   </div>
 
@@ -445,7 +499,8 @@ const ReviewPaperDummy = () => {
                       placeholder="Comment on the identified research gap."
                       value={researchGapFeedback}
                       onChange={(e) => setResearchGapFeedback(e.target.value)}
-                      style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.6rem', width: '100%', resize: 'none', background: '#ffffff' }}
+                      disabled={isApproved || isRejected}
+                      style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.6rem', width: '100%', resize: 'none', background: (isApproved || isRejected) ? '#f1f5f9' : '#ffffff', cursor: (isApproved || isRejected) ? 'not-allowed' : 'text' }}
                     />
                   </div>
 
@@ -457,7 +512,8 @@ const ReviewPaperDummy = () => {
                       placeholder="Point out anything missing from the paper's evaluation."
                       value={missingFindings}
                       onChange={(e) => setMissingFindings(e.target.value)}
-                      style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.6rem', width: '100%', resize: 'none', background: '#ffffff' }}
+                      disabled={isApproved || isRejected}
+                      style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.6rem', width: '100%', resize: 'none', background: (isApproved || isRejected) ? '#f1f5f9' : '#ffffff', cursor: (isApproved || isRejected) ? 'not-allowed' : 'text' }}
                     />
                   </div>
 
@@ -469,7 +525,8 @@ const ReviewPaperDummy = () => {
                       placeholder="Overall comments and suggestions."
                       value={comments}
                       onChange={(e) => setComments(e.target.value)}
-                      style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.6rem', width: '100%', resize: 'none', background: '#ffffff' }}
+                      disabled={isApproved || isRejected}
+                      style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.6rem', width: '100%', resize: 'none', background: (isApproved || isRejected) ? '#f1f5f9' : '#ffffff', cursor: (isApproved || isRejected) ? 'not-allowed' : 'text' }}
                     />
                   </div>
 
@@ -479,11 +536,12 @@ const ReviewPaperDummy = () => {
                     </label>
                     <input
                       type="range"
-                      min="1"
+                      min="0"
                       max="5"
                       value={satisfactionLevel}
                       onChange={(e) => setSatisfactionLevel(parseInt(e.target.value, 10))}
-                      style={{ width: '100%', accentColor: '#10b981', cursor: 'pointer' }}
+                      disabled={isApproved || isRejected}
+                      style={{ width: '100%', accentColor: '#10b981', cursor: (isApproved || isRejected) ? 'not-allowed' : 'pointer' }}
                     />
                   </div>
 
@@ -492,6 +550,7 @@ const ReviewPaperDummy = () => {
                     <button
                       type="button"
                       onClick={() => handleAction('REJECTED')}
+                      disabled={isApproved || isRejected}
                       style={{
                         backgroundColor: '#ef4444',
                         color: '#ffffff',
@@ -499,8 +558,9 @@ const ReviewPaperDummy = () => {
                         borderRadius: '6px',
                         padding: '0.5rem 1.25rem',
                         fontWeight: 600,
-                        cursor: 'pointer',
-                        fontSize: '0.85rem'
+                        cursor: (isApproved || isRejected) ? 'not-allowed' : 'pointer',
+                        fontSize: '0.85rem',
+                        opacity: (isApproved || isRejected) ? 0.5 : 1
                       }}
                     >
                       Reject
@@ -508,6 +568,7 @@ const ReviewPaperDummy = () => {
                     <button
                       type="button"
                       onClick={() => handleAction('APPROVED')}
+                      disabled={isApproved || isRejected}
                       style={{
                         backgroundColor: '#10b981',
                         color: '#ffffff',
@@ -515,8 +576,9 @@ const ReviewPaperDummy = () => {
                         borderRadius: '6px',
                         padding: '0.5rem 1.25rem',
                         fontWeight: 600,
-                        cursor: 'pointer',
-                        fontSize: '0.85rem'
+                        cursor: (isApproved || isRejected) ? 'not-allowed' : 'pointer',
+                        fontSize: '0.85rem',
+                        opacity: (isApproved || isRejected) ? 0.5 : 1
                       }}
                     >
                       Approve
@@ -776,25 +838,45 @@ const ReviewPaperDummy = () => {
                         boxShadow: isAssigned ? '0 1px 3px rgba(0,0,0,0.05)' : 'none',
                         position: 'relative'
                       }}>
-                        {active && paper.supervisorDecideAt && (
+                        {active && paper.supervisorDesignedAt && (
                           <span style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', backgroundColor: '#f0fdf4', color: '#047857', padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 600, border: '1px solid #a7f3d0' }}>
-                            At {new Date(paper.supervisorDecideAt).toLocaleString('en-GB')}
+                            At {new Date(paper.supervisorDesignedAt).toLocaleString('en-GB')}
                           </span>
                         )}
                         <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: isAssigned ? '#047857' : '#64748b', margin: 0 }}>Supervisor Decision</h4>
                         {isAssigned ? (
-                          <span style={{
-                            alignSelf: 'flex-start',
-                            marginTop: '0.25rem',
-                            padding: '0.15rem 0.5rem',
-                            fontSize: '0.7rem',
-                            fontWeight: '700',
-                            borderRadius: '4px',
-                            backgroundColor: badge.bg,
-                            color: badge.color
-                          }}>
-                            {badge.text}
-                          </span>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                            {active ? (
+                              <>
+                                <span style={{
+                                  alignSelf: 'flex-start',
+                                  padding: '0.15rem 0.5rem',
+                                  fontSize: '0.7rem',
+                                  fontWeight: '700',
+                                  borderRadius: '4px',
+                                  backgroundColor: approvalStatus === 'APPROVED' ? '#d1fae5' : '#fee2e2',
+                                  color: approvalStatus === 'APPROVED' ? '#065f46' : '#991b1b'
+                                }}>
+                                  {approvalStatus === 'APPROVED' ? 'APPROVED' : 'REJECTED'}
+                                </span>
+                                <span style={{ fontSize: '0.75rem', color: '#475569', fontWeight: 500 }}>
+                                  By {paper.supervisorName || getSupervisorNameByEmail(paper.assignedSupervisorEmail)}
+                                </span>
+                              </>
+                            ) : (
+                              <span style={{
+                                alignSelf: 'flex-start',
+                                padding: '0.15rem 0.5rem',
+                                fontSize: '0.7rem',
+                                fontWeight: '700',
+                                borderRadius: '4px',
+                                backgroundColor: '#dbeafe',
+                                color: '#1e40af'
+                              }}>
+                                UNDER REVIEW
+                              </span>
+                            )}
+                          </div>
                         ) : (
                           <span style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.75rem' }}>Pending Decision</span>
                         )}
@@ -846,6 +928,36 @@ const ReviewPaperDummy = () => {
           </div>
         </main>
       </div>
+      {/* Supervisor Decision Confirmation Blur Modal */}
+      {showConfirmPopup && pendingDecision && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(8px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999 }}>
+          <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '2rem', width: '95%', maxWidth: '450px', position: 'relative' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1e293b', marginBottom: '0.5rem' }}>Confirm Review Decision</h3>
+            <p style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>
+              You are locking your review decision for this paper as <strong>{pendingDecision === 'APPROVED' ? 'APPROVED' : 'REJECTED'}</strong>.
+              An email and dashboard notification will be sent immediately to the student.
+            </p>
+
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  setShowConfirmPopup(false);
+                  setPendingDecision(null);
+                }}
+                style={{ padding: '0.5rem 1rem', border: '1px solid #cbd5e1', backgroundColor: '#ffffff', borderRadius: '6px', cursor: 'pointer' }}
+              >
+                Back to Decision
+              </button>
+              <button
+                onClick={handleConfirmDecision}
+                style={{ padding: '0.5rem 1.25rem', border: 'none', backgroundColor: '#10b981', color: '#ffffff', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

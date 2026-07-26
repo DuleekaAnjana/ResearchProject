@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ChevronRight, ArrowLeft, Check, Clock, AlertCircle, FileText, Download, Eye, X } from 'lucide-react';
+import { ChevronRight, ArrowLeft, Check, Clock, AlertCircle, FileText, Download, Eye, X, ExternalLink } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api, { API_BASE_URL } from '../../services/api';
 import DashboardHeader from '../../components/layout/DashboardHeader';
@@ -230,6 +230,10 @@ const AdminReviewPage = () => {
     }
   };
 
+  const handleOpenPdf = () => {
+    window.open(`${API_BASE_URL}/papers/${getNumericId(id)}/pdf`, '_blank');
+  };
+
   const getStatusBadgeStyle = (status) => {
     if (status === 'APPROVED' || status === 'VERIFIED') {
       return { backgroundColor: '#d1fae5', color: '#065f46' };
@@ -392,14 +396,14 @@ const AdminReviewPage = () => {
               }}
             >
               <button
-                onClick={() => setShowPdfPreview(true)}
+                onClick={handleOpenPdf}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.5rem',
                   backgroundColor: '#ffffff',
-                  border: '1px solid #cbd5e1',
-                  color: '#475569',
+                  border: '1px solid #0f172a',
+                  color: '#0f172a',
                   padding: '0.5rem 1rem',
                   borderRadius: '6px',
                   fontWeight: 600,
@@ -407,7 +411,7 @@ const AdminReviewPage = () => {
                   cursor: 'pointer'
                 }}
               >
-                <Eye size={16} />
+                <ExternalLink size={16} />
                 Preview PDF
               </button>
               <button

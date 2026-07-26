@@ -121,8 +121,8 @@ public class Paper {
 
     private LocalDateTime publishedAt;
 
-    @Column(name = "supervisor_decide_at")
-    private LocalDateTime supervisorDecideAt;
+    @Column(name = "supervisor_designed_at")
+    private LocalDateTime supervisorDesignedAt;
 
     @Transient
     private String studentName;
