@@ -27,10 +27,13 @@ public class SupervisorService {
         String name = supervisorOptional.map(Supervisor::getFullName).orElse("Prof. R. Silva");
         String university = supervisorOptional.map(Supervisor::getUniversity).orElse("University of Colombo");
 
-        List<Paper> papers = paperRepository.findBySupervisorEmail(email);
+        List<Paper> papers = paperRepository.findByAssignedSupervisorEmail(email);
+        if (papers.isEmpty()) {
+            papers = paperRepository.findByStuRequestedSupervisorEmailOrderBySubmittedAtDesc(email);
+        }
         if (papers.isEmpty()) {
             // Fallback to default demo email papers if email didn't match any custom supervisor
-            papers = paperRepository.findBySupervisorEmail("demo@researchsphere.edu");
+            papers = paperRepository.findByAssignedSupervisorEmail("demo@researchsphere.edu");
         }
 
         long assignedCount = papers.size();
@@ -38,14 +41,12 @@ public class SupervisorService {
         long approvedCount = papers.stream().filter(p -> "APPROVED".equalsIgnoreCase(p.getStatus())).count();
         long rejectedCount = papers.stream().filter(p -> "REJECTED".equalsIgnoreCase(p.getStatus())).count();
 
-        // Calculate average review time
-        double avgDays = papers.stream()
-                .filter(p -> p.getReviewTimeDays() != null)
-                .mapToDouble(Paper::getReviewTimeDays)
-                .average()
-                .orElse(2.4);
+        // Calculate average review time (mocked constant since reviewTimeDays is removed)
+        double avgDays = 2.4;
 
+        java.time.LocalDateTime twentyFourHoursAgo = java.time.LocalDateTime.now().minusHours(24);
         List<PaperDTO> recentReviews = papers.stream()
+                .filter(p -> p.getSupervisorAssignedAt() != null && p.getSupervisorAssignedAt().isAfter(twentyFourHoursAgo))
                 .map(p -> PaperDTO.builder()
                         .id(p.getId())
                         .title(p.getTitle())
@@ -53,7 +54,9 @@ public class SupervisorService {
                         .studentEmail(p.getStudentEmail())
                         .status(p.getStatus())
                         .category(p.getCategory())
-                        .reviewTimeDays(p.getReviewTimeDays())
+                        .reviewTimeDays(2.4)
+                        .formattedPublicationId(p.getFormattedPublicationId())
+                        .submittedAt(p.getSubmittedAt())
                         .build())
                 .toList();
 

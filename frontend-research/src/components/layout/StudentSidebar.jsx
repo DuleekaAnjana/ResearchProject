@@ -64,13 +64,7 @@ const StudentSidebar = () => {
             <LayoutDashboard className={styles.navIcon} />
             <span>Dashboard</span>
           </Link>
-          <Link
-            to="/student/dashboard?tab=analytics"
-            className={`${styles.navItem} ${isAnalyticsActive ? styles.navItemActive : ''}`}
-          >
-            <BarChart3 className={styles.navIcon} />
-            <span>Analytics</span>
-          </Link>
+
           <Link
             to="/student/notifications"
             className={`${styles.navItem} ${isNotificationsActive ? styles.navItemActive : ''}`}
@@ -80,15 +74,15 @@ const StudentSidebar = () => {
           </Link>
         </div>
 
-        {/* Publications Section */}
+        {/* Submissions Section */}
         <div className={styles.navGroup}>
-          <span className={styles.groupTitle}>Publications</span>
+          <span className={styles.groupTitle}>Submissions</span>
           <Link
             to="/student/publications"
             className={`${styles.navItem} ${isAllPublicationsActive ? styles.navItemActive : ''}`}
           >
             <Folder className={styles.navIcon} />
-            <span>All Publications</span>
+            <span>All Submissions</span>
           </Link>
           <Link
             to="/student/upload"
@@ -119,13 +113,6 @@ const StudentSidebar = () => {
             <XCircle className={styles.navIcon} />
             <span>Rejected</span>
           </Link>
-          <Link
-            to="/student/status"
-            className={`${styles.navItem} ${isHistoryActive ? styles.navItemActive : ''}`}
-          >
-            <Bookmark className={styles.navIcon} />
-            <span>Submission History</span>
-          </Link>
         </div>
 
         {/* Discover Section */}
@@ -137,27 +124,6 @@ const StudentSidebar = () => {
           >
             <Compass className={styles.navIcon} />
             <span>Research Library</span>
-          </Link>
-          <Link
-            to="/articles"
-            className={`${styles.navItem} ${isArticlesActive ? styles.navItemActive : ''}`}
-          >
-            <BookOpen className={styles.navIcon} />
-            <span>Articles</span>
-          </Link>
-          <Link
-            to="/blogs"
-            className={`${styles.navItem} ${isBlogsActive ? styles.navItemActive : ''}`}
-          >
-            <FileText className={styles.navIcon} />
-            <span>Blogs</span>
-          </Link>
-          <Link
-            to="/student/contact"
-            className={`${styles.navItem} ${isContactActive ? styles.navItemActive : ''}`}
-          >
-            <User className={styles.navIcon} />
-            <span>Contact Supervisors</span>
           </Link>
         </div>
 

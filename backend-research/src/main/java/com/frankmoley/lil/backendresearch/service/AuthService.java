@@ -3,9 +3,11 @@ package com.frankmoley.lil.backendresearch.service;
 import com.frankmoley.lil.backendresearch.dto.AuthResponse;
 import com.frankmoley.lil.backendresearch.dto.LoginRequest;
 import com.frankmoley.lil.backendresearch.dto.RegisterRequest;
+import com.frankmoley.lil.backendresearch.entity.Admin;
 import com.frankmoley.lil.backendresearch.entity.Student;
 import com.frankmoley.lil.backendresearch.entity.User;
 import com.frankmoley.lil.backendresearch.entity.Supervisor;
+import com.frankmoley.lil.backendresearch.repository.AdminRepository;
 import com.frankmoley.lil.backendresearch.repository.StudentRepository;
 import com.frankmoley.lil.backendresearch.repository.UserRepository;
 import com.frankmoley.lil.backendresearch.repository.SupervisorRepository;
@@ -25,6 +27,7 @@ public class AuthService {
     private final StudentRepository studentRepository;
     private final UserRepository userRepository;
     private final SupervisorRepository supervisorRepository;
+    private final AdminRepository adminRepository;
     private final NotificationService notificationService;
 
     public AuthResponse register(RegisterRequest request) {
@@ -84,7 +87,6 @@ public class AuthService {
 
             student.setResearchCategory(request.getResearchCategory());
             student.setPassword(hashedPassword);
-            student.setRole("student");
 
             Student savedStudent = studentRepository.save(student);
 
@@ -142,6 +144,7 @@ public class AuthService {
             supervisor.setResearchInterests(request.getResearchInterests());
             supervisor.setPassword(hashedPassword);
             supervisor.setRole("supervisor");
+            supervisor.setAvailable(true);
 
             Supervisor savedSupervisor = supervisorRepository.save(supervisor);
 
@@ -253,10 +256,76 @@ public class AuthService {
             }
         }
 
+        Optional<Admin> adminOpt = adminRepository.findByEmail(request.getEmail());
+        if (adminOpt.isPresent()) {
+            Admin admin = adminOpt.get();
+            if (admin.getPassword().equals(hashedPassword) || admin.getPassword().equals(request.getPassword())) {
+                return AuthResponse.builder()
+                        .success(true)
+                        .message("Login successful!")
+                        .id(admin.getId())
+                        .name(admin.getFullName())
+                        .email(admin.getEmail())
+                        .role(admin.getRole())
+                        .build();
+            }
+        }
+
         return AuthResponse.builder()
                 .success(false)
                 .message("Invalid email or password.")
                 .build();
+    }
+
+    public Optional<Student> getStudentProfile(String email) {
+        return studentRepository.findByEmail(email);
+    }
+
+    public boolean changePassword(String email, String currentPassword, String newPassword) {
+        String hashedCurrent = hashPassword(currentPassword);
+        String hashedNew = hashPassword(newPassword);
+
+        Optional<Student> studentOpt = studentRepository.findByEmail(email);
+        if (studentOpt.isPresent()) {
+            Student student = studentOpt.get();
+            if (student.getPassword().equals(hashedCurrent) || student.getPassword().equals(currentPassword)) {
+                student.setPassword(hashedNew);
+                studentRepository.save(student);
+                return true;
+            }
+        }
+
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            if (user.getPassword().equals(hashedCurrent) || user.getPassword().equals(currentPassword)) {
+                user.setPassword(hashedNew);
+                userRepository.save(user);
+                return true;
+            }
+        }
+
+        Optional<Supervisor> supervisorOpt = supervisorRepository.findByEmail(email);
+        if (supervisorOpt.isPresent()) {
+            Supervisor supervisor = supervisorOpt.get();
+            if (supervisor.getPassword().equals(hashedCurrent) || supervisor.getPassword().equals(currentPassword)) {
+                supervisor.setPassword(hashedNew);
+                supervisorRepository.save(supervisor);
+                return true;
+            }
+        }
+
+        Optional<Admin> adminOpt = adminRepository.findByEmail(email);
+        if (adminOpt.isPresent()) {
+            Admin admin = adminOpt.get();
+            if (admin.getPassword().equals(hashedCurrent) || admin.getPassword().equals(currentPassword)) {
+                admin.setPassword(hashedNew);
+                adminRepository.save(admin);
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public boolean isNicRegistered(String nic) {

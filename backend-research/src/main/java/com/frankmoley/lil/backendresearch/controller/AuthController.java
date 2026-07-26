@@ -34,6 +34,28 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody java.util.Map<String, String> request) {
+        String email = request.get("email");
+        String currentPassword = request.get("currentPassword");
+        String newPassword = request.get("newPassword");
+        if (email == null || currentPassword == null || newPassword == null) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", "All fields are required."));
+        }
+        boolean success = authService.changePassword(email, currentPassword, newPassword);
+        if (!success) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", "Incorrect current password."));
+        }
+        return ResponseEntity.ok(java.util.Map.of("message", "Password changed successfully!"));
+    }
+
+    @GetMapping("/student-profile")
+    public ResponseEntity<?> getStudentProfile(@RequestParam String email) {
+        return authService.getStudentProfile(email)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/check-nic")
     public ResponseEntity<Boolean> checkNic(@RequestParam("nic") String nic) {
         return ResponseEntity.ok(authService.isNicRegistered(nic));

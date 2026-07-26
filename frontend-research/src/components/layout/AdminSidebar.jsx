@@ -3,27 +3,19 @@ import {
   GraduationCap,
   LayoutDashboard,
   FileText,
-  Clock,
-  CheckCircle2,
-  XCircle,
-  Sliders,
   Bell,
   User
 } from 'lucide-react';
-import styles from './SupervisorSidebar.module.css';
+import styles from './AdminSidebar.module.css';
 
-const SupervisorSidebar = () => {
+const AdminSidebar = () => {
   const location = useLocation();
   const pathname = location.pathname;
 
-  const isDashboardActive = pathname === '/supervisor/dashboard';
-  const isAssignedActive = pathname === '/supervisor/assigned';
-  const isPendingActive = pathname === '/supervisor/pending';
-  const isApprovedActive = pathname === '/supervisor/approved';
-  const isRejectedActive = pathname === '/supervisor/rejected';
-  const isAnalyticsActive = pathname === '/supervisor/analytics';
-  const isNotificationsActive = pathname === '/supervisor/notifications';
-  const isProfileActive = pathname === '/supervisor/profile';
+  const isDashboardActive = pathname === '/admin/dashboard';
+  const isSubmissionsActive = pathname === '/admin/submissions';
+  const isNotificationsActive = pathname === '/admin/notifications';
+  const isProfileActive = pathname === '/admin/profile';
 
   return (
     <aside className={styles.sidebar}>
@@ -43,7 +35,7 @@ const SupervisorSidebar = () => {
           <span className={styles.groupTitle}>Workspace</span>
           
           <Link
-            to="/supervisor/dashboard"
+            to="/admin/dashboard"
             className={`${styles.navItem} ${isDashboardActive ? styles.navItemActive : ''}`}
           >
             <LayoutDashboard className={styles.navIcon} />
@@ -51,41 +43,15 @@ const SupervisorSidebar = () => {
           </Link>
 
           <Link
-            to="/supervisor/assigned"
-            className={`${styles.navItem} ${isAssignedActive ? styles.navItemActive : ''}`}
+            to="/admin/submissions"
+            className={`${styles.navItem} ${isSubmissionsActive ? styles.navItemActive : ''}`}
           >
             <FileText className={styles.navIcon} />
-            <span>Assigned Papers</span>
+            <span>Manage Submissions</span>
           </Link>
 
           <Link
-            to="/supervisor/pending"
-            className={`${styles.navItem} ${isPendingActive ? styles.navItemActive : ''}`}
-          >
-            <Clock className={styles.navIcon} />
-            <span>Pending Reviews</span>
-          </Link>
-
-          <Link
-            to="/supervisor/approved"
-            className={`${styles.navItem} ${isApprovedActive ? styles.navItemActive : ''}`}
-          >
-            <CheckCircle2 className={styles.navIcon} />
-            <span>Approved</span>
-          </Link>
-
-          <Link
-            to="/supervisor/rejected"
-            className={`${styles.navItem} ${isRejectedActive ? styles.navItemActive : ''}`}
-          >
-            <XCircle className={styles.navIcon} />
-            <span>Rejected</span>
-          </Link>
-
-
-
-          <Link
-            to="/supervisor/notifications"
+            to="/admin/notifications"
             className={`${styles.navItem} ${isNotificationsActive ? styles.navItemActive : ''}`}
           >
             <Bell className={styles.navIcon} />
@@ -97,7 +63,7 @@ const SupervisorSidebar = () => {
         <div className={styles.navGroup}>
           <span className={styles.groupTitle}>Account</span>
           <Link
-            to="/supervisor/profile"
+            to="/admin/profile"
             className={`${styles.navItem} ${isProfileActive ? styles.navItemActive : ''}`}
           >
             <User className={styles.navIcon} />
@@ -109,4 +75,4 @@ const SupervisorSidebar = () => {
   );
 };
 
-export default SupervisorSidebar;
+export default AdminSidebar;

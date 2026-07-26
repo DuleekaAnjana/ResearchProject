@@ -38,6 +38,8 @@ const AllPublicationsPage = () => {
 
   // ---- Modal Preview State ----
   const [previewPaper, setPreviewPaper] = useState(null);
+  const [publishConfirmPaper, setPublishConfirmPaper] = useState(null);
+  const [alertPopup, setAlertPopup] = useState(null);
 
   // ---- Get Student Subcategories based on Registered Subject Path ----
   const studentCategory = user?.researchCategory || 'Computer Science';
@@ -156,7 +158,7 @@ ${paper.comments || ''}
   };
 
   const handlePublish = (paper) => {
-    alert(`Successfully published "${paper.title}"! It is now live in the Research Library.`);
+    setPublishConfirmPaper(paper);
   };
 
   // ---- Date Formatter ----
@@ -216,6 +218,10 @@ ${paper.comments || ''}
         const timeA = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
         const timeB = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
         return timeA - timeB;
+      } else if (sortOrder === 'most_downloaded') {
+        return (b.downloads || 0) - (a.downloads || 0);
+      } else if (sortOrder === 'most_viewed') {
+        return (b.views || 0) - (a.views || 0);
       } else if (sortOrder === 'alphabetical') {
         return (a.title || '').localeCompare(b.title || '');
       }
@@ -250,12 +256,12 @@ ${paper.comments || ''}
           <div className={styles.breadcrumbs}>
             <Link to="/student/dashboard" className={styles.breadcrumbLink}>Home</Link>
             <ChevronRight size={14} className={styles.breadcrumbDivider} />
-            <span className={styles.breadcrumbCurrent}>Publications</span>
+            <span className={styles.breadcrumbCurrent}>Submissions</span>
           </div>
 
           {/* Page Header */}
           <div className={styles.pageHeader}>
-            <h1 className={styles.pageTitle}>All publications</h1>
+            <h1 className={styles.pageTitle}>All Submissions</h1>
             <p className={styles.pageSubtitle}>
               Every paper you've authored — drafts, submissions, and approvals.
             </p>
@@ -294,6 +300,8 @@ ${paper.comments || ''}
             >
               <option value="newest">Newest</option>
               <option value="oldest">Oldest</option>
+              <option value="most_downloaded">Most downloaded</option>
+              <option value="most_viewed">Most Viewed</option>
               <option value="alphabetical">A-Z</option>
             </select>
           </div>
@@ -315,7 +323,7 @@ ${paper.comments || ''}
           ) : filteredPapers.length === 0 ? (
             <div className={styles.emptyState}>
               <FileText size={48} className={styles.emptyIcon} />
-              <h3>No publications found</h3>
+              <h3>No submissions found</h3>
               <p>You haven't submitted any papers matching these filters.</p>
               <Link to="/student/upload" className={styles.submitNewBtn}>
                 Submit a new paper
@@ -334,13 +342,31 @@ ${paper.comments || ''}
 
                 return (
                   <div key={paper.id} className={styles.pubCard}>
-                    <div className={styles.cardHeader}>
-                      <span className={styles.categoryLabel}>{combinedCategory}</span>
+                    <div className={styles.cardHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#f1f5f9', color: '#475569', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
+                        {paper.formattedPublicationId || `PUB-${paper.id}`}
+                      </span>
                       {getStatusBadge(paper.status)}
                     </div>
 
                     <h3 className={styles.pubTitle}>{paper.title}</h3>
-                    <p className={styles.pubAbstract}>{paper.abstractText}</p>
+                    
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.25rem', marginBottom: '0.75rem', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 600, backgroundColor: '#e0f2fe', color: '#0369a1', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
+                        {paper.subcategory || 'General'}
+                      </span>
+                      {paper.keywords && paper.keywords.trim() && paper.keywords.split(',').map((kw, idx) => (
+                        <span key={idx} style={{ fontSize: '0.65rem', fontWeight: 600, backgroundColor: '#e0f2fe', color: '#0369a1', padding: '0.15rem 0.35rem', borderRadius: '4px' }}>
+                          {kw.trim()}
+                        </span>
+                      ))}
+                    </div>
+
+                    <p className={styles.pubAbstract}>
+                      {paper.abstractText && paper.abstractText.length > 150 
+                        ? `${paper.abstractText.substring(0, 150)}......` 
+                        : paper.abstractText}
+                    </p>
 
                     <div className={styles.pubMeta}>
                       <span className={styles.metaItem}>
@@ -382,7 +408,7 @@ ${paper.comments || ''}
                         Download
                       </button>
 
-                      {isApproved && (
+                      {isApproved && !paper.isPublished && (
                         <button
                           type="button"
                           onClick={() => handlePublish(paper)}
@@ -390,6 +416,11 @@ ${paper.comments || ''}
                         >
                           Publish
                         </button>
+                      )}
+                      {isApproved && paper.isPublished && (
+                        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#10b981', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.375rem 0.75rem' }}>
+                          Published
+                        </span>
                       )}
 
                       {isRejected && (
@@ -501,6 +532,90 @@ ${paper.comments || ''}
                 }}
               >
                 <Download size={14} /> Download PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {publishConfirmPaper && (
+        <div className={styles.modalOverlay} onClick={() => setPublishConfirmPaper(null)}>
+          <div className={styles.modalContent} style={{ maxWidth: '450px', height: 'auto', padding: '2rem' }} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e5e7eb', paddingBottom: '1rem' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: '#111827' }}>Confirm Publication</h3>
+              <button type="button" onClick={() => setPublishConfirmPaper(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af' }}>
+                <X size={20} />
+              </button>
+            </div>
+            <div style={{ padding: '1.5rem 0' }}>
+              <p style={{ color: '#4b5563', fontSize: '0.95rem', lineHeight: 1.5, margin: 0 }}>
+                Are you sure you want to publish the research paper <strong>"{publishConfirmPaper.title}"</strong> to the Research Library? Once published, it will be visible to everyone.
+              </p>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', borderTop: '1px solid #e5e7eb', paddingTop: '1rem' }}>
+              <button
+                type="button"
+                onClick={() => setPublishConfirmPaper(null)}
+                style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: '6px', backgroundColor: '#fff', cursor: 'pointer', fontWeight: 600, color: '#374151' }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const res = await api.post(`/papers/${publishConfirmPaper.id}/publish`, {});
+                    if (res) {
+                      setPapers(prev => prev.map(p => p.id === res.id ? res : p));
+                      setAlertPopup({
+                        type: 'success',
+                        title: 'Publication Success',
+                        message: `"${publishConfirmPaper.title}" has been successfully published!`
+                      });
+                    }
+                  } catch (err) {
+                    console.error(err);
+                    setAlertPopup({
+                      type: 'error',
+                      title: 'Publication Failed',
+                      message: `Error Details: ${err?.message || (typeof err === 'object' ? JSON.stringify(err) : String(err)) || 'Failed to publish. Please try again.'}`
+                    });
+                  } finally {
+                    setPublishConfirmPaper(null);
+                  }
+                }}
+                style={{ padding: '0.5rem 1rem', border: 'none', borderRadius: '6px', backgroundColor: '#10b981', color: '#fff', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {alertPopup && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(8px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999 }}>
+          <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '2rem', width: '95%', maxWidth: '400px', position: 'relative', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
+            <button 
+              onClick={() => setAlertPopup(null)}
+              style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}
+            >
+              <X size={20} />
+            </button>
+            
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: alertPopup.type === 'success' ? '#16a34a' : '#dc2626', marginBottom: '0.5rem' }}>
+              {alertPopup.title}
+            </h3>
+            <p style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '1.5rem', lineHeight: '1.5' }}>
+              {alertPopup.message}
+            </p>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setAlertPopup(null)}
+                style={{ padding: '0.5rem 1.25rem', border: 'none', backgroundColor: '#1e293b', color: '#ffffff', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
+              >
+                OK
               </button>
             </div>
           </div>

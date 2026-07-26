@@ -1,9 +1,11 @@
 package com.frankmoley.lil.backendresearch.config;
 
+import com.frankmoley.lil.backendresearch.entity.Admin;
 import com.frankmoley.lil.backendresearch.entity.Notification;
 import com.frankmoley.lil.backendresearch.entity.Paper;
 import com.frankmoley.lil.backendresearch.entity.Student;
 import com.frankmoley.lil.backendresearch.entity.User;
+import com.frankmoley.lil.backendresearch.repository.AdminRepository;
 import com.frankmoley.lil.backendresearch.repository.NotificationRepository;
 import com.frankmoley.lil.backendresearch.repository.PaperRepository;
 import com.frankmoley.lil.backendresearch.repository.StudentRepository;
@@ -27,10 +29,69 @@ public class DataInitializer implements CommandLineRunner {
     private final StudentRepository studentRepository;
     private final PaperRepository paperRepository;
     private final NotificationRepository notificationRepository;
+    private final AdminRepository adminRepository;
+    private final com.frankmoley.lil.backendresearch.repository.SupervisorRepository supervisorRepository;
 
     @Override
     public void run(String... args) throws Exception {
         String defaultHashedPassword = hashPassword("password123");
+
+        // Seed supervisors if not exists
+        if (!supervisorRepository.existsByEmail("demo@researchsphere.edu")) {
+            com.frankmoley.lil.backendresearch.entity.Supervisor supervisor = new com.frankmoley.lil.backendresearch.entity.Supervisor();
+            supervisor.setFullName("Prof. R. Silva");
+            supervisor.setEmail("demo@researchsphere.edu");
+            supervisor.setPassword(defaultHashedPassword);
+            supervisor.setUniversity("University of Colombo");
+            supervisor.setResearchCategory("Computer Science");
+            supervisor.setResearchSubcategoriesJson("Artificial Intelligence");
+            supervisor.setRole("supervisor");
+            supervisor.setAvailable(true); // Available
+            supervisorRepository.save(supervisor);
+        }
+
+        if (!supervisorRepository.existsByEmail("supervisor@researchsphere.edu")) {
+            com.frankmoley.lil.backendresearch.entity.Supervisor supervisor = new com.frankmoley.lil.backendresearch.entity.Supervisor();
+            supervisor.setFullName("Prof. B. Perera");
+            supervisor.setEmail("supervisor@researchsphere.edu");
+            supervisor.setPassword(defaultHashedPassword);
+            supervisor.setUniversity("University of Colombo");
+            supervisor.setResearchCategory("Computer Science");
+            supervisor.setRole("supervisor");
+            supervisor.setAvailable(false); // Unavailable
+        }
+
+        if (!supervisorRepository.existsByEmail("amara.perera@researchsphere.edu")) {
+            com.frankmoley.lil.backendresearch.entity.Supervisor supervisor = new com.frankmoley.lil.backendresearch.entity.Supervisor();
+            supervisor.setFullName("Amara Perera");
+            supervisor.setNicNumber("2001082596");
+            supervisor.setEmail("amara.perera@researchsphere.edu");
+            supervisor.setPhoneNumber("+94 706300027");
+            supervisor.setPassword(defaultHashedPassword);
+            supervisor.setUniversity("University of Colombo");
+            supervisor.setEmployeeId("2024/CS/1000");
+            supervisor.setHighestQualification("BSc Honours in Computer Science");
+            supervisor.setAcademicPosition("Master");
+            supervisor.setPreviouslyCompletedDegreesJson("Diploma in Software Engineering");
+            supervisor.setFaculty("SLIIT");
+            supervisor.setResearchCategory("Computer Science");
+            supervisor.setResearchSubcategoriesJson("Artificial Intelligence");
+            supervisor.setProfessionalBiography("Passionate researcher focused on applying artificial intelligence to real-world problems in healthcare, education, and sustainability.");
+            supervisor.setRole("supervisor");
+            supervisor.setAvailable(true);
+            supervisorRepository.save(supervisor);
+        }
+
+        // Seed repository admin if not exists
+        if (!adminRepository.existsByEmail("repoadmin@researchsphere.edu")) {
+            Admin admin = new Admin();
+            admin.setFullName("Repositary Admin");
+            admin.setEmail("repoadmin@researchsphere.edu");
+            admin.setPassword(hashPassword("123"));
+            admin.setRole("repositary admin");
+            adminRepository.save(admin);
+        }
+
 
         // Seed default Demo Supervisor if not exists
         if (!userRepository.existsByEmail("demo@researchsphere.edu")) {
@@ -54,6 +115,17 @@ public class DataInitializer implements CommandLineRunner {
             supervisor.setRole("supervisor");
             supervisor.setUniversity("University of Colombo");
             supervisor.setResearchCategory("Computer Science");
+        }
+
+        if (!userRepository.existsByEmail("amara.perera@researchsphere.edu")) {
+            User supervisor = new User();
+            supervisor.setFullName("Amara Perera");
+            supervisor.setEmail("amara.perera@researchsphere.edu");
+            supervisor.setPassword(defaultHashedPassword);
+            supervisor.setRole("supervisor");
+            supervisor.setUniversity("University of Colombo");
+            supervisor.setResearchCategory("Computer Science");
+            supervisor.setResearchSubcategory("Artificial Intelligence");
             userRepository.save(supervisor);
         }
 
@@ -63,7 +135,6 @@ public class DataInitializer implements CommandLineRunner {
             student.setFullName("Amara Perera");
             student.setEmail("student@researchsphere.edu");
             student.setPassword(defaultHashedPassword);
-            student.setRole("student");
             student.setUniversity("University of Colombo");
             student.setRegistrationNumber("2024/CS/1001");
             student.setResearchCategory("Computer Science");
@@ -147,6 +218,17 @@ public class DataInitializer implements CommandLineRunner {
                             .build()
             ));
         }
+
+        // Clean up any existing seeded pending papers that have assigned supervisor/status set incorrectly
+        List<Paper> allPapers = paperRepository.findAll();
+        for (Paper p : allPapers) {
+            if ("PENDING".equalsIgnoreCase(p.getSupervisorApprovalStatus()) && p.getSupervisorAssignedAt() == null) {
+                p.setAssignedSupervisorEmail(null);
+                p.setSupervisorName(null);
+                p.setAdminApprovalStatus("PENDING");
+                paperRepository.save(p);
+            }
+        }
     }
 
     private Paper createPaper(Student student, String title, String studentName, String studentEmail, String supervisorEmail, String status, String category, Double reviewTime, LocalDateTime submittedAt) {
@@ -154,14 +236,30 @@ public class DataInitializer implements CommandLineRunner {
         paper.setTitle(title);
         paper.setStudentName(studentName);
         paper.setStudentEmail(studentEmail);
-        paper.setSupervisorEmail(supervisorEmail);
-        paper.setStatus(status);
+        paper.setStuRequestedSupervisorEmail(supervisorEmail);
+        if ("PENDING".equalsIgnoreCase(status)) {
+            paper.setAssignedSupervisorEmail(null);
+            paper.setAdminApprovalStatus("PENDING");
+        } else {
+            paper.setAssignedSupervisorEmail(supervisorEmail);
+            paper.setAdminApprovalStatus("APPROVED");
+        }
+        paper.setSupervisorApprovalStatus(status);
+        paper.setIsPublished("APPROVED".equalsIgnoreCase(status));
+        paper.setUploadedManuscript("manuscript.pdf");
         paper.setCategory(category);
-        paper.setReviewTimeDays(reviewTime);
         paper.setSubmittedAt(submittedAt);
+        if (submittedAt != null) {
+            paper.setAdminValidatedAt(submittedAt.plusDays(2));
+            paper.setDuplicateCheckedAt(submittedAt.plusDays(4));
+            paper.setSupervisorAssignedAt(submittedAt.plusDays(6));
+            paper.setUnderReviewAt(submittedAt.plusDays(8));
+            if ("APPROVED".equalsIgnoreCase(status)) {
+                paper.setAdminReviewedAt(submittedAt.plusDays(10));
+            }
+        }
         paper.setAbstractText("This is the default abstract description for the research titled '" + title + "'. It addresses critical challenges and proposed methodologies.");
         paper.setKeywords("research, publication, Sinhala, Federated, Rainfall");
-        paper.setStudent(student);
         // Add random pages, views, downloads
         paper.setPages((int) (Math.random() * 15) + 15);
         paper.setViews((int) (Math.random() * 3000) + 500);

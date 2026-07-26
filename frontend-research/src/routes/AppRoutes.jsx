@@ -12,8 +12,11 @@ import NewStudentRegister from '../pages/auth/NewStudentRegister';
 import NewSupervisorRegister from '../pages/auth/NewSupervisorRegister';
 import StudentDashboard from '../pages/student/StudentDashboard';
 import SupervisorDashboard from '../pages/supervisor/SupervisorDashboard';
+import AssignedPapers from '../pages/supervisor/AssignedPapers';
+import ReviewPaperDummy from '../pages/supervisor/ReviewPaperDummy';
 import SupervisorPlaceholderPage from '../pages/supervisor/SupervisorPlaceholderPage';
 import SupervisorNotificationsPage from '../pages/supervisor/SupervisorNotificationsPage';
+import SupervisorProfilePage from '../pages/supervisor/SupervisorProfilePage';
 import NotificationsPage from '../pages/student/NotificationsPage';
 import SearchPublicationsPage from '../pages/student/SearchPublicationsPage';
 import AllPublicationsPage from '../pages/student/AllPublicationsPage';
@@ -23,6 +26,11 @@ import StudentProfilePage from '../pages/student/StudentProfilePage';
 import ArticlesPage from '../pages/student/ArticlesPage';
 import BlogsPage from '../pages/student/BlogsPage';
 import ContactSupervisorsPage from '../pages/student/ContactSupervisorsPage';
+import AdminDashboard from '../pages/admin/AdminDashboard';
+import ManageSubmissions from '../pages/admin/ManageSubmissions';
+import AdminNotificationsPage from '../pages/admin/AdminNotificationsPage';
+import AdminProfilePage from '../pages/admin/AdminProfilePage';
+import AdminReviewPage from '../pages/admin/AdminReviewPage';
 
 /**
  * Application routes configuration
@@ -67,27 +75,22 @@ const AppRoutes = () => {
 
       {/* ====== Supervisor Routes ====== */}
       <Route path="/supervisor/dashboard" element={<ProtectedRoute allowedRole="supervisor"><SupervisorDashboard /></ProtectedRoute>} />
-      <Route path="/supervisor/assigned" element={<ProtectedRoute allowedRole="supervisor"><SupervisorPlaceholderPage title="Assigned Papers" /></ProtectedRoute>} />
-      <Route path="/supervisor/pending" element={<ProtectedRoute allowedRole="supervisor"><SupervisorPlaceholderPage title="Pending Reviews" /></ProtectedRoute>} />
-      <Route path="/supervisor/approved" element={<ProtectedRoute allowedRole="supervisor"><SupervisorPlaceholderPage title="Approved Papers" /></ProtectedRoute>} />
-      <Route path="/supervisor/rejected" element={<ProtectedRoute allowedRole="supervisor"><SupervisorPlaceholderPage title="Rejected Papers" /></ProtectedRoute>} />
-      <Route path="/supervisor/analytics" element={<ProtectedRoute allowedRole="supervisor"><SupervisorPlaceholderPage title="Analytics" /></ProtectedRoute>} />
+      <Route path="/supervisor/assigned" element={<ProtectedRoute allowedRole="supervisor"><AssignedPapers /></ProtectedRoute>} />
+      <Route path="/supervisor/pending" element={<ProtectedRoute allowedRole="supervisor"><AssignedPapers filterStatus="PENDING" /></ProtectedRoute>} />
+      <Route path="/supervisor/approved" element={<ProtectedRoute allowedRole="supervisor"><AssignedPapers filterStatus="APPROVED" /></ProtectedRoute>} />
+      <Route path="/supervisor/rejected" element={<ProtectedRoute allowedRole="supervisor"><AssignedPapers filterStatus="REJECTED" /></ProtectedRoute>} />
       <Route path="/supervisor/notifications" element={<ProtectedRoute allowedRole="supervisor"><SupervisorNotificationsPage /></ProtectedRoute>} />
-      <Route path="/supervisor/profile" element={<ProtectedRoute allowedRole="supervisor"><SupervisorPlaceholderPage title="Supervisor Profile" /></ProtectedRoute>} />
-      <Route path="/supervisor/review/:id" element={<ProtectedRoute allowedRole="supervisor"><PlaceholderPage title="Review Paper" /></ProtectedRoute>} />
+      <Route path="/supervisor/profile" element={<ProtectedRoute allowedRole="supervisor"><SupervisorProfilePage /></ProtectedRoute>} />
+      <Route path="/supervisor/review/:id" element={<ProtectedRoute allowedRole="supervisor"><ReviewPaperDummy /></ProtectedRoute>} />
       <Route path="/supervisor/approval" element={<ProtectedRoute allowedRole="supervisor"><PlaceholderPage title="Approval Page" /></ProtectedRoute>} />
       <Route path="/supervisor/feedback/:id" element={<ProtectedRoute allowedRole="supervisor"><PlaceholderPage title="Feedback Page" /></ProtectedRoute>} />
 
       {/* ====== Admin Routes ====== */}
-      {/* TODO: Wrap with ProtectedRoute role="admin" */}
-      <Route path="/admin/dashboard" element={<PlaceholderPage title="Admin Dashboard" />} />
-      <Route path="/admin/users" element={<PlaceholderPage title="User Management" />} />
-      <Route path="/admin/departments" element={<PlaceholderPage title="Department Management" />} />
-      <Route path="/admin/categories" element={<PlaceholderPage title="Category Management" />} />
-      <Route path="/admin/publications" element={<PlaceholderPage title="Publication Management" />} />
-      <Route path="/admin/archive" element={<PlaceholderPage title="Archive Publications" />} />
-      <Route path="/admin/reports" element={<PlaceholderPage title="Reports" />} />
-      <Route path="/admin/statistics" element={<PlaceholderPage title="System Statistics" />} />
+      <Route path="/admin/dashboard" element={<ProtectedRoute allowedRole="repositary admin"><AdminDashboard /></ProtectedRoute>} />
+      <Route path="/admin/submissions" element={<ProtectedRoute allowedRole="repositary admin"><ManageSubmissions /></ProtectedRoute>} />
+      <Route path="/admin/notifications" element={<ProtectedRoute allowedRole="repositary admin"><AdminNotificationsPage /></ProtectedRoute>} />
+      <Route path="/admin/profile" element={<ProtectedRoute allowedRole="repositary admin"><AdminProfilePage /></ProtectedRoute>} />
+      <Route path="/admin/review/:id" element={<ProtectedRoute allowedRole="repositary admin"><AdminReviewPage /></ProtectedRoute>} />
 
       {/* ====== 404 ====== */}
       <Route path="*" element={<NotFound />} />

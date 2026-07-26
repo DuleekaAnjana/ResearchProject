@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   GraduationCap,
@@ -27,15 +27,9 @@ import {
 } from 'lucide-react';
 
 import { useAuth } from '../../context/AuthContext';
-import {
-  studentProfile,
-  studentStats,
-  monthlyActivity,
-  approvalTrend,
-  recentSubmissions,
-  recentActivity,
-  continueWhereYouLeftOff
-} from '../../data/studentDashboardData';
+import { studentProfile } from '../../data/studentDashboardData';
+import api from '../../services/api';
+import notificationService from '../../services/notificationService';
 
 import DashboardHeader from '../../components/layout/DashboardHeader';
 import StudentSidebar from '../../components/layout/StudentSidebar';
@@ -63,6 +57,8 @@ const renderStatIcon = (iconName) => {
       return <Download size={20} />;
     case 'Trophy':
       return <Trophy size={20} />;
+    case '📢':
+      return <span style={{ fontSize: '1.25rem' }}>📢</span>;
     default:
       return <BookOpen size={20} />;
   }
@@ -74,6 +70,110 @@ const StudentDashboard = () => {
   const activeTab = searchParams.get('tab') || 'dashboard';
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { user } = useAuth();
+
+  const [papers, setPapers] = useState([]);
+  const [activities, setActivities] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!user?.email) return;
+      setLoading(true);
+      try {
+        const papersData = await api.get(`/papers/student?email=${encodeURIComponent(user.email)}`);
+        setPapers(papersData || []);
+
+        const notificationsData = await notificationService.getAll(user.email);
+        setActivities(notificationsData || []);
+      } catch (err) {
+        console.warn('Failed to load dashboard data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboardData();
+  }, [user?.email]);
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'N/A';
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    return date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  const getDynamicStats = () => {
+    const totalPubs = papers.length;
+    const approvedCount = papers.filter(p => p.status === 'APPROVED').length;
+    const pendingCount = papers.filter(p => p.status === 'PENDING' || p.status === 'UNDER REVIEW').length;
+    const rejectedCount = papers.filter(p => p.status === 'REJECTED').length;
+    const publishedCount = papers.filter(p => p.isPublished).length;
+    const totalViews = papers.reduce((sum, p) => sum + (p.views || 0), 0);
+    const totalDownloads = papers.reduce((sum, p) => sum + (p.downloads || 0), 0);
+
+    return [
+      {
+        id: 'total_publications',
+        label: 'TOTAL SUBMISSIONS',
+        value: totalPubs.toString(),
+        icon: 'BookOpen',
+        variant: 'blue',
+      },
+      {
+        id: 'approved',
+        label: 'APPROVED',
+        value: approvedCount.toString(),
+        icon: 'CheckCircle2',
+        variant: 'green',
+      },
+      {
+        id: 'pending',
+        label: 'PENDING',
+        value: pendingCount.toString(),
+        icon: 'Clock',
+        variant: 'amber',
+      },
+      {
+        id: 'rejected',
+        label: 'REJECTED',
+        value: rejectedCount.toString(),
+        icon: 'XCircle',
+        variant: 'red',
+      },
+      {
+        id: 'published',
+        label: 'PUBLISHED',
+        value: publishedCount.toString(),
+        icon: '📢',
+        variant: 'teal',
+      },
+      {
+        id: 'total_views',
+        label: 'TOTAL VIEWS',
+        value: totalViews.toLocaleString(),
+        icon: 'Eye',
+        variant: 'purple',
+      },
+      {
+        id: 'downloads',
+        label: 'DOWNLOADS',
+        value: totalDownloads.toLocaleString(),
+        icon: 'Download',
+        variant: 'teal',
+      },
+      {
+        id: 'category_rank',
+        label: 'CATEGORY RANK',
+        value: '#4',
+        subtitle: `Top 5% in ${user?.researchCategory || 'Computer Science'}`,
+        icon: 'Trophy',
+        variant: 'gold',
+      },
+    ];
+  };
 
   return (
     <div className={styles.dashboardLayout}>
@@ -121,7 +221,7 @@ const StudentDashboard = () => {
 
           {/* 8 Stat Cards Grid */}
           <div className={styles.statsGrid}>
-            {studentStats.map((stat) => (
+            {getDynamicStats().map((stat) => (
               <div key={stat.id} className={styles.statCard}>
                 <div className={styles.statContent}>
                   <span className={styles.statLabel}>{stat.label}</span>
@@ -142,107 +242,6 @@ const StudentDashboard = () => {
             ))}
           </div>
 
-          {/* Charts Section */}
-          <div className={styles.chartsSection}>
-            {/* Monthly Activity Line Chart */}
-            <div className={styles.chartCard}>
-              <div className={styles.chartHeader}>
-                <div>
-                  <h3 className={styles.chartTitle}>Monthly activity</h3>
-                  <p className={styles.chartSubtitle}>
-                    Submissions vs. engagement over the last 6 months.
-                  </p>
-                </div>
-                <button
-                  className={styles.analyticsLinkBtn}
-                  onClick={() => setActiveTab('analytics')}
-                >
-                  Go to Analytics <ArrowRight size={14} />
-                </button>
-              </div>
-
-              {/* Line SVG Chart */}
-              <div className={styles.svgChartContainer}>
-                <svg
-                  viewBox="0 0 500 180"
-                  className={styles.lineChartSvg}
-                  preserveAspectRatio="none"
-                >
-                  {/* Grid Lines */}
-                  <line x1="0" y1="30" x2="500" y2="30" stroke="#f1f5f9" strokeDasharray="4" />
-                  <line x1="0" y1="80" x2="500" y2="80" stroke="#f1f5f9" strokeDasharray="4" />
-                  <line x1="0" y1="130" x2="500" y2="130" stroke="#f1f5f9" strokeDasharray="4" />
-                  <line x1="0" y1="170" x2="500" y2="170" stroke="#e2e8f0" />
-
-                  {/* Y-Axis Labels */}
-                  <text x="5" y="32" fill="#94a3b8" fontSize="10">2200</text>
-                  <text x="5" y="82" fill="#94a3b8" fontSize="10">1650</text>
-                  <text x="5" y="132" fill="#94a3b8" fontSize="10">1100</text>
-                  <text x="5" y="172" fill="#94a3b8" fontSize="10">0</text>
-
-                  {/* Views Line (Blue Curve) */}
-                  <path
-                    d="M 40 155 Q 120 140, 200 120 T 360 70 T 480 30"
-                    fill="none"
-                    stroke="#1e40af"
-                    strokeWidth="2.5"
-                  />
-
-                  {/* Downloads Line (Teal Curve) */}
-                  <path
-                    d="M 40 168 Q 120 162, 200 156 T 360 148 T 480 138"
-                    fill="none"
-                    stroke="#10b981"
-                    strokeWidth="2"
-                  />
-
-                  {/* X-Axis Ticks */}
-                  {monthlyActivity.months.map((m, i) => (
-                    <text
-                      key={m}
-                      x={40 + i * 88}
-                      y="180"
-                      fill="#94a3b8"
-                      fontSize="11"
-                      textAnchor="middle"
-                    >
-                      {m}
-                    </text>
-                  ))}
-                </svg>
-              </div>
-            </div>
-
-            {/* Approval Trend Bar Chart */}
-            <div className={styles.chartCard}>
-              <div className={styles.chartHeader}>
-                <div>
-                  <h3 className={styles.chartTitle}>Approval trend</h3>
-                  <p className={styles.chartSubtitle}>
-                    Submissions accepted per month.
-                  </p>
-                </div>
-              </div>
-
-              <div className={styles.barChartContainer}>
-                {approvalTrend.map((item) => {
-                  // Max count is 4 in our data, calculate bar height percentage
-                  const heightPercent = (item.count / 4) * 80;
-                  return (
-                    <div key={item.month} className={styles.barCol}>
-                      <div
-                        className={styles.barFill}
-                        style={{ height: `${heightPercent}%` }}
-                        title={`${item.count} approved`}
-                      />
-                      <span className={styles.barLabel}>{item.month}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
           {/* Submissions & Recent Activity Grid */}
           <div className={styles.activityGrid}>
             {/* Recent Submissions */}
@@ -255,19 +254,36 @@ const StudentDashboard = () => {
               </div>
 
               <div className={styles.submissionsList}>
-                {recentSubmissions.map((paper) => (
-                  <div key={paper.id} className={styles.submissionRow}>
-                    <div className={styles.submissionInfo}>
-                      <h4 className={styles.submissionTitle}>{paper.title}</h4>
-                      <span className={styles.submissionMeta}>
-                        {paper.category} · {paper.pages} pages
-                      </span>
-                    </div>
-                    <span className={styles.badgeApproved}>
-                      {paper.status}
-                    </span>
-                  </div>
-                ))}
+                {loading ? (
+                  <div style={{ color: '#64748b', fontSize: '0.85rem', padding: '1rem 0' }}>Loading submissions…</div>
+                ) : papers.length === 0 ? (
+                  <div style={{ color: '#64748b', fontSize: '0.85rem', padding: '1rem 0' }}>No submissions found.</div>
+                ) : (
+                  [...papers]
+                    .sort((a, b) => new Date(b.submittedAt || b.reviewedAt || 0) - new Date(a.submittedAt || a.reviewedAt || 0))
+                    .slice(0, 10)
+                    .map((paper) => (
+                      <div key={paper.id} className={styles.submissionRow}>
+                        <div className={styles.submissionInfo}>
+                          <h4 className={styles.submissionTitle}>{paper.title}</h4>
+                          <span className={styles.submissionMeta}>
+                            {paper.category} · {paper.pages || 0} pages
+                          </span>
+                        </div>
+                        <span style={{
+                          fontSize: '0.7rem',
+                          fontWeight: 700,
+                          backgroundColor: paper.status === 'APPROVED' ? '#dcfce7' : paper.status === 'REJECTED' ? '#fee2e2' : '#fef9c3',
+                          color: paper.status === 'APPROVED' ? '#15803d' : paper.status === 'REJECTED' ? '#b91c1c' : '#a16207',
+                          padding: '0.2rem 0.5rem',
+                          borderRadius: '4px',
+                          textTransform: 'uppercase'
+                        }}>
+                          {paper.status}
+                        </span>
+                      </div>
+                    ))
+                )}
               </div>
             </div>
 
@@ -275,81 +291,30 @@ const StudentDashboard = () => {
             <div className={styles.submissionsCard}>
               <div className={styles.chartHeader}>
                 <h3 className={styles.chartTitle}>Recent activity</h3>
+                <Link to="/student/notifications" className={styles.viewAllLink}>
+                  View all
+                </Link>
               </div>
 
               <div className={styles.activityFeed}>
-                {recentActivity.map((act) => (
-                  <div key={act.id} className={styles.activityItem}>
-                    <div className={styles.activityDot} />
-                    <div className={styles.activityTextGroup}>
-                      <span className={styles.activityText}>{act.text}</span>
-                      <span className={styles.activityTime}>{act.time}</span>
-                    </div>
-                  </div>
-                ))}
+                {loading ? (
+                  <div style={{ color: '#64748b', fontSize: '0.85rem', padding: '1rem 0' }}>Loading activity…</div>
+                ) : activities.length === 0 ? (
+                  <div style={{ color: '#64748b', fontSize: '0.85rem', padding: '1rem 0' }}>No recent activity.</div>
+                ) : (
+                  [...activities]
+                    .slice(0, 5)
+                    .map((act) => (
+                      <div key={act.id} className={styles.activityItem}>
+                        <div className={styles.activityDot} />
+                        <div className={styles.activityTextGroup}>
+                          <span className={styles.activityText}>{act.message || act.text}</span>
+                          <span className={styles.activityTime}>{formatDate(act.createdAt)}</span>
+                        </div>
+                      </div>
+                    ))
+                )}
               </div>
-            </div>
-          </div>
-
-          {/* Continue Where You Left Off */}
-          <div className={styles.continueSection}>
-            <div className={styles.continueHeader}>
-              <h2 className={styles.continueTitle}>Continue where you left off</h2>
-              <p className={styles.continueSubtitle}>
-                Your latest publications and drafts.
-              </p>
-            </div>
-
-            <div className={styles.continueGrid}>
-              {continueWhereYouLeftOff.map((item) => (
-                <div key={item.id} className={styles.continueCard}>
-                  <div className={styles.continueCardTop}>
-                    <div className={styles.cardTagsRow}>
-                      <span className={styles.categoryTag}>{item.tag}</span>
-                      <span className={styles.badgeApproved}>{item.status}</span>
-                    </div>
-
-                    <h3 className={styles.cardTitle}>{item.title}</h3>
-                    <p className={styles.cardAbstract}>{item.abstract}</p>
-
-                    <div className={styles.cardMetaRow}>
-                      <span className={styles.metaItem}>
-                        <Calendar size={13} /> {item.date}
-                      </span>
-                      <span className={styles.metaItem}>
-                        <File size={13} /> {item.pages} pages
-                      </span>
-                      <span className={styles.metaItem}>
-                        <Eye size={13} /> {item.views}
-                      </span>
-                      <span className={styles.metaItem}>
-                        <Download size={13} /> {item.downloads}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className={styles.cardActions}>
-                    <button
-                      className={`${styles.actionBtn} ${styles.primary}`}
-                      onClick={() => navigate(`/student/publication/${item.id}`)}
-                    >
-                      <Eye size={13} /> Preview
-                    </button>
-                    <button
-                      className={`${styles.actionBtn} ${styles.secondary}`}
-                      onClick={() => alert(`Downloading ${item.title}...`)}
-                    >
-                      <Download size={13} /> Download
-                    </button>
-                    <button
-                      className={`${styles.actionBtn} ${styles.publish}`}
-                      onClick={() => navigate('/student/upload')}
-                    >
-                      <Send size={13} /> Publish
-                    </button>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
 

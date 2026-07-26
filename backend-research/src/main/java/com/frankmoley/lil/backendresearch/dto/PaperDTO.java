@@ -17,4 +17,6 @@ public class PaperDTO {
     private String status;
     private String category;
     private Double reviewTimeDays;
+    private String formattedPublicationId;
+    private java.time.LocalDateTime submittedAt;
 }
