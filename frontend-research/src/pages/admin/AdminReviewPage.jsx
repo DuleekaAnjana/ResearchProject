@@ -604,11 +604,19 @@ const AdminReviewPage = () => {
 
                   {/* Right: Assign Supervisor */}
                   {(() => {
-                    const isAssignSupervisorEnabled = isOriginalityConfirmed && originalityDecision === 'VERIFIED';
+                    const isAssignSupervisorEnabled = isOriginalityConfirmed && (originalityDecision === 'VERIFIED' || originalityDecision === 'PENDING' || paper.adminApprovalStatus === 'PENDING' || paper.adminApprovalStatus === 'VERIFIED');
                     const isSupervisorAlreadyAssigned = !!paper.supervisorAssignedAt;
                     
                     const filteredSupervisors = supervisors.filter(
-                      sup => sup.available && sup.researchCategory && sup.researchCategory.toLowerCase() === paper.category?.toLowerCase()
+                      sup => {
+                        const isAvail = sup.available === true || sup.available === 1 || sup.available === '1' || 
+                                        sup.isAvailable === true || sup.isAvailable === 1 || sup.isAvailable === '1' ||
+                                        sup.available === undefined;
+                        if (!isAvail) return false;
+                        const paperCat = (paper.category || 'Computer Science').trim().toLowerCase().replace(/\s+/g, '');
+                        const supCat = sup.researchCategory ? sup.researchCategory.trim().toLowerCase().replace(/\s+/g, '') : '';
+                        return supCat === paperCat;
+                      }
                     );
 
                     const getRequestedSupervisorDisplay = () => {
@@ -683,7 +691,7 @@ const AdminReviewPage = () => {
                     };
 
                     const isSelectDisabled = !isAssignSupervisorEnabled || isSupervisorAlreadyAssigned;
-                    const isButtonDisabled = !isAssignSupervisorEnabled || !selectedSupervisor || paper?.assignedSupervisorEmail === selectedSupervisor.email || isSupervisorAlreadyAssigned;
+                    const isButtonDisabled = !isAssignSupervisorEnabled || !selectedSupervisor || isSupervisorAlreadyAssigned;
 
                     return (
                       <div 
@@ -939,7 +947,7 @@ const AdminReviewPage = () => {
                                 <span>
                                   {getSupervisorNameByEmail(paper.stuRequestedSupervisorEmail)}
                                   {' '}
-                                  (<a href={`mailto:${paper.stuRequestedSupervisorEmail}`} style={{ color: '#ca8a04', textDecoration: 'underline' }}>{paper.stuRequestedSupervisorEmail}</a>)
+                                  (<a href={`mailto:${paper.stuRequestedSupervisorEmail}`} style={{ color: '#2563eb', textDecoration: 'underline' }}>{paper.stuRequestedSupervisorEmail}</a>)
                                 </span>
                               ) : (
                                 'None'
@@ -954,7 +962,7 @@ const AdminReviewPage = () => {
                                   <span style={{ color: getAssignedColor(), fontWeight: 600 }}>
                                     {paper.supervisorName || getSupervisorNameByEmail(paper.assignedSupervisorEmail)}
                                     <br />
-                                    (<a href={`mailto:${paper.assignedSupervisorEmail}`} style={{ color: '#ca8a04', textDecoration: 'underline' }}>{paper.assignedSupervisorEmail}</a>)
+                                    (<a href={`mailto:${paper.assignedSupervisorEmail}`} style={{ color: getAssignedColor(), textDecoration: 'underline' }}>{paper.assignedSupervisorEmail}</a>)
                                   </span>
                                 )}
                               </div>
