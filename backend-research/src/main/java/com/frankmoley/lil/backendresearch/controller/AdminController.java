@@ -1,8 +1,10 @@
 package com.frankmoley.lil.backendresearch.controller;
 
 import com.frankmoley.lil.backendresearch.entity.Paper;
+import com.frankmoley.lil.backendresearch.entity.Student;
 import com.frankmoley.lil.backendresearch.entity.Supervisor;
 import com.frankmoley.lil.backendresearch.repository.PaperRepository;
+import com.frankmoley.lil.backendresearch.repository.StudentRepository;
 import com.frankmoley.lil.backendresearch.repository.SupervisorRepository;
 import com.frankmoley.lil.backendresearch.service.NotificationService;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ import java.util.*;
 public class AdminController {
 
     private final PaperRepository paperRepository;
+    private final StudentRepository studentRepository;
     private final SupervisorRepository supervisorRepository;
     private final NotificationService notificationService;
 
@@ -61,11 +64,9 @@ public class AdminController {
                 .limit(10)
                 .toList();
 
-        // Populate student names
+        // Populate student names from student table
         for (Paper p : latestSubmissions) {
-            if (p.getStudentName() == null || p.getStudentName().isBlank()) {
-                p.setStudentName("Registered Student");
-            }
+            populateStudentNameFromTable(p);
         }
 
         populateFormattedPublicationIds(latestSubmissions);
@@ -271,9 +272,7 @@ public class AdminController {
         List<Paper> allPapers = paperRepository.findAll();
         populateFormattedPublicationIds(allPapers);
         for (Paper p : allPapers) {
-            if (p.getStudentName() == null || p.getStudentName().isBlank()) {
-                p.setStudentName("Registered Student");
-            }
+            populateStudentNameFromTable(p);
         }
         
         if (status == null || status.isBlank()) {
@@ -302,5 +301,15 @@ public class AdminController {
                 })
                 .toList();
         return ResponseEntity.ok(filtered);
+    }
+
+    private void populateStudentNameFromTable(Paper paper) {
+        if (paper.getStudentEmail() != null && !paper.getStudentEmail().isBlank()) {
+            studentRepository.findByEmail(paper.getStudentEmail())
+                    .ifPresent(student -> paper.setStudentName(student.getFullName()));
+        }
+        if (paper.getStudentName() == null || paper.getStudentName().isBlank()) {
+            paper.setStudentName("Registered Student");
+        }
     }
 }

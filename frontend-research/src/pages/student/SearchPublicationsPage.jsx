@@ -205,6 +205,27 @@ ${paper.keywords || ''}
     );
   };
 
+  // Extract category colors for reuse (same logic as getCategoryBadge)
+  const getCategoryColors = (category) => {
+    const cat = category || 'Computer Science';
+    let bg = '#e0f2fe';
+    let fg = '#0369a1';
+    if (cat.toLowerCase().includes('computer')) {
+      bg = '#ecfdf5';
+      fg = '#047857';
+    } else if (cat.toLowerCase().includes('medicine')) {
+      bg = '#fdf2f8';
+      fg = '#be185d';
+    } else if (cat.toLowerCase().includes('engineering')) {
+      bg = '#fff7ed';
+      fg = '#c2410c';
+    } else if (cat.toLowerCase().includes('statistics')) {
+      bg = '#f5f3ff';
+      fg = '#6d28d9';
+    }
+    return { bg, fg };
+  };
+
   // Compute allCategories dynamically
   const allCategories = ['All Category', ...new Set(papers.map(p => p.category).filter(Boolean))];
 
@@ -289,10 +310,34 @@ ${paper.keywords || ''}
               boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
               marginBottom: '1.5rem',
             }}>
-              {/* Header Title inside Search Filter Box */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-                <span style={{ fontSize: '1rem', fontWeight: '700', color: '#0f172a' }}>Browse everything</span>
-                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Search, filter and sort the entire repository.</span>
+              {/* Header Title + Refresh Button */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                  <span style={{ fontSize: '1rem', fontWeight: '700', color: '#0f172a' }}>Browse everything</span>
+                  <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Search, filter and sort the entire repository.</span>
+                </div>
+                <button
+                  onClick={fetchPapers}
+                  title="Refresh publications"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '32px',
+                    height: '32px',
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    color: '#64748b',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    flexShrink: 0
+                  }}
+                  onMouseOver={(e) => { e.currentTarget.style.color = '#0f172a'; e.currentTarget.style.backgroundColor = '#f1f5f9'; }}
+                  onMouseOut={(e) => { e.currentTarget.style.color = '#64748b'; e.currentTarget.style.backgroundColor = '#ffffff'; }}
+                >
+                  <RefreshCw size={14} />
+                </button>
               </div>
 
               {/* Row of Controls */}
@@ -377,30 +422,6 @@ ${paper.keywords || ''}
                   <option value="Most Downloaded">Most Downloaded</option>
                   <option value="A-Z">A-Z</option>
                 </select>
-
-                {/* Refresh Button */}
-                <button
-                  onClick={fetchPapers}
-                  title="Refresh publications"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: '38px',
-                    height: '38px',
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '10px',
-                    color: '#64748b',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    marginLeft: 'auto'
-                  }}
-                  onMouseOver={(e) => { e.currentTarget.style.color = '#0f172a'; e.currentTarget.style.backgroundColor = '#f1f5f9'; }}
-                  onMouseOut={(e) => { e.currentTarget.style.color = '#64748b'; e.currentTarget.style.backgroundColor = '#ffffff'; }}
-                >
-                  <RefreshCw size={16} />
-                </button>
               </div>
             </div>
 
@@ -462,6 +483,44 @@ ${paper.keywords || ''}
                     </div>
 
                     <h3 className={pubCardStyles.pubTitle}>{paper.title}</h3>
+
+                    {/* Author Name & Email Labels */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.35rem', alignItems: 'center' }}>
+                      {paper.studentName && (
+                        <span style={{
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          backgroundColor: getCategoryColors(paper.category).bg,
+                          color: getCategoryColors(paper.category).fg,
+                          padding: '0.2rem 0.6rem',
+                          borderRadius: '6px',
+                          letterSpacing: '0.01em'
+                        }}>
+                          By {paper.studentName}
+                        </span>
+                      )}
+                      {paper.studentEmail && (
+                        <a
+                          href={`mailto:${paper.studentEmail}`}
+                          style={{
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            backgroundColor: getCategoryColors(paper.category).bg,
+                            color: getCategoryColors(paper.category).fg,
+                            padding: '0.2rem 0.6rem',
+                            borderRadius: '6px',
+                            textDecoration: 'none',
+                            letterSpacing: '0.01em',
+                            cursor: 'pointer',
+                            transition: 'opacity 0.2s'
+                          }}
+                          onMouseOver={(e) => e.currentTarget.style.opacity = '0.8'}
+                          onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+                        >
+                          {paper.studentEmail}
+                        </a>
+                      )}
+                    </div>
                     
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.25rem', marginBottom: '0.75rem', alignItems: 'center' }}>
                       <span style={{ fontSize: '0.75rem', fontWeight: 600, backgroundColor: '#e0f2fe', color: '#0369a1', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
