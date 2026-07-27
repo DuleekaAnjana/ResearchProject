@@ -265,4 +265,42 @@ public class AdminController {
 
         return ResponseEntity.ok(saved);
     }
+
+    @GetMapping("/papers")
+    public ResponseEntity<List<Paper>> getAllPapers(@RequestParam(required = false) String status) {
+        List<Paper> allPapers = paperRepository.findAll();
+        populateFormattedPublicationIds(allPapers);
+        for (Paper p : allPapers) {
+            if (p.getStudentName() == null || p.getStudentName().isBlank()) {
+                p.setStudentName("Registered Student");
+            }
+        }
+        
+        if (status == null || status.isBlank()) {
+            return ResponseEntity.ok(allPapers);
+        }
+        
+        List<Paper> filtered = allPapers.stream()
+                .filter(p -> {
+                    String appStatus = p.getAdminApprovalStatus();
+                    if ("UNDER_ADMIN_APPROVAL".equalsIgnoreCase(status) || "UNDER ADMIN APPROVAL".equalsIgnoreCase(status) || "PENDING".equalsIgnoreCase(status)) {
+                        return appStatus == null || 
+                               "PENDING".equalsIgnoreCase(appStatus) || 
+                               "UNDER ADMIN APPROVAL".equalsIgnoreCase(appStatus) || 
+                               "UNDER_ADMIN_APPROVAL".equalsIgnoreCase(appStatus);
+                    } else if ("VERIFIED".equalsIgnoreCase(status)) {
+                        return "VERIFIED".equalsIgnoreCase(appStatus) || "APPROVED".equalsIgnoreCase(appStatus);
+                    } else if ("DUPLICATE_DETECTED".equalsIgnoreCase(status) || "DUPLICATE DETECTED".equalsIgnoreCase(status)) {
+                        return "DUPLICATE DETECTED".equalsIgnoreCase(appStatus) || "DUPLICATE_DETECTED".equalsIgnoreCase(appStatus);
+                    } else if ("SUPERVISOR_UNAVAILABLE".equalsIgnoreCase(status) || "SUPERVISOR UNAVAILABLE".equalsIgnoreCase(status)) {
+                        return "SUPERVISOR UNAVAILABLE".equalsIgnoreCase(appStatus) || 
+                               "SUPERVISOR_UNAVAILABLE".equalsIgnoreCase(appStatus) || 
+                               "SUPERVISOR NOT AVAILABLE".equalsIgnoreCase(appStatus) || 
+                               "SUPERVISOR_NOT_AVAILABLE".equalsIgnoreCase(appStatus);
+                    }
+                    return status.equalsIgnoreCase(appStatus);
+                })
+                .toList();
+        return ResponseEntity.ok(filtered);
+    }
 }

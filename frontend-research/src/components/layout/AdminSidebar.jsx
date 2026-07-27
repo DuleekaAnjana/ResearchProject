@@ -4,7 +4,11 @@ import {
   LayoutDashboard,
   FileText,
   Bell,
-  User
+  User,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  UserX
 } from 'lucide-react';
 import styles from './AdminSidebar.module.css';
 
@@ -14,6 +18,10 @@ const AdminSidebar = () => {
 
   const isDashboardActive = pathname === '/admin/dashboard';
   const isSubmissionsActive = pathname === '/admin/submissions';
+  const isPendingActive = pathname === '/admin/pending';
+  const isVerifiedActive = pathname === '/admin/verified';
+  const isDuplicateActive = pathname === '/admin/duplicate-detected';
+  const isNoSupervisorsActive = pathname === '/admin/no-supervisors';
   const isNotificationsActive = pathname === '/admin/notifications';
   const isProfileActive = pathname === '/admin/profile';
 
@@ -48,6 +56,38 @@ const AdminSidebar = () => {
           >
             <FileText className={styles.navIcon} />
             <span>Manage Submissions</span>
+          </Link>
+
+          <Link
+            to="/admin/pending"
+            className={`${styles.navItem} ${isPendingActive ? styles.navItemActive : ''}`}
+          >
+            <Clock className={styles.navIcon} />
+            <span>Pending</span>
+          </Link>
+
+          <Link
+            to="/admin/verified"
+            className={`${styles.navItem} ${isVerifiedActive ? styles.navItemActive : ''}`}
+          >
+            <CheckCircle className={styles.navIcon} />
+            <span>Verified</span>
+          </Link>
+
+          <Link
+            to="/admin/duplicate-detected"
+            className={`${styles.navItem} ${isDuplicateActive ? styles.navItemActive : ''}`}
+          >
+            <AlertCircle className={styles.navIcon} />
+            <span>Duplicate Detected</span>
+          </Link>
+
+          <Link
+            to="/admin/no-supervisors"
+            className={`${styles.navItem} ${isNoSupervisorsActive ? styles.navItemActive : ''}`}
+          >
+            <UserX className={styles.navIcon} />
+            <span>No Supervisors Available</span>
           </Link>
 
           <Link

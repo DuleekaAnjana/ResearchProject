@@ -91,6 +91,17 @@ const StudentProfilePage = () => {
     }
   };
 
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'N/A';
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    return date.toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
   return (
     <div className={dashboardStyles.dashboardLayout}>
       {sidebarOpen && <StudentSidebar />}
@@ -153,6 +164,9 @@ const StudentProfilePage = () => {
                   </h1>
                   <p style={{ margin: '0.25rem 0 0', opacity: 0.9, fontSize: '1.1rem', fontWeight: 500 }}>
                     Registered Student · {profile?.registrationNumber || 'N/A'}
+                  </p>
+                  <p style={{ margin: '0.25rem 0 0', opacity: 0.8, fontSize: '0.95rem', fontWeight: 400 }}>
+                    Joined {profile?.registeredDate ? formatDate(profile.registeredDate) : '25 Jul 2025'}
                   </p>
                   <div style={{ display: 'flex', gap: '1rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
                     <span style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)', padding: '0.25rem 0.75rem', borderRadius: '9999px', fontSize: '0.8rem', fontWeight: 600 }}>

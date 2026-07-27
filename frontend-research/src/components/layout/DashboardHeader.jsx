@@ -124,8 +124,9 @@ const DashboardHeader = ({ onSidebarToggle, notificationsRoute = null }) => {
 
   const handleLogout = () => {
     setProfileOpen(false);
+    const roleKey = user?.role === 'repositary admin' ? 'admin' : (user?.role || 'student');
     logout();
-    navigate('/');
+    navigate(`/auth/${roleKey}/login`);
   };
 
   const handleNotifClick = (notif) => {

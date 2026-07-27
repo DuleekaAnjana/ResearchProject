@@ -56,4 +56,7 @@ public class Student {
 
     @Column(nullable = false)
     private String password;
+
+    @Column(name = "registered_date")
+    private java.time.LocalDateTime registeredDate = java.time.LocalDateTime.now();
 }

@@ -1,68 +1,91 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, Key, Trash2 } from 'lucide-react';
+import { 
+  User, Mail, Phone, MapPin, Award, BookOpen, 
+  Calendar, Lock, Eye, EyeOff, CheckCircle2, AlertCircle,
+  Briefcase, GraduationCap, FileText, Bookmark, RefreshCw
+} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import DashboardHeader from '../../components/layout/DashboardHeader';
 import SupervisorSidebar from '../../components/layout/SupervisorSidebar';
-import styles from './SupervisorProfilePage.module.css';
+import dashboardStyles from '../student/StudentDashboard.module.css';
 
 const SupervisorProfilePage = () => {
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
-  const [successMsg, setSuccessMsg] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [passLoading, setPassLoading] = useState(false);
 
-  // Profile Form States
+  // Status/Alert messages
+  const [profileStatus, setProfileStatus] = useState(null);
+  const [securityStatus, setSecurityStatus] = useState(null);
+
+  // Profile Data state
   const [profileData, setProfileData] = useState({
     id: null,
-    fullName: 'Amara Perera',
-    nicNumber: '2001082596',
-    email: 'amara.perera@researchsphere.edu',
-    phoneNumber: '+94 706300027',
-    university: 'University of Colombo',
-    employeeId: '2024/CS/1000', // Used for Registration Number
-    highestQualification: 'BSc Honours in Computer Science', // Current Degree
-    academicPosition: 'Master', // Education Level
-    previouslyCompletedDegreesJson: 'Diploma in Software Engineering', // Previous Degrees
-    faculty: 'SLIIT', // Used for Previous Universities
-    researchCategory: 'Computer Science',
-    researchSubcategoriesJson: 'Artificial Intelligence',
-    professionalBiography: 'Passionate researcher focused on applying artificial intelligence to real-world problems in healthcare, education, and sustainability.',
-    password: ''
+    fullName: '',
+    nicNumber: '',
+    email: '',
+    phoneNumber: '',
+    university: '',
+    faculty: '',
+    department: '',
+    academicPosition: '',
+    employeeId: '',
+    highestQualification: '',
+    previouslyCompletedDegreesJson: '',
+    yearsOfTeachingExperience: '',
+    yearsOfResearchExperience: '',
+    professionalBiography: '',
+    researchCategory: '',
+    researchSubcategoriesJson: '',
+    researchInterests: '',
+    registeredDate: null
   });
 
-  // Security Form States
-  const [securityData, setSecurityData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmNewPassword: ''
-  });
+  // Password Update state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  // Password Visibility
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'N/A';
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    return date.toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  const fetchProfile = async () => {
+    if (!user?.email) return;
+    setLoading(true);
+    try {
+      const data = await api.get(`/supervisor/profile?email=${encodeURIComponent(user.email)}`);
+      if (data) {
+        setProfileData(data);
+      }
+    } catch (err) {
+      console.error('Failed to load supervisor profile:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      setLoading(true);
-      try {
-        const email = user?.email || 'demo@researchsphere.edu';
-        const data = await api.get(`/supervisor/profile?email=${encodeURIComponent(email)}`);
-        if (data) {
-          setProfileData(prev => ({
-            ...prev,
-            ...data,
-            password: '' // Don't expose password
-          }));
-        }
-      } catch (err) {
-        console.error('Failed to load profile data, using default seeded state.', err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchProfile();
-  }, [user]);
+  }, [user?.email]);
 
-  const handleProfileChange = (e) => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
     setProfileData(prev => ({
       ...prev,
@@ -70,355 +93,567 @@ const SupervisorProfilePage = () => {
     }));
   };
 
-  const handleSecurityChange = (e) => {
-    const { name, value } = e.target;
-    setSecurityData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
   const handleSaveProfile = async (e) => {
     e.preventDefault();
-    setSuccessMsg('');
-    setErrorMsg('');
+    setProfileStatus(null);
+    setSaveLoading(true);
     try {
       const data = await api.put('/supervisor/profile', profileData);
       if (data) {
-        setProfileData(prev => ({
-          ...prev,
-          ...data,
-          password: ''
-        }));
-        setSuccessMsg('Personal information updated successfully!');
+        setProfileData(data);
+        setProfileStatus({ type: 'success', text: 'Profile information updated successfully!' });
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     } catch (err) {
-      console.error('Failed to save profile details:', err);
-      setErrorMsg('Failed to save personal information.');
+      console.error(err);
+      setProfileStatus({ type: 'error', text: err?.message || 'Failed to update profile.' });
+    } finally {
+      setSaveLoading(false);
     }
   };
 
-  const handleChangePassword = async (e) => {
+  const handlePasswordChange = async (e) => {
     e.preventDefault();
-    setSuccessMsg('');
-    setErrorMsg('');
-    if (!securityData.currentPassword || !securityData.newPassword || !securityData.confirmNewPassword) {
-      setErrorMsg('Please fill in all password fields.');
+    setSecurityStatus(null);
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setSecurityStatus({ type: 'error', text: 'All fields are required.' });
       return;
     }
-    if (securityData.newPassword !== securityData.confirmNewPassword) {
-      setErrorMsg('New passwords do not match.');
+
+    if (newPassword !== confirmPassword) {
+      setSecurityStatus({ type: 'error', text: 'New passwords do not match.' });
       return;
     }
+
+    if (newPassword.length < 6) {
+      setSecurityStatus({ type: 'error', text: 'Password must be at least 6 characters long.' });
+      return;
+    }
+
+    setPassLoading(true);
     try {
-      const updated = {
-        ...profileData,
-        password: securityData.newPassword
-      };
-      await api.put('/supervisor/profile', updated);
-      setSuccessMsg('Password changed successfully!');
-      setSecurityData({
-        currentPassword: '',
-        newPassword: '',
-        confirmNewPassword: ''
+      const res = await api.post('/auth/change-password', {
+        email: user.email,
+        currentPassword,
+        newPassword
       });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (res) {
+        setSecurityStatus({ type: 'success', text: 'Password updated successfully!' });
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      }
     } catch (err) {
-      console.error('Failed to change password:', err);
-      setErrorMsg('Failed to change password.');
+      console.error(err);
+      setSecurityStatus({ 
+        type: 'error', 
+        text: err?.message || 'Failed to change password. Please verify current password.' 
+      });
+    } finally {
+      setPassLoading(false);
     }
   };
-
-  const handleDeleteAccount = () => {
-    const confirm = window.confirm('Are you absolutely sure you want to delete your supervisor account? This action is permanent.');
-    if (confirm) {
-      alert('Delete request has been logged. Please contact administration to complete.');
-    }
-  };
-
-  const displayName = profileData.fullName || 'Amara Perera';
-  const displayInitials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
 
   return (
-    <div className={styles.dashboardLayout}>
+    <div className={dashboardStyles.dashboardLayout}>
       {sidebarOpen && <SupervisorSidebar />}
-
-      <div className={styles.mainContent}>
+      
+      <div className={dashboardStyles.mainContainer}>
         <DashboardHeader
-          onSidebarToggle={() => setSidebarOpen((prev) => !prev)}
+          onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
           notificationsRoute="/supervisor/notifications"
         />
 
-        <main className={styles.pageBody}>
-          {/* Breadcrumbs */}
-          <div className={styles.breadcrumb}>
-            <Link to="/" className={styles.breadcrumbItem}>Home</Link>
-            <ChevronRight size={14} />
-            <span className={styles.breadcrumbActive}>Profile</span>
-          </div>
-
-          {/* Page Header */}
-          <div className={styles.pageHeader}>
-            <h1 className={styles.pageTitle}>Profile</h1>
-            <p className={styles.pageSubtext}>
-              Manage your researcher profile and account settings.
-            </p>
-          </div>
-
-          {successMsg && (
-            <div style={{ padding: '1rem', backgroundColor: '#d1fae5', color: '#065f46', borderRadius: '8px', marginBottom: '1.5rem', fontWeight: 600 }}>
-              {successMsg}
+        <div 
+          className={dashboardStyles.contentWrapper}
+          style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            minHeight: 'calc(100vh - 64px)', 
+            justifyContent: 'space-between',
+            padding: '2rem'
+          }}
+        >
+          {loading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1, height: '400px', fontSize: '1.1rem', color: '#64748b' }}>
+              Loading Profile Details...
             </div>
-          )}
-          {errorMsg && (
-            <div style={{ padding: '1rem', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '8px', marginBottom: '1.5rem', fontWeight: 600 }}>
-              {errorMsg}
-            </div>
-          )}
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', flex: 1 }}>
+              
+              {/* Header profile banner card (Green Theme) */}
+              <div 
+                style={{ 
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', 
+                  borderRadius: '16px', 
+                  padding: '2.5rem', 
+                  color: '#ffffff',
+                  boxShadow: '0 4px 20px rgba(16, 185, 129, 0.15)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '2rem',
+                  flexWrap: 'wrap'
+                }}
+              >
+                <div 
+                  style={{ 
+                    width: '90px', 
+                    height: '90px', 
+                    borderRadius: '50%', 
+                    backgroundColor: '#ffffff', 
+                    color: '#059669', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    fontSize: '2.25rem', 
+                    fontWeight: 800,
+                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
+                  }}
+                >
+                  {(profileData.fullName || user?.name || 'E').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                </div>
+                <div>
+                  <h1 style={{ fontSize: '2rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>
+                    {profileData.fullName}
+                  </h1>
+                  <p style={{ margin: '0.25rem 0 0', opacity: 0.9, fontSize: '1.1rem', fontWeight: 500 }}>
+                    Registered Supervisor · {profileData.employeeId || 'N/A'}
+                  </p>
+                  <p style={{ margin: '0.25rem 0 0', opacity: 0.8, fontSize: '0.95rem', fontWeight: 400 }}>
+                    Joined {profileData.registeredDate ? formatDate(profileData.registeredDate) : '25 Jul 2025'}
+                  </p>
+                  <div style={{ display: 'flex', gap: '1rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
+                    <span style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)', padding: '0.25rem 0.75rem', borderRadius: '9999px', fontSize: '0.8rem', fontWeight: 600 }}>
+                      Category: {profileData.researchCategory || 'Computer Science'}
+                    </span>
+                    <span style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)', padding: '0.25rem 0.75rem', borderRadius: '9999px', fontSize: '0.8rem', fontWeight: 600 }}>
+                      Position: {profileData.academicPosition || 'Master'}
+                    </span>
+                  </div>
+                </div>
+              </div>
 
-          <div className={styles.profileLayoutGrid}>
-            {/* Left Card: Photo / Meta */}
-            <div className={styles.leftProfileCard}>
-              <div className={styles.avatarCircle}>{displayInitials}</div>
-              <h2 className={styles.profileName}>{displayName}</h2>
-              <span className={styles.profileRole}>Supervisor</span>
-              <span className={styles.profileJoined}>Joined Jul 2025</span>
-              <button type="button" className={styles.changePhotoBtn}>
-                Change photo
-              </button>
-            </div>
+              {/* Two Column details cards */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' }}>
+                
+                {/* Profile Details Edit Form */}
+                <div 
+                  style={{ 
+                    background: '#ffffff', 
+                    borderRadius: '16px', 
+                    padding: '2rem', 
+                    border: '1px solid #e2e8f0',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+                    gridColumn: 'span 2'
+                  }}
+                >
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1e293b', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem' }}>
+                    <User size={18} color="#059669" />
+                    Supervisor Profile Information
+                  </h3>
 
-            {/* Right Column Forms */}
-            <div className={styles.rightFormsCol}>
-              {/* Form 1: Personal Info */}
-              <div className={styles.card}>
-                <h3 className={styles.cardTitle}>Personal Information</h3>
-                <form onSubmit={handleSaveProfile}>
-                  <div className={styles.formGrid}>
-                    <div>
-                      <label className={styles.inputLabel}>Full Name</label>
-                      <input
+                  {profileStatus && (
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '0.5rem', 
+                      padding: '0.75rem 1rem', 
+                      borderRadius: '8px', 
+                      fontSize: '0.85rem', 
+                      fontWeight: 600,
+                      marginBottom: '1rem',
+                      backgroundColor: profileStatus.type === 'success' ? '#f0fdf4' : '#fef2f2',
+                      color: profileStatus.type === 'success' ? '#15803d' : '#b91c1c',
+                      border: `1px solid ${profileStatus.type === 'success' ? '#bbf7d0' : '#fecaca'}`
+                    }}>
+                      {profileStatus.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+                      {profileStatus.text}
+                    </div>
+                  )}
+
+                  <form onSubmit={handleSaveProfile} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                    
+                    {/* Full Name */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>Full Name</label>
+                      <input 
                         type="text"
                         name="fullName"
                         value={profileData.fullName}
-                        onChange={handleProfileChange}
-                        className={styles.textInput}
+                        onChange={handleInputChange}
+                        required
+                        style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.625rem 0.875rem', outline: 'none', fontSize: '0.925rem' }}
                       />
                     </div>
-                    <div>
-                      <label className={styles.inputLabel}>NIC</label>
-                      <input
-                        type="text"
-                        name="nicNumber"
-                        value={profileData.nicNumber}
-                        onChange={handleProfileChange}
-                        className={styles.textInput}
-                      />
-                    </div>
-                    <div>
-                      <label className={styles.inputLabel}>Email</label>
-                      <input
+
+                    {/* Email (ReadOnly) */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>Email Address</label>
+                      <input 
                         type="email"
-                        name="email"
                         value={profileData.email}
                         readOnly
-                        className={`${styles.textInput} ${styles.readOnlyInput}`}
+                        style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.625rem 0.875rem', outline: 'none', backgroundColor: '#f1f5f9', color: '#64748b', fontSize: '0.925rem', cursor: 'not-allowed' }}
                       />
                     </div>
-                    <div>
-                      <label className={styles.inputLabel}>Phone</label>
-                      <input
+
+                    {/* Phone Number */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>Phone Number</label>
+                      <input 
                         type="text"
                         name="phoneNumber"
                         value={profileData.phoneNumber}
-                        onChange={handleProfileChange}
-                        className={styles.textInput}
+                        onChange={handleInputChange}
+                        style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.625rem 0.875rem', outline: 'none', fontSize: '0.925rem' }}
                       />
                     </div>
-                    <div>
-                      <label className={styles.inputLabel}>University</label>
-                      <select
+
+                    {/* NIC Number */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>NIC Number</label>
+                      <input 
+                        type="text"
+                        name="nicNumber"
+                        value={profileData.nicNumber}
+                        onChange={handleInputChange}
+                        style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.625rem 0.875rem', outline: 'none', fontSize: '0.925rem' }}
+                      />
+                    </div>
+
+                    {/* Date of Birth */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>Date of Birth</label>
+                      <input 
+                        type="date"
+                        name="dateOfBirth"
+                        value={profileData.dateOfBirth}
+                        onChange={handleInputChange}
+                        style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.625rem 0.875rem', outline: 'none', fontSize: '0.925rem' }}
+                      />
+                    </div>
+
+                    {/* Gender */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>Gender</label>
+                      <select 
+                        name="gender"
+                        value={profileData.gender}
+                        onChange={handleInputChange}
+                        style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.625rem 0.875rem', outline: 'none', fontSize: '0.925rem' }}
+                      >
+                        <option value="">Select Gender</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+
+                    {/* University */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>University</label>
+                      <input 
+                        type="text"
                         name="university"
                         value={profileData.university}
-                        onChange={handleProfileChange}
-                        className={styles.selectInput}
-                      >
-                        <option value="University of Colombo">University of Colombo</option>
-                        <option value="University of Moratuwa">University of Moratuwa</option>
-                        <option value="SLIIT">SLIIT</option>
-                        <option value="University of Kelaniya">University of Kelaniya</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className={styles.inputLabel}>Registration Number</label>
-                      <input
-                        type="text"
-                        name="employeeId"
-                        value={profileData.employeeId}
-                        onChange={handleProfileChange}
-                        className={styles.textInput}
+                        onChange={handleInputChange}
+                        style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.625rem 0.875rem', outline: 'none', fontSize: '0.925rem' }}
                       />
                     </div>
-                    <div>
-                      <label className={styles.inputLabel}>Current Degree</label>
-                      <input
-                        type="text"
-                        name="highestQualification"
-                        value={profileData.highestQualification}
-                        onChange={handleProfileChange}
-                        className={styles.textInput}
-                      />
-                    </div>
-                    <div>
-                      <label className={styles.inputLabel}>Education Level</label>
-                      <select
-                        name="academicPosition"
-                        value={profileData.academicPosition}
-                        onChange={handleProfileChange}
-                        className={styles.selectInput}
-                      >
-                        <option value="Master">Master</option>
-                        <option value="PhD">PhD</option>
-                        <option value="Professor">Professor</option>
-                        <option value="Senior Lecturer">Senior Lecturer</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className={styles.inputLabel}>Previous Degrees</label>
-                      <input
-                        type="text"
-                        name="previouslyCompletedDegreesJson"
-                        value={profileData.previouslyCompletedDegreesJson}
-                        onChange={handleProfileChange}
-                        className={styles.textInput}
-                      />
-                    </div>
-                    <div>
-                      <label className={styles.inputLabel}>Previous Universities</label>
-                      <input
+
+                    {/* Faculty */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>Faculty</label>
+                      <input 
                         type="text"
                         name="faculty"
                         value={profileData.faculty}
-                        onChange={handleProfileChange}
-                        className={styles.textInput}
+                        onChange={handleInputChange}
+                        style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.625rem 0.875rem', outline: 'none', fontSize: '0.925rem' }}
                       />
                     </div>
-                    <div>
-                      <label className={styles.inputLabel}>Research Category</label>
-                      <select
+
+                    {/* Department */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>Department</label>
+                      <input 
+                        type="text"
+                        name="department"
+                        value={profileData.department}
+                        onChange={handleInputChange}
+                        style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.625rem 0.875rem', outline: 'none', fontSize: '0.925rem' }}
+                      />
+                    </div>
+
+                    {/* Employee ID */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>Employee ID</label>
+                      <input 
+                        type="text"
+                        name="employeeId"
+                        value={profileData.employeeId}
+                        onChange={handleInputChange}
+                        style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.625rem 0.875rem', outline: 'none', fontSize: '0.925rem' }}
+                      />
+                    </div>
+
+                    {/* Highest Qualification */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>Highest Qualification</label>
+                      <input 
+                        type="text"
+                        name="highestQualification"
+                        value={profileData.highestQualification}
+                        onChange={handleInputChange}
+                        style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.625rem 0.875rem', outline: 'none', fontSize: '0.925rem' }}
+                      />
+                    </div>
+
+                    {/* Academic Position */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>Academic Position</label>
+                      <select 
+                        name="academicPosition"
+                        value={profileData.academicPosition}
+                        onChange={handleInputChange}
+                        style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.625rem 0.875rem', outline: 'none', fontSize: '0.925rem' }}
+                      >
+                        <option value="Senior Lecturer I">Senior Lecturer I</option>
+                        <option value="Senior Lecturer II">Senior Lecturer II</option>
+                        <option value="Lecturer">Lecturer</option>
+                        <option value="Professor">Professor</option>
+                        <option value="Assistant Lecturer">Assistant Lecturer</option>
+                        <option value="Master">Master</option>
+                        <option value="PhD">PhD</option>
+                      </select>
+                    </div>
+
+                    {/* Years of Teaching Experience */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>Years of Teaching Experience</label>
+                      <input 
+                        type="text"
+                        name="yearsOfTeachingExperience"
+                        value={profileData.yearsOfTeachingExperience}
+                        onChange={handleInputChange}
+                        style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.625rem 0.875rem', outline: 'none', fontSize: '0.925rem' }}
+                      />
+                    </div>
+
+                    {/* Years of Research Experience */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>Years of Research Experience</label>
+                      <input 
+                        type="text"
+                        name="yearsOfResearchExperience"
+                        value={profileData.yearsOfResearchExperience}
+                        onChange={handleInputChange}
+                        style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.625rem 0.875rem', outline: 'none', fontSize: '0.925rem' }}
+                      />
+                    </div>
+
+                    {/* Research Category */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>Research Category</label>
+                      <select 
                         name="researchCategory"
                         value={profileData.researchCategory}
-                        onChange={handleProfileChange}
-                        className={styles.selectInput}
+                        onChange={handleInputChange}
+                        style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.625rem 0.875rem', outline: 'none', fontSize: '0.925rem' }}
                       >
                         <option value="Computer Science">Computer Science</option>
                         <option value="Medicine">Medicine</option>
                         <option value="Engineering">Engineering</option>
                       </select>
                     </div>
-                    <div>
-                      <label className={styles.inputLabel}>Research Subcategory</label>
-                      <select
+
+                    {/* Research Subcategories */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>Research Subspecializations (Comma Separated)</label>
+                      <input 
+                        type="text"
                         name="researchSubcategoriesJson"
                         value={profileData.researchSubcategoriesJson}
-                        onChange={handleProfileChange}
-                        className={styles.selectInput}
+                        onChange={handleInputChange}
+                        style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.625rem 0.875rem', outline: 'none', fontSize: '0.925rem' }}
+                      />
+                    </div>
+
+                    {/* Research Interests */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', gridColumn: 'span 2' }}>
+                      <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>Research Interests</label>
+                      <input 
+                        type="text"
+                        name="researchInterests"
+                        value={profileData.researchInterests}
+                        onChange={handleInputChange}
+                        style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.625rem 0.875rem', outline: 'none', fontSize: '0.925rem' }}
+                      />
+                    </div>
+
+                    {/* Professional Biography */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', gridColumn: 'span 2' }}>
+                      <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>Professional Biography</label>
+                      <textarea 
+                        name="professionalBiography"
+                        value={profileData.professionalBiography}
+                        onChange={handleInputChange}
+                        rows={4}
+                        style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.625rem 0.875rem', outline: 'none', fontSize: '0.925rem', fontFamily: 'inherit', resize: 'vertical' }}
+                      />
+                    </div>
+
+                    {/* Submit Button */}
+                    <div style={{ gridColumn: 'span 2', display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+                      <button
+                        type="submit"
+                        disabled={saveLoading}
+                        style={{
+                          backgroundColor: '#059669',
+                          color: '#ffffff',
+                          border: 'none',
+                          padding: '0.625rem 1.75rem',
+                          borderRadius: '8px',
+                          fontWeight: '600',
+                          fontSize: '0.875rem',
+                          cursor: 'pointer',
+                          transition: 'background-color 0.2s',
+                          boxShadow: '0 2px 4px rgba(5, 150, 105, 0.2)'
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#047857'}
+                        onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#059669'}
                       >
-                        <option value="Artificial Intelligence">Artificial Intelligence</option>
-                        <option value="Machine Learning">Machine Learning</option>
-                        <option value="Cyber Security">Cyber Security</option>
-                        <option value="Data Science">Data Science</option>
-                        <option value="Software Engineering">Software Engineering</option>
-                      </select>
+                        {saveLoading ? 'Saving...' : 'Save Profile Details'}
+                      </button>
                     </div>
-                  </div>
 
-                  <div style={{ marginTop: '1.25rem' }}>
-                    <label className={styles.inputLabel}>Biography</label>
-                    <textarea
-                      name="professionalBiography"
-                      value={profileData.professionalBiography}
-                      onChange={handleProfileChange}
-                      rows={4}
-                      className={styles.textareaInput}
-                    />
-                  </div>
-
-                  <div className={styles.btnRow}>
-                    <button type="submit" className={styles.saveBtn}>
-                      Save changes
-                    </button>
-                  </div>
-                </form>
-              </div>
-
-              {/* Form 2: Security */}
-              <div className={styles.card}>
-                <h3 className={styles.cardTitle}>Security</h3>
-                <form onSubmit={handleChangePassword}>
-                  <div className={styles.formGrid}>
-                    <div style={{ gridColumn: 'span 2' }}>
-                      <label className={styles.inputLabel}>Current password</label>
-                      <input
-                        type="password"
-                        name="currentPassword"
-                        value={securityData.currentPassword}
-                        onChange={handleSecurityChange}
-                        className={styles.textInput}
-                      />
-                    </div>
-                    <div>
-                      <label className={styles.inputLabel}>New password</label>
-                      <input
-                        type="password"
-                        name="newPassword"
-                        value={securityData.newPassword}
-                        onChange={handleSecurityChange}
-                        className={styles.textInput}
-                      />
-                    </div>
-                    <div>
-                      <label className={styles.inputLabel}>Confirm new password</label>
-                      <input
-                        type="password"
-                        name="confirmNewPassword"
-                        value={securityData.confirmNewPassword}
-                        onChange={handleSecurityChange}
-                        className={styles.textInput}
-                      />
-                    </div>
-                  </div>
-
-                  <div className={styles.btnRow}>
-                    <button type="submit" className={styles.securityBtn}>
-                      <Key size={14} /> Change password
-                    </button>
-                  </div>
-                </form>
-              </div>
-
-              {/* Card 3: Delete Account */}
-              <div className={`${styles.card} ${styles.deleteCard}`}>
-                <h3 className={styles.deleteTitle}>Delete account</h3>
-                <div className={styles.deleteWrapper}>
-                  <p className={styles.deleteText}>
-                    Permanently delete your ResearchSphere account. Published research will remain in the repository, credited to your name.
-                  </p>
-                  <button type="button" onClick={handleDeleteAccount} className={styles.deleteBtn}>
-                    <Trash2 size={14} /> Delete account
-                  </button>
+                  </form>
                 </div>
+
+                {/* Password Update Card */}
+                <div 
+                  style={{ 
+                    background: '#ffffff', 
+                    borderRadius: '16px', 
+                    padding: '2rem', 
+                    border: '1px solid #e2e8f0',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+                    gridColumn: 'span 2'
+                  }}
+                >
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1e293b', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem' }}>
+                    <Lock size={18} color="#059669" />
+                    Security & Password Update
+                  </h3>
+
+                  {securityStatus && (
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '0.5rem', 
+                      padding: '0.75rem 1rem', 
+                      borderRadius: '8px', 
+                      fontSize: '0.85rem', 
+                      fontWeight: 600,
+                      marginBottom: '1rem',
+                      backgroundColor: securityStatus.type === 'success' ? '#f0fdf4' : '#fef2f2',
+                      color: securityStatus.type === 'success' ? '#15803d' : '#b91c1c',
+                      border: `1px solid ${securityStatus.type === 'success' ? '#bbf7d0' : '#fecaca'}`
+                    }}>
+                      {securityStatus.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+                      {securityStatus.text}
+                    </div>
+                  )}
+
+                  <form onSubmit={handlePasswordChange} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                    
+                    {/* Current Password */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', position: 'relative' }}>
+                      <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>Current Password</label>
+                      <input 
+                        type={showCurrent ? 'text' : 'password'}
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.625rem 2.5rem 0.625rem 0.875rem', outline: 'none', fontSize: '0.925rem' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCurrent(!showCurrent)}
+                        style={{ position: 'absolute', right: '0.75rem', bottom: '0.6rem', border: 'none', background: 'none', cursor: 'pointer', color: '#64748b' }}
+                      >
+                        {showCurrent ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+
+                    {/* New Password */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', position: 'relative' }}>
+                      <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>New Password</label>
+                      <input 
+                        type={showNew ? 'text' : 'password'}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.625rem 2.5rem 0.625rem 0.875rem', outline: 'none', fontSize: '0.925rem' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNew(!showNew)}
+                        style={{ position: 'absolute', right: '0.75rem', bottom: '0.6rem', border: 'none', background: 'none', cursor: 'pointer', color: '#64748b' }}
+                      >
+                        {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+
+                    {/* Confirm Password */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', position: 'relative' }}>
+                      <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>Confirm New Password</label>
+                      <input 
+                        type={showConfirm ? 'text' : 'password'}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.625rem 2.5rem 0.625rem 0.875rem', outline: 'none', fontSize: '0.925rem' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirm(!showConfirm)}
+                        style={{ position: 'absolute', right: '0.75rem', bottom: '0.6rem', border: 'none', background: 'none', cursor: 'pointer', color: '#64748b' }}
+                      >
+                        {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+
+                    {/* Save Security Button */}
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+                      <button
+                        type="submit"
+                        disabled={passLoading}
+                        style={{
+                          backgroundColor: '#059669',
+                          color: '#ffffff',
+                          border: 'none',
+                          padding: '0.625rem 1.75rem',
+                          borderRadius: '8px',
+                          fontWeight: '600',
+                          fontSize: '0.875rem',
+                          cursor: 'pointer',
+                          transition: 'background-color 0.2s',
+                          boxShadow: '0 2px 4px rgba(5, 150, 105, 0.2)'
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#047857'}
+                        onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#059669'}
+                      >
+                        {passLoading ? 'Updating...' : 'Update Password'}
+                      </button>
+                    </div>
+
+                  </form>
+                </div>
+
               </div>
 
             </div>
-          </div>
-        </main>
-
-        <footer className={styles.footer}>
-          <span>&copy; 2026 ResearchSphere &mdash; Supervisor Research Review Portal.</span>
-          <span>v1.0 proto</span>
-        </footer>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -21,7 +21,8 @@ import {
   Calendar,
   Eye,
   Download,
-  File
+  File,
+  RefreshCw
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
@@ -46,6 +47,8 @@ const SearchPublicationsPage = () => {
   const [papers, setPapers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [previewPaper, setPreviewPaper] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState('All Category');
+  const [sortBy, setSortBy] = useState('Newest');
 
   const searchInputRef = useRef(null);
 
@@ -105,21 +108,22 @@ const SearchPublicationsPage = () => {
   };
 
   // ---- Fetch papers ----
+  const fetchPapers = async () => {
+    setLoading(true);
+    try {
+      const data = await api.get('/papers');
+      const allPapers = data || [];
+      const publishedPapers = allPapers.filter(p => p.isPublished);
+      setPapers(publishedPapers);
+    } catch (err) {
+      console.warn('Failed to fetch papers:', err);
+      setPapers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchPapers = async () => {
-      setLoading(true);
-      try {
-        const data = await api.get('/papers');
-        const allPapers = data || [];
-        const publishedPapers = allPapers.filter(p => p.isPublished);
-        setPapers(publishedPapers);
-      } catch (err) {
-        console.warn('Failed to fetch papers:', err);
-        setPapers([]);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchPapers();
   }, []);
 
@@ -201,15 +205,45 @@ ${paper.keywords || ''}
     );
   };
 
-  // ---- Filter papers by query ----
+  // Compute allCategories dynamically
+  const allCategories = ['All Category', ...new Set(papers.map(p => p.category).filter(Boolean))];
+
+  // ---- Filter papers by query & category ----
   const filteredPapers = papers.filter((p) => {
-    if (!query.trim()) return true;
-    const q = query.toLowerCase();
-    return (
-      p.title?.toLowerCase().includes(q) ||
-      (p.student || p.studentName || '').toLowerCase().includes(q) ||
-      p.category?.toLowerCase().includes(q)
-    );
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      const match = 
+        (p.title || '').toLowerCase().includes(q) ||
+        (p.studentName || p.student || '').toLowerCase().includes(q) ||
+        (p.publicationId ? String(p.publicationId) : '').includes(q) ||
+        (p.subcategory || '').toLowerCase().includes(q) ||
+        (p.keywords || '').toLowerCase().includes(q);
+      if (!match) return false;
+    }
+    if (selectedCategory && selectedCategory !== 'All Category') {
+      if (p.category !== selectedCategory) return false;
+    }
+    return true;
+  });
+
+  // ---- Sort papers ----
+  const sortedPapers = [...filteredPapers].sort((a, b) => {
+    if (sortBy === 'Newest') {
+      return new Date(b.publishedAt || b.submittedAt || 0) - new Date(a.publishedAt || a.submittedAt || 0);
+    }
+    if (sortBy === 'Oldest') {
+      return new Date(a.publishedAt || a.submittedAt || 0) - new Date(b.publishedAt || b.submittedAt || 0);
+    }
+    if (sortBy === 'Most Viewed') {
+      return (b.views || 0) - (a.views || 0);
+    }
+    if (sortBy === 'Most Downloaded') {
+      return (b.downloads || 0) - (a.downloads || 0);
+    }
+    if (sortBy === 'A-Z') {
+      return (a.title || '').localeCompare(b.title || '');
+    }
+    return 0;
   });
 
   return (
@@ -243,20 +277,130 @@ ${paper.keywords || ''}
               </p>
             </div>
 
-            {/* Search Bar */}
-            <div className={styles.searchRow}>
-              <div className={styles.searchField}>
-                <Search size={16} className={styles.searchIcon} />
-                <input
-                  type="text"
-                  id="publications-search-input"
-                  ref={searchInputRef}
-                  className={styles.searchInput}
-                  placeholder="Search by title, author, or category..."
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                />
+            {/* Search Filter Bar */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem',
+              backgroundColor: '#ffffff',
+              padding: '1.25rem',
+              borderRadius: '16px',
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+              marginBottom: '1.5rem',
+            }}>
+              {/* Header Title inside Search Filter Box */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                <span style={{ fontSize: '1rem', fontWeight: '700', color: '#0f172a' }}>Browse everything</span>
+                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Search, filter and sort the entire repository.</span>
+              </div>
+
+              {/* Row of Controls */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '1rem',
+                flexWrap: 'wrap',
+                width: '100%'
+              }}>
+                {/* Search Field */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '12px',
+                  padding: '0.5rem 1rem',
+                  flex: 2,
+                  minWidth: '280px',
+                  backgroundColor: '#f8fafc'
+                }}>
+                  <Search size={16} style={{ color: '#64748b' }} />
+                  <input
+                    type="text"
+                    ref={searchInputRef}
+                    placeholder="Search title, author, publication id, subcategory or keyword.."
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    style={{
+                      border: 'none',
+                      outline: 'none',
+                      backgroundColor: 'transparent',
+                      width: '100%',
+                      fontSize: '0.875rem',
+                      color: '#0f172a'
+                    }}
+                  />
+                </div>
+
+                {/* Category Filter */}
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  style={{
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '12px',
+                    padding: '0.625rem 1rem',
+                    backgroundColor: '#ffffff',
+                    fontSize: '0.875rem',
+                    color: '#0f172a',
+                    minWidth: '160px',
+                    outline: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {allCategories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+
+                {/* Sort Filter */}
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  style={{
+                    border: '1px solid #2563eb',
+                    borderRadius: '12px',
+                    padding: '0.625rem 1rem',
+                    backgroundColor: '#ffffff',
+                    fontSize: '0.875rem',
+                    color: '#0f172a',
+                    minWidth: '140px',
+                    outline: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="Newest">Newest</option>
+                  <option value="Oldest">Oldest</option>
+                  <option value="Most Viewed">Most Viewed</option>
+                  <option value="Most Downloaded">Most Downloaded</option>
+                  <option value="A-Z">A-Z</option>
+                </select>
+
+                {/* Refresh Button */}
+                <button
+                  onClick={fetchPapers}
+                  title="Refresh publications"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '38px',
+                    height: '38px',
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '10px',
+                    color: '#64748b',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    marginLeft: 'auto'
+                  }}
+                  onMouseOver={(e) => { e.currentTarget.style.color = '#0f172a'; e.currentTarget.style.backgroundColor = '#f1f5f9'; }}
+                  onMouseOut={(e) => { e.currentTarget.style.color = '#64748b'; e.currentTarget.style.backgroundColor = '#ffffff'; }}
+                >
+                  <RefreshCw size={16} />
+                </button>
               </div>
             </div>
 
@@ -290,7 +434,7 @@ ${paper.keywords || ''}
             {!loading && (
               <div className={styles.resultsHeader}>
                 <span className={styles.resultsCount}>
-                  {filteredPapers.length} result{filteredPapers.length !== 1 ? 's' : ''}
+                  {sortedPapers.length} result{sortedPapers.length !== 1 ? 's' : ''}
                   {query ? ` for "${query}"` : ''}
                 </span>
               </div>
@@ -299,7 +443,7 @@ ${paper.keywords || ''}
             {/* Results */}
             {loading ? (
               <div className={styles.loadingState}>Loading publications…</div>
-            ) : filteredPapers.length === 0 ? (
+            ) : sortedPapers.length === 0 ? (
               <div className={styles.emptyState}>
                 <p className={styles.emptyStateTitle}>No publications found</p>
                 <p className={styles.emptyStateDesc}>
@@ -308,7 +452,7 @@ ${paper.keywords || ''}
               </div>
             ) : (
               <div className={pubCardStyles.publicationsGrid}>
-                {filteredPapers.map((paper) => (
+                {sortedPapers.map((paper) => (
                   <div key={paper.id} className={pubCardStyles.pubCard}>
                     <div className={pubCardStyles.cardHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#f1f5f9', color: '#475569', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>

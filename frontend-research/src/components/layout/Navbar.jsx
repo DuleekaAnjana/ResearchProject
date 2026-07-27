@@ -64,7 +64,7 @@ const Navbar = () => {
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
             >
-              <circle cx="16" cy="16" r="16" fill="#2563eb" />
+              <circle cx="16" cy="16" r="16" fill="#5c061a" />
               <path
                 d="M10 12C10 10.8954 10.8954 10 12 10H20C21.1046 10 22 10.8954 22 12V20C22 21.1046 21.1046 22 20 22H12C10.8954 22 10 21.1046 10 20V12Z"
                 fill="white"
@@ -92,8 +92,8 @@ const Navbar = () => {
             </svg>
           </div>
           <div className={styles.logoText}>
-            <span className={styles.logoTitle}>ResearchSphere</span>
-            <span className={styles.logoSubtitle}>RESEARCH REPOSITORY</span>
+            <span className={styles.logoTitle} style={{ color: '#5c061a' }}>ResearchSphere</span>
+            <span className={styles.logoSubtitle} style={{ color: 'rgba(92, 6, 26, 0.6)' }}>RESEARCH REPOSITORY</span>
           </div>
         </Link>
 
@@ -126,8 +126,9 @@ const Navbar = () => {
                 </Button>
                 <button
                   onClick={() => {
+                    const roleKey = user?.role === 'repositary admin' ? 'admin' : (user?.role || 'student');
                     logout();
-                    navigate('/');
+                    navigate(`/auth/${roleKey}/login`);
                   }}
                   style={{
                     background: 'none',

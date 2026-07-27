@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronRight, Search, FileText } from 'lucide-react';
+import { ChevronRight, Search, FileText, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import DashboardHeader from '../../components/layout/DashboardHeader';
@@ -19,54 +19,76 @@ const AssignedPapers = ({ filterStatus }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSubcategory, setSelectedSubcategory] = useState('');
   const [sortOrder, setSortOrder] = useState('newest');
+  
+  // Supervisor's registered research category
+  const [supervisorCategory, setSupervisorCategory] = useState(user?.researchCategory || 'Computer Science');
 
-  // Hardcoded subcategories matching category
-  const subcategories = [
-    'Artificial Intelligence',
-    'Machine Learning',
-    'Cyber Security',
-    'Data Science',
-    'Software Engineering',
-    'Human-Computer Interaction',
-    'Internet of Things',
-    'Cloud Computing',
-    'Cardiovascular Medicine',
-    'Radiology & Imaging',
-    'Pathology',
-    'Neurology',
-    'Oncology',
-    'Pediatrics',
-    'Robotics & Automation',
-    'Electrical Engineering',
-    'Civil Engineering',
-    'Mechanical Engineering',
-    'Renewable Energy Systems'
-  ];
+  const getSubcategories = (category) => {
+    switch (category) {
+      case 'Computer Science':
+        return [
+          'Artificial Intelligence',
+          'Machine Learning',
+          'Cyber Security',
+          'Data Science',
+          'Software Engineering',
+          'Human-Computer Interaction',
+          'Internet of Things',
+          'Cloud Computing',
+        ];
+      case 'Medicine':
+        return [
+          'Cardiovascular Medicine',
+          'Radiology & Imaging',
+          'Pathology',
+          'Neurology',
+          'Oncology',
+          'Pediatrics',
+        ];
+      case 'Engineering':
+        return [
+          'Robotics & Automation',
+          'Electrical Engineering',
+          'Civil Engineering',
+          'Mechanical Engineering',
+          'Renewable Energy Systems',
+        ];
+      default:
+        return [];
+    }
+  };
+
+  const relevantSubcategories = getSubcategories(supervisorCategory);
+
+  const fetchPapers = async () => {
+    setLoading(true);
+    try {
+      const email = user?.email || 'demo@researchsphere.edu';
+      const data = await api.get(`/papers/supervisor?email=${encodeURIComponent(email)}`);
+      setPapers(data || []);
+
+      const profileData = await api.get(`/supervisor/profile?email=${encodeURIComponent(email)}`);
+      if (profileData && profileData.researchCategory) {
+        setSupervisorCategory(profileData.researchCategory);
+      }
+    } catch (err) {
+      console.error('Failed to fetch assigned papers:', err);
+      setErrorMsg('Failed to load assigned papers. Using local demo data.');
+      // Fallback demo papers
+      setPapers([
+        { publicationId: 1, title: 'Transformer-Based Approaches for Low-Resource Sinhala NLP', studentName: 'Amara Perera', submittedAt: '2026-05-25T10:00:00', status: 'APPROVED', subcategory: 'Artificial Intelligence', keywords: 'Sinhala, NLP' },
+        { publicationId: 2, title: 'Federated Learning for Privacy-Preserving Medical Imaging', studentName: 'Amara Perera', submittedAt: '2026-05-28T10:00:00', status: 'APPROVED', subcategory: 'Machine Learning', keywords: 'Federated, Medical' },
+        { publicationId: 3, title: 'A Bayesian Framework for Rainfall Prediction in South Asia', studentName: 'Amara Perera', submittedAt: '2026-05-31T10:00:00', status: 'APPROVED', subcategory: 'Data Science', keywords: 'Rainfall, Bayesian' },
+        { publicationId: 4, title: 'Blockchain-Backed Digital Credentials for University Certifications', studentName: 'Amara Perera', submittedAt: '2026-06-03T10:00:00', status: 'APPROVED', subcategory: 'Cyber Security', keywords: 'Blockchain, Credentials' },
+        { publicationId: 5, title: 'Deep Reinforcement Learning for Autonomous Warehouse Robotics', studentName: 'Amara Perera', submittedAt: '2026-06-06T10:00:00', status: 'APPROVED', subcategory: 'Robotics & Automation', keywords: 'Reinforcement, Robotics' },
+        { publicationId: 6, title: 'Solar-Powered Micro-Irrigation Systems for Smallholder Farms', studentName: 'Amara Perera', submittedAt: '2026-06-09T10:00:00', status: 'APPROVED', subcategory: 'Renewable Energy Systems', keywords: 'Solar, Irrigation' }
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchPapers = async () => {
-      setLoading(true);
-      try {
-        const email = user?.email || 'demo@researchsphere.edu';
-        const data = await api.get(`/papers/supervisor?email=${encodeURIComponent(email)}`);
-        setPapers(data || []);
-      } catch (err) {
-        console.error('Failed to fetch assigned papers:', err);
-        setErrorMsg('Failed to load assigned papers. Using local demo data.');
-        // Fallback demo papers
-        setPapers([
-          { publicationId: 1, title: 'Transformer-Based Approaches for Low-Resource Sinhala NLP', studentName: 'Amara Perera', submittedAt: '2026-05-25T10:00:00', status: 'APPROVED', subcategory: 'Artificial Intelligence', keywords: 'Sinhala, NLP' },
-          { publicationId: 2, title: 'Federated Learning for Privacy-Preserving Medical Imaging', studentName: 'Amara Perera', submittedAt: '2026-05-28T10:00:00', status: 'APPROVED', subcategory: 'Machine Learning', keywords: 'Federated, Medical' },
-          { publicationId: 3, title: 'A Bayesian Framework for Rainfall Prediction in South Asia', studentName: 'Amara Perera', submittedAt: '2026-05-31T10:00:00', status: 'APPROVED', subcategory: 'Data Science', keywords: 'Rainfall, Bayesian' },
-          { publicationId: 4, title: 'Blockchain-Backed Digital Credentials for University Certifications', studentName: 'Amara Perera', submittedAt: '2026-06-03T10:00:00', status: 'APPROVED', subcategory: 'Cyber Security', keywords: 'Blockchain, Credentials' },
-          { publicationId: 5, title: 'Deep Reinforcement Learning for Autonomous Warehouse Robotics', studentName: 'Amara Perera', submittedAt: '2026-06-06T10:00:00', status: 'APPROVED', subcategory: 'Robotics & Automation', keywords: 'Reinforcement, Robotics' },
-          { publicationId: 6, title: 'Solar-Powered Micro-Irrigation Systems for Smallholder Farms', studentName: 'Amara Perera', submittedAt: '2026-06-09T10:00:00', status: 'APPROVED', subcategory: 'Renewable Energy Systems', keywords: 'Solar, Irrigation' }
-        ]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchPapers();
   }, [user]);
 
@@ -168,39 +190,124 @@ const AssignedPapers = ({ filterStatus }) => {
             </p>
           </div>
 
-          {/* Search box & Dropdown filters in a single aligned line */}
-          <div className={styles.toolbarRow}>
-            <div className={styles.searchBox}>
-              <Search size={18} className={styles.searchIcon} />
-              <input
-                type="text"
-                placeholder="Search by title, author, or keyword"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className={styles.searchInput}
-              />
+          {/* Search and Filters row */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1rem',
+            backgroundColor: '#ffffff',
+            padding: '1.25rem',
+            borderRadius: '16px',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+            marginBottom: '1.5rem',
+            position: 'relative',
+            width: '100%'
+          }}>
+            {/* Header / Top Row containing Refresh Button */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+              <button
+                onClick={fetchPapers}
+                title="Refresh submissions"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '32px',
+                  height: '32px',
+                  backgroundColor: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  color: '#64748b',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => { e.currentTarget.style.color = '#0f172a'; e.currentTarget.style.backgroundColor = '#f1f5f9'; }}
+                onMouseOut={(e) => { e.currentTarget.style.color = '#64748b'; e.currentTarget.style.backgroundColor = '#ffffff'; }}
+              >
+                <RefreshCw size={14} />
+              </button>
             </div>
 
-            <select
-              value={selectedSubcategory}
-              onChange={(e) => setSelectedSubcategory(e.target.value)}
-              className={styles.filterSelect}
-            >
-              <option value="">All Sub Categories</option>
-              {subcategories.map((sub) => (
-                <option key={sub} value={sub}>{sub}</option>
-              ))}
-            </select>
+            {/* Row of Controls */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              flexWrap: 'wrap'
+            }}>
+              {/* Search Field */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                border: '1px solid #e2e8f0',
+                borderRadius: '12px',
+                padding: '0.5rem 1rem',
+                flex: 4,
+                minWidth: '280px',
+                backgroundColor: '#f8fafc'
+              }}>
+                <Search size={18} style={{ color: '#64748b' }} />
+                <input
+                  type="text"
+                  placeholder="Search title, author, publication id, keyword..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{
+                    border: 'none',
+                    outline: 'none',
+                    backgroundColor: 'transparent',
+                    width: '100%',
+                    fontSize: '0.875rem',
+                    color: '#0f172a'
+                  }}
+                />
+              </div>
 
-            <select
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value)}
-              className={styles.filterSelect}
-            >
-              <option value="newest">Newest</option>
-              <option value="oldest">Oldest</option>
-              <option value="alphabetical">A-Z</option>
-            </select>
+              {/* Category Filter */}
+              <select
+                value={selectedSubcategory}
+                onChange={(e) => setSelectedSubcategory(e.target.value)}
+                style={{
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '12px',
+                  padding: '0.625rem 1rem',
+                  backgroundColor: '#ffffff',
+                  fontSize: '0.875rem',
+                  color: '#0f172a',
+                  minWidth: '165px',
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="">All Sub Categories</option>
+                {relevantSubcategories.map((sub) => (
+                  <option key={sub} value={sub}>{sub}</option>
+                ))}
+              </select>
+
+              {/* Sort Order */}
+              <select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+                style={{
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '12px',
+                  padding: '0.625rem 1rem',
+                  backgroundColor: '#ffffff',
+                  fontSize: '0.875rem',
+                  color: '#0f172a',
+                  minWidth: '150px',
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="newest">Newest</option>
+                <option value="oldest">Oldest</option>
+                <option value="alphabetical">A-Z</option>
+              </select>
+            </div>
           </div>
 
           {/* Table Card */}

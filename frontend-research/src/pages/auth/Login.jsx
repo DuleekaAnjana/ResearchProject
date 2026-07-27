@@ -146,7 +146,6 @@ const Login = ({ roleProp }) => {
                 strokeLinecap="round"
               />
             </svg>
-            <span className={styles.logoTitle} style={{ color: theme.textColor }}>ResearchSphere</span>
           </Link>
         </div>
 
@@ -166,11 +165,40 @@ const Login = ({ roleProp }) => {
 
       {/* Right Form Side */}
       <div className={styles.rightPanel}>
-        <div className={styles.topNav} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Link to="/#signin" className={styles.backLink} style={{ color: theme.logoBg }}>
+        <div className={styles.topNav} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: '1.5rem' }}>
+          <Link 
+            to="/#signin" 
+            style={{ 
+              color: theme.textColor, 
+              backgroundColor: theme.background.includes('#eff6ff') ? '#eff6ff' : theme.background.includes('#f0fdf4') ? '#f0fdf4' : '#fefdf0',
+              border: `1px solid ${theme.logoBg}`,
+              padding: '0.5rem 1rem',
+              borderRadius: '24px',
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              textDecoration: 'none',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+            }}
+          >
             <ArrowLeft size={16} /> Back to Select Role
           </Link>
-          <Link to="/" className={styles.backLink}>
+          <Link 
+            to="/" 
+            style={{ 
+              color: '#ffffff', 
+              backgroundColor: theme.logoBg,
+              border: `1px solid ${theme.logoBg}`,
+              padding: '0.5rem 1.25rem',
+              borderRadius: '24px',
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              textDecoration: 'none',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+            }}
+          >
             Back to home
           </Link>
         </div>

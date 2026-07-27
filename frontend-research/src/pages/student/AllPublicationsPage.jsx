@@ -11,7 +11,9 @@ import {
   AlertCircle,
   X,
   File,
-  ExternalLink
+  ExternalLink,
+  Plus,
+  RefreshCw
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
@@ -179,10 +181,11 @@ ${paper.comments || ''}
       // 1. Search Query Filter
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
-        const matchesTitle = paper.title?.toLowerCase().includes(query);
-        const matchesAbstract = paper.abstractText?.toLowerCase().includes(query);
-        const matchesKeywords = paper.keywords?.toLowerCase().includes(query);
-        if (!matchesTitle && !matchesAbstract && !matchesKeywords) {
+        const matchesTitle = (paper.title || '').toLowerCase().includes(query);
+        const matchesAuthor = (paper.studentName || user?.name || '').toLowerCase().includes(query);
+        const matchesPubId = (paper.publicationId ? String(paper.publicationId) : '').includes(query);
+        const matchesKeywords = (paper.keywords || '').toLowerCase().includes(query);
+        if (!matchesTitle && !matchesAuthor && !matchesPubId && !matchesKeywords) {
           return false;
         }
       }
@@ -260,50 +263,158 @@ ${paper.comments || ''}
           </div>
 
           {/* Page Header */}
-          <div className={styles.pageHeader}>
-            <h1 className={styles.pageTitle}>All Submissions</h1>
-            <p className={styles.pageSubtitle}>
-              Every paper you've authored — drafts, submissions, and approvals.
-            </p>
+          <div className={styles.pageHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+            <div>
+              <h1 className={styles.pageTitle}>All Submissions</h1>
+              <p className={styles.pageSubtitle}>
+                Every paper you've authored — drafts, submissions, and approvals.
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/student/upload')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                backgroundColor: '#1e40af',
+                color: '#ffffff',
+                border: 'none',
+                padding: '0.625rem 1.25rem',
+                borderRadius: '10px',
+                fontWeight: '600',
+                fontSize: '0.875rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e40af'}
+            >
+              <Plus size={18} />
+              New submission
+            </button>
           </div>
 
           {/* Search and Filters row */}
-          <div className={styles.filtersContainer}>
-            <div className={styles.searchField}>
-              <Search size={18} className={styles.searchIcon} />
-              <input
-                type="text"
-                placeholder="Search title, author, keyword..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className={styles.searchInput}
-              />
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1rem',
+            backgroundColor: '#ffffff',
+            padding: '1.25rem',
+            borderRadius: '16px',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+            marginBottom: '1.5rem',
+            position: 'relative',
+            width: '100%'
+          }}>
+            {/* Header / Top Row containing Refresh Button */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+              <button
+                onClick={fetchStudentPapers}
+                title="Refresh submissions"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '32px',
+                  height: '32px',
+                  backgroundColor: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  color: '#64748b',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => { e.currentTarget.style.color = '#0f172a'; e.currentTarget.style.backgroundColor = '#f1f5f9'; }}
+                onMouseOut={(e) => { e.currentTarget.style.color = '#64748b'; e.currentTarget.style.backgroundColor = '#ffffff'; }}
+              >
+                <RefreshCw size={14} />
+              </button>
             </div>
 
-            {/* Category Filter */}
-            <select
-              value={selectedSubcategory}
-              onChange={(e) => setSelectedSubcategory(e.target.value)}
-              className={styles.filterSelect}
-            >
-              <option value="">All Sub Categories</option>
-              {relevantSubcategories.map((sub) => (
-                <option key={sub} value={sub}>{sub}</option>
-              ))}
-            </select>
+            {/* Row of Controls */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              flexWrap: 'wrap'
+            }}>
+              {/* Search Field */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                border: '1px solid #e2e8f0',
+                borderRadius: '12px',
+                padding: '0.5rem 1rem',
+                flex: 4,
+                minWidth: '280px',
+                backgroundColor: '#f8fafc'
+              }}>
+                <Search size={18} style={{ color: '#64748b' }} />
+                <input
+                  type="text"
+                  placeholder="Search title, author, publication id, keyword..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{
+                    border: 'none',
+                    outline: 'none',
+                    backgroundColor: 'transparent',
+                    width: '100%',
+                    fontSize: '0.875rem',
+                    color: '#0f172a'
+                  }}
+                />
+              </div>
 
-            {/* Sort Order */}
-            <select
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value)}
-              className={styles.filterSelect}
-            >
-              <option value="newest">Newest</option>
-              <option value="oldest">Oldest</option>
-              <option value="most_downloaded">Most downloaded</option>
-              <option value="most_viewed">Most Viewed</option>
-              <option value="alphabetical">A-Z</option>
-            </select>
+              {/* Category Filter */}
+              <select
+                value={selectedSubcategory}
+                onChange={(e) => setSelectedSubcategory(e.target.value)}
+                style={{
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '12px',
+                  padding: '0.625rem 1rem',
+                  backgroundColor: '#ffffff',
+                  fontSize: '0.875rem',
+                  color: '#0f172a',
+                  minWidth: '165px',
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="">All Sub Categories</option>
+                {relevantSubcategories.map((sub) => (
+                  <option key={sub} value={sub}>{sub}</option>
+                ))}
+              </select>
+
+              {/* Sort Order */}
+              <select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+                style={{
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '12px',
+                  padding: '0.625rem 1rem',
+                  backgroundColor: '#ffffff',
+                  fontSize: '0.875rem',
+                  color: '#0f172a',
+                  minWidth: '150px',
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="newest">Newest</option>
+                <option value="oldest">Oldest</option>
+                <option value="most_downloaded">Most Downloaded</option>
+                <option value="most_viewed">Most Viewed</option>
+                <option value="alphabetical">A-Z</option>
+              </select>
+            </div>
           </div>
 
           {/* Error Message */}

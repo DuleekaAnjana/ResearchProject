@@ -37,8 +37,14 @@ public class SupervisorService {
         long approvedCount = papers.stream().filter(p -> "APPROVED".equalsIgnoreCase(p.getStatus())).count();
         long rejectedCount = papers.stream().filter(p -> "REJECTED".equalsIgnoreCase(p.getStatus())).count();
 
-        // Calculate average review time (mocked constant since reviewTimeDays is removed)
-        double avgDays = assignedCount > 0 ? 2.4 : 0.0;
+        // Calculate average review time using formula: (Approved + Rejected) * 30 / Assigned
+        String avgReviewTimeStr;
+        if (approvedCount == 0 && rejectedCount == 0) {
+            avgReviewTimeStr = "Not Reviewd any Submission yet";
+        } else {
+            double avgDays = assignedCount > 0 ? (double) (approvedCount + rejectedCount) * 30.0 / assignedCount : 0.0;
+            avgReviewTimeStr = String.format(Locale.US, "%.1f days", avgDays);
+        }
 
         java.time.LocalDateTime twentyFourHoursAgo = java.time.LocalDateTime.now().minusHours(24);
         List<PaperDTO> recentReviews = papers.stream()
@@ -73,7 +79,7 @@ public class SupervisorService {
                 .pendingReviews(pendingCount)
                 .approved(approvedCount)
                 .rejected(rejectedCount)
-                .avgReviewTime(String.format(Locale.US, "%.1f days", avgDays))
+                .avgReviewTime(avgReviewTimeStr)
                 .recentReviews(recentReviews)
                 .weeklyWorkload(workload)
                 .build();
