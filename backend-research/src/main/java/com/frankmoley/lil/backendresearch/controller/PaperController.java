@@ -361,6 +361,95 @@ public class PaperController {
         return ResponseEntity.notFound().build();
     }
 
+    @GetMapping("/student/rank")
+    public ResponseEntity<?> getStudentCategoryRank(@RequestParam String email) {
+        Optional<Student> studentOpt = studentRepository.findByEmail(email);
+        if (studentOpt.isEmpty()) {
+            return ResponseEntity.ok(java.util.Map.of("rank", 1, "totalStudents", 1));
+        }
+        Student targetStudent = studentOpt.get();
+        String category = targetStudent.getResearchCategory();
+        if (category == null || category.isBlank()) {
+            return ResponseEntity.ok(java.util.Map.of("rank", 1, "totalStudents", 1));
+        }
+
+        List<Student> categoryStudents = studentRepository.findAll().stream()
+                .filter(s -> category.equalsIgnoreCase(s.getResearchCategory()))
+                .toList();
+
+        List<Paper> allPapers = paperRepository.findAll();
+
+        class StudentRankStats {
+            String email;
+            long publishedCount;
+            long totalViews;
+            long totalDownloads;
+
+            StudentRankStats(String email, long publishedCount, long totalViews, long totalDownloads) {
+                this.email = email;
+                this.publishedCount = publishedCount;
+                this.totalViews = totalViews;
+                this.totalDownloads = totalDownloads;
+            }
+        }
+
+        List<StudentRankStats> rankList = new java.util.ArrayList<>();
+        for (Student s : categoryStudents) {
+            List<Paper> sPapers = allPapers.stream()
+                    .filter(p -> p.getStudentEmail() != null && p.getStudentEmail().equalsIgnoreCase(s.getEmail()))
+                    .toList();
+
+            long publishedCount = sPapers.stream().filter(p -> Boolean.TRUE.equals(p.getIsPublished())).count();
+            long totalViews = sPapers.stream().mapToLong(p -> p.getViews() != null ? p.getViews() : 0).sum();
+            long totalDownloads = sPapers.stream().mapToLong(p -> p.getDownloads() != null ? p.getDownloads() : 0).sum();
+
+            rankList.add(new StudentRankStats(s.getEmail(), publishedCount, totalViews, totalDownloads));
+        }
+
+        rankList.sort((a, b) -> {
+            if (b.publishedCount != a.publishedCount) {
+                return Long.compare(b.publishedCount, a.publishedCount);
+            }
+            if (b.totalViews != a.totalViews) {
+                return Long.compare(b.totalViews, a.totalViews);
+            }
+            if (b.totalDownloads != a.totalDownloads) {
+                return Long.compare(b.totalDownloads, a.totalDownloads);
+            }
+            return 0;
+        });
+
+        int rank = 1;
+        for (int i = 0; i < rankList.size(); i++) {
+            if (i > 0) {
+                StudentRankStats current = rankList.get(i);
+                StudentRankStats prev = rankList.get(i - 1);
+                if (current.publishedCount != prev.publishedCount ||
+                    current.totalViews != prev.totalViews ||
+                    current.totalDownloads != prev.totalDownloads) {
+                    rank = i + 1;
+                }
+            }
+            if (rankList.get(i).email.equalsIgnoreCase(email)) {
+                break;
+            }
+        }
+
+        long targetPublishedCount = 0;
+        for (StudentRankStats stats : rankList) {
+            if (stats.email.equalsIgnoreCase(email)) {
+                targetPublishedCount = stats.publishedCount;
+                break;
+            }
+        }
+
+        return ResponseEntity.ok(java.util.Map.of(
+            "rank", rank,
+            "totalStudents", categoryStudents.size(),
+            "publishedCount", targetPublishedCount
+        ));
+    }
+
     private byte[] createDummyPdf(String title) {
         String pdfContent = "%PDF-1.4\n" +
                 "1 0 obj <</Type/Catalog/Pages 2 0 R>> endobj\n" +

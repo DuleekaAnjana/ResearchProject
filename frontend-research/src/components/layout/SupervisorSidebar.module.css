@@ -23,7 +23,7 @@
 .logoIcon {
   width: 32px;
   height: 32px;
-  background-color: #10b981;
+  background-color: #5c061a;
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -39,14 +39,14 @@
 .logoTitle {
   font-size: 1.125rem;
   font-weight: 700;
-  color: #0f172a;
+  color: #5c061a;
   line-height: 1.2;
 }
 
 .logoSubtitle {
   font-size: 0.6875rem;
   font-weight: 600;
-  color: #64748b;
+  color: rgba(92, 6, 26, 0.6);
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }

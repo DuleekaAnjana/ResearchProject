@@ -74,6 +74,7 @@ const StudentDashboard = () => {
   const [papers, setPapers] = useState([]);
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [rankInfo, setRankInfo] = useState({ rank: 1, totalStudents: 1 });
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -85,6 +86,11 @@ const StudentDashboard = () => {
 
         const notificationsData = await notificationService.getAll(user.email);
         setActivities(notificationsData || []);
+
+        const rankData = await api.get(`/papers/student/rank?email=${encodeURIComponent(user.email)}`);
+        if (rankData) {
+          setRankInfo(rankData);
+        }
       } catch (err) {
         console.warn('Failed to load dashboard data:', err);
       } finally {
@@ -103,6 +109,20 @@ const StudentDashboard = () => {
       month: 'short',
       year: 'numeric'
     });
+  };
+
+  const getRelativeTime = (dateStr) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    if (diffDays >= 1) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    if (diffHours >= 1) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffMins >= 1) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+    return 'Just now';
   };
 
   const getDynamicStats = () => {
@@ -167,8 +187,9 @@ const StudentDashboard = () => {
       {
         id: 'category_rank',
         label: 'CATEGORY RANK',
-        value: '#4',
-        subtitle: `Top 5% in ${user?.researchCategory || 'Computer Science'}`,
+        value: rankInfo.publishedCount === 0 ? '#N/A' : `#${rankInfo.rank}`,
+        subtitle: rankInfo.publishedCount === 0 ? 'Publish first for Rank' : `Ranked ${rankInfo.rank} of ${rankInfo.totalStudents} in ${user?.researchCategory || 'Computer Science'}`,
+        extraLine: rankInfo.publishedCount === 0 ? `Ranked 0 of ${rankInfo.totalStudents} in ${user?.researchCategory || 'Computer Science'}` : null,
         icon: 'Trophy',
         variant: 'gold',
       },
@@ -232,6 +253,9 @@ const StudentDashboard = () => {
                   {stat.subtitle && (
                     <span className={styles.statSubtitle}>{stat.subtitle}</span>
                   )}
+                  {stat.extraLine && (
+                    <span className={styles.statSubtitle} style={{ marginTop: '2px', display: 'block' }}>{stat.extraLine}</span>
+                  )}
                 </div>
                 <div
                   className={`${styles.statIconWrapper} ${styles[stat.variant]}`}
@@ -247,7 +271,7 @@ const StudentDashboard = () => {
             {/* Recent Submissions */}
             <div className={styles.submissionsCard}>
               <div className={styles.chartHeader}>
-                <h3 className={styles.chartTitle}>Recent submissions</h3>
+                <h3 className={styles.chartTitle}>Recent Submissions</h3>
                 <Link to="/student/status" className={styles.viewAllLink}>
                   View all
                 </Link>
@@ -290,7 +314,7 @@ const StudentDashboard = () => {
             {/* Recent Activity */}
             <div className={styles.submissionsCard}>
               <div className={styles.chartHeader}>
-                <h3 className={styles.chartTitle}>Recent activity</h3>
+                <h3 className={styles.chartTitle}>Recent Activity</h3>
                 <Link to="/student/notifications" className={styles.viewAllLink}>
                   View all
                 </Link>
@@ -305,12 +329,41 @@ const StudentDashboard = () => {
                   [...activities]
                     .slice(0, 5)
                     .map((act) => (
-                      <div key={act.id} className={styles.activityItem}>
-                        <div className={styles.activityDot} />
-                        <div className={styles.activityTextGroup}>
-                          <span className={styles.activityText}>{act.message || act.text}</span>
-                          <span className={styles.activityTime}>{formatDate(act.createdAt)}</span>
+                      <div key={act.id} className={styles.activityItem} style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.35rem',
+                        padding: '1rem',
+                        border: '1px solid #f1f5f9',
+                        borderRadius: '12px',
+                        backgroundColor: '#ffffff',
+                        marginBottom: '0.75rem',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
+                          <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: '#0f172a' }}>
+                            {act.title}
+                          </h4>
+                          {!act.read && !act.isRead && (
+                            <span style={{
+                              fontSize: '0.7rem',
+                              fontWeight: 700,
+                              backgroundColor: '#2563eb',
+                              color: '#ffffff',
+                              padding: '0.15rem 0.5rem',
+                              borderRadius: '20px',
+                              flexShrink: 0
+                            }}>
+                              New
+                            </span>
+                          )}
                         </div>
+                        <p style={{ margin: 0, fontSize: '0.825rem', color: '#475569', lineHeight: 1.4 }}>
+                          {act.description}
+                        </p>
+                        <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                          {getRelativeTime(act.createdAt)}
+                        </span>
                       </div>
                     ))
                 )}

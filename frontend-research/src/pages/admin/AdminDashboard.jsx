@@ -157,7 +157,7 @@ const AdminDashboard = () => {
             {/* Card 5: Not Available Supervisor */}
             <div className={styles.statCard}>
               <div className={styles.statInfo}>
-                <span className={styles.statLabel}>NOT AVAILABLE SUPERVISOR</span>
+                <span className={styles.statLabel}>NO SUPERVISORS AVAILABLE</span>
                 <span className={styles.statValue}>
                   {loading ? '...' : Number(dashboardData.supervisorUnavailable || 0).toLocaleString()}
                 </span>

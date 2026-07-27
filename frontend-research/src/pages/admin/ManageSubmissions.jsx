@@ -25,6 +25,8 @@ const ManageSubmissions = () => {
   const [selectedPaper, setSelectedPaper] = useState(null);
   const [assignedSupervisorEmail, setAssignedSupervisorEmail] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All Category');
+  const [sortBy, setSortBy] = useState('Newest');
   const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState(null);
 
@@ -45,11 +47,9 @@ const ManageSubmissions = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const papersData = await api.get('/admin/dashboard');
-      if (papersData && papersData.latestSubmissions) {
-        // Fetch all papers since latest 10 is only on dashboard. Let's use getPapers list if available, 
-        // otherwise default to dashboard submissions. Let's also fetch general papers just in case.
-        setPapers(papersData.latestSubmissions);
+      const papersData = await api.get('/admin/papers');
+      if (papersData) {
+        setPapers(papersData);
       }
       
       const supsData = await api.get('/admin/supervisors');
@@ -128,13 +128,43 @@ const ManageSubmissions = () => {
     });
   };
 
+  // Compute allCategories dynamically
+  const allCategories = ['All Category', ...new Set(papers.map(p => p.category).filter(Boolean))];
+
   const filteredPapers = papers.filter((p) => {
-    const query = searchQuery.toLowerCase();
-    return (
-      p.title.toLowerCase().includes(query) ||
-      (p.studentName && p.studentName.toLowerCase().includes(query)) ||
-      (p.category && p.category.toLowerCase().includes(query))
-    );
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const match = 
+        (p.title || '').toLowerCase().includes(q) ||
+        (p.studentName || p.student || '').toLowerCase().includes(q) ||
+        (p.publicationId ? String(p.publicationId) : '').includes(q) ||
+        (p.subcategory || '').toLowerCase().includes(q) ||
+        (p.keywords || '').toLowerCase().includes(q);
+      if (!match) return false;
+    }
+    if (selectedCategory && selectedCategory !== 'All Category') {
+      if (p.category !== selectedCategory) return false;
+    }
+    return true;
+  });
+
+  const sortedPapers = [...filteredPapers].sort((a, b) => {
+    if (sortBy === 'Newest') {
+      return new Date(b.publishedAt || b.submittedAt || 0) - new Date(a.publishedAt || a.submittedAt || 0);
+    }
+    if (sortBy === 'Oldest') {
+      return new Date(a.publishedAt || a.submittedAt || 0) - new Date(b.publishedAt || b.submittedAt || 0);
+    }
+    if (sortBy === 'Most Viewed') {
+      return (b.views || 0) - (a.views || 0);
+    }
+    if (sortBy === 'Most Downloaded') {
+      return (b.downloads || 0) - (a.downloads || 0);
+    }
+    if (sortBy === 'A-Z') {
+      return (a.title || '').localeCompare(b.title || '');
+    }
+    return 0;
   });
 
   return (
@@ -163,20 +193,124 @@ const ManageSubmissions = () => {
             </p>
           </div>
 
-          <div className={styles.controlsRow}>
-            <div className={styles.searchBox}>
-              <Search size={18} className={styles.searchIcon} />
-              <input
-                type="text"
-                placeholder="Search by title, student, category..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className={styles.searchInput}
-              />
+          {/* Search Filter Bar */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1rem',
+            backgroundColor: '#ffffff',
+            padding: '1.25rem',
+            borderRadius: '16px',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+            marginBottom: '1.5rem',
+            position: 'relative'
+          }}>
+            {/* Header / Top Row containing Refresh Button */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+              <button
+                onClick={fetchData}
+                title="Refresh submissions"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '32px',
+                  height: '32px',
+                  backgroundColor: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  color: '#64748b',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => { e.currentTarget.style.color = '#0f172a'; e.currentTarget.style.backgroundColor = '#f1f5f9'; }}
+                onMouseOut={(e) => { e.currentTarget.style.color = '#64748b'; e.currentTarget.style.backgroundColor = '#ffffff'; }}
+              >
+                <RefreshCw size={14} />
+              </button>
             </div>
-            <button className={styles.refreshBtn} onClick={fetchData} title="Refresh submissions">
-              <RefreshCw size={16} />
-            </button>
+
+            {/* Row of Controls */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1rem',
+              flexWrap: 'wrap'
+            }}>
+              {/* Search Field */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                border: '1px solid #e2e8f0',
+                borderRadius: '12px',
+                padding: '0.5rem 1rem',
+                flex: 3,
+                minWidth: '280px',
+                backgroundColor: '#f8fafc'
+              }}>
+                <Search size={16} style={{ color: '#64748b' }} />
+                <input
+                  type="text"
+                  placeholder="Search title, author, publication id, subcategory or keyword.."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{
+                    border: 'none',
+                    outline: 'none',
+                    backgroundColor: 'transparent',
+                    width: '100%',
+                    fontSize: '0.875rem',
+                    color: '#0f172a'
+                  }}
+                />
+              </div>
+
+              {/* Category Filter */}
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                style={{
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '12px',
+                  padding: '0.625rem 1rem',
+                  backgroundColor: '#ffffff',
+                  fontSize: '0.875rem',
+                  color: '#0f172a',
+                  minWidth: '160px',
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                {allCategories.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+
+              {/* Sort Filter */}
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                style={{
+                  border: '1px solid #ca8a04',
+                  borderRadius: '12px',
+                  padding: '0.625rem 1rem',
+                  backgroundColor: '#ffffff',
+                  fontSize: '0.875rem',
+                  color: '#0f172a',
+                  minWidth: '140px',
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="Newest">Newest</option>
+                <option value="Oldest">Oldest</option>
+                <option value="Most Viewed">Most Viewed</option>
+                <option value="Most Downloaded">Most Downloaded</option>
+                <option value="A-Z">A-Z</option>
+              </select>
+            </div>
           </div>
 
           <div className={styles.card}>
@@ -200,14 +334,14 @@ const ManageSubmissions = () => {
                         Loading submissions...
                       </td>
                     </tr>
-                  ) : filteredPapers.length === 0 ? (
+                  ) : sortedPapers.length === 0 ? (
                     <tr>
                       <td colSpan="7" style={{ textAlign: 'center', padding: '2rem' }}>
                         No submissions found.
                       </td>
                     </tr>
                   ) : (
-                    filteredPapers.map((paper) => (
+                    sortedPapers.map((paper) => (
                       <tr key={paper.id}>
                         <td style={{ fontWeight: 600, color: '#475569' }}>
                           {paper.formattedPublicationId || `PUB-${paper.id}`}

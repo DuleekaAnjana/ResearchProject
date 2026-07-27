@@ -85,13 +85,7 @@ const SupervisorDashboard = () => {
     });
   };
 
-  const reviewsList = dashboardData.recentReviews && dashboardData.recentReviews.length > 0
-    ? dashboardData.recentReviews
-    : [
-        { id: 1, title: 'Transformer-Based Approaches for Sinhala NLP', student: 'Amara Perera', status: 'APPROVED', formattedPublicationId: 'PUB-24', submittedAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString() },
-        { id: 2, title: 'Federated Learning for Privacy-Preserving Medical Imaging', student: 'Amara Perera', status: 'APPROVED', formattedPublicationId: 'PUB-25', submittedAt: new Date(Date.now() - 4 * 3600 * 1000).toISOString() },
-        { id: 3, title: 'A Bayesian Framework for Rainfall Prediction', student: 'Amara Perera', status: 'APPROVED', formattedPublicationId: 'PUB-26', submittedAt: new Date(Date.now() - 6 * 3600 * 1000).toISOString() }
-      ];
+  const reviewsList = dashboardData.recentReviews || [];
 
   const maxWorkload = 8; // Max tick height for Y-axis
 

@@ -31,6 +31,10 @@ import ManageSubmissions from '../pages/admin/ManageSubmissions';
 import AdminNotificationsPage from '../pages/admin/AdminNotificationsPage';
 import AdminProfilePage from '../pages/admin/AdminProfilePage';
 import AdminReviewPage from '../pages/admin/AdminReviewPage';
+import PendingSubmissions from '../pages/admin/PendingSubmissions';
+import VerifiedSubmissions from '../pages/admin/VerifiedSubmissions';
+import DuplicateDetectedSubmissions from '../pages/admin/DuplicateDetectedSubmissions';
+import NoSupervisorsSubmissions from '../pages/admin/NoSupervisorsSubmissions';
 
 /**
  * Application routes configuration
@@ -88,6 +92,10 @@ const AppRoutes = () => {
       {/* ====== Admin Routes ====== */}
       <Route path="/admin/dashboard" element={<ProtectedRoute allowedRole="repositary admin"><AdminDashboard /></ProtectedRoute>} />
       <Route path="/admin/submissions" element={<ProtectedRoute allowedRole="repositary admin"><ManageSubmissions /></ProtectedRoute>} />
+      <Route path="/admin/pending" element={<ProtectedRoute allowedRole="repositary admin"><PendingSubmissions /></ProtectedRoute>} />
+      <Route path="/admin/verified" element={<ProtectedRoute allowedRole="repositary admin"><VerifiedSubmissions /></ProtectedRoute>} />
+      <Route path="/admin/duplicate-detected" element={<ProtectedRoute allowedRole="repositary admin"><DuplicateDetectedSubmissions /></ProtectedRoute>} />
+      <Route path="/admin/no-supervisors" element={<ProtectedRoute allowedRole="repositary admin"><NoSupervisorsSubmissions /></ProtectedRoute>} />
       <Route path="/admin/notifications" element={<ProtectedRoute allowedRole="repositary admin"><AdminNotificationsPage /></ProtectedRoute>} />
       <Route path="/admin/profile" element={<ProtectedRoute allowedRole="repositary admin"><AdminProfilePage /></ProtectedRoute>} />
       <Route path="/admin/review/:id" element={<ProtectedRoute allowedRole="repositary admin"><AdminReviewPage /></ProtectedRoute>} />

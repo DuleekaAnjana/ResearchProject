@@ -33,7 +33,8 @@ public class AuthService {
     public AuthResponse register(RegisterRequest request) {
         if (studentRepository.existsByEmail(request.getEmail()) 
                 || userRepository.existsByEmail(request.getEmail())
-                || supervisorRepository.existsByEmail(request.getEmail())) {
+                || supervisorRepository.existsByEmail(request.getEmail())
+                || adminRepository.existsByEmail(request.getEmail())) {
             return AuthResponse.builder()
                     .success(false)
                     .message("Email address is already registered.")
@@ -204,9 +205,37 @@ public class AuthService {
 
     public AuthResponse login(LoginRequest request) {
         String hashedPassword = hashPassword(request.getPassword());
+        String targetRole = request.getRole(); // student, supervisor, admin
 
+        // Enforce cross-role login restrictions:
+        // 1. Check if the email exists in another role's repository
+        boolean isStudent = studentRepository.existsByEmail(request.getEmail()) || 
+                            (userRepository.findByEmail(request.getEmail()).isPresent() && 
+                             "student".equalsIgnoreCase(userRepository.findByEmail(request.getEmail()).get().getRole()));
+        boolean isSupervisor = supervisorRepository.existsByEmail(request.getEmail());
+        boolean isAdmin = adminRepository.existsByEmail(request.getEmail()) || 
+                          (userRepository.findByEmail(request.getEmail()).isPresent() && 
+                           ("admin".equalsIgnoreCase(userRepository.findByEmail(request.getEmail()).get().getRole()) || 
+                            "repositary admin".equalsIgnoreCase(userRepository.findByEmail(request.getEmail()).get().getRole())));
+
+        if (targetRole != null) {
+            if ("student".equalsIgnoreCase(targetRole) && !isStudent && (isSupervisor || isAdmin)) {
+                return AuthResponse.builder().success(false).message("This email is registered for another role.").build();
+            }
+            if ("supervisor".equalsIgnoreCase(targetRole) && !isSupervisor && (isStudent || isAdmin)) {
+                return AuthResponse.builder().success(false).message("This email is registered for another role.").build();
+            }
+            if ("admin".equalsIgnoreCase(targetRole) && !isAdmin && (isStudent || isSupervisor)) {
+                return AuthResponse.builder().success(false).message("This email is registered for another role.").build();
+            }
+        }
+
+        // Authenticate student
         Optional<Student> studentOpt = studentRepository.findByEmail(request.getEmail());
         if (studentOpt.isPresent()) {
+            if (targetRole != null && !"student".equalsIgnoreCase(targetRole)) {
+                return AuthResponse.builder().success(false).message("This email is registered for another role.").build();
+            }
             Student student = studentOpt.get();
             if (student.getPassword().equals(hashedPassword) || student.getPassword().equals(request.getPassword())) {
                 return AuthResponse.builder()
@@ -222,8 +251,12 @@ public class AuthService {
             }
         }
 
+        // Authenticate supervisor
         Optional<Supervisor> supervisorOpt = supervisorRepository.findByEmail(request.getEmail());
         if (supervisorOpt.isPresent()) {
+            if (targetRole != null && !"supervisor".equalsIgnoreCase(targetRole)) {
+                return AuthResponse.builder().success(false).message("This email is registered for another role.").build();
+            }
             Supervisor supervisor = supervisorOpt.get();
             if (supervisor.getPassword().equals(hashedPassword) || supervisor.getPassword().equals(request.getPassword())) {
                 return AuthResponse.builder()
@@ -239,9 +272,19 @@ public class AuthService {
             }
         }
 
+        // Authenticate user table roles
         Optional<User> userOptional = userRepository.findByEmail(request.getEmail());
         if (userOptional.isPresent()) {
             User user = userOptional.get();
+            String userRole = user.getRole();
+            if (targetRole != null) {
+                if ("student".equalsIgnoreCase(targetRole) && !"student".equalsIgnoreCase(userRole)) {
+                    return AuthResponse.builder().success(false).message("This email is registered for another role.").build();
+                }
+                if ("admin".equalsIgnoreCase(targetRole) && !"admin".equalsIgnoreCase(userRole) && !"repositary admin".equalsIgnoreCase(userRole)) {
+                    return AuthResponse.builder().success(false).message("This email is registered for another role.").build();
+                }
+            }
             if (user.getPassword().equals(hashedPassword) || user.getPassword().equals(request.getPassword())) {
                 return AuthResponse.builder()
                         .success(true)
@@ -256,8 +299,12 @@ public class AuthService {
             }
         }
 
+        // Authenticate admin table
         Optional<Admin> adminOpt = adminRepository.findByEmail(request.getEmail());
         if (adminOpt.isPresent()) {
+            if (targetRole != null && !"admin".equalsIgnoreCase(targetRole)) {
+                return AuthResponse.builder().success(false).message("This email is registered for another role.").build();
+            }
             Admin admin = adminOpt.get();
             if (admin.getPassword().equals(hashedPassword) || admin.getPassword().equals(request.getPassword())) {
                 return AuthResponse.builder()

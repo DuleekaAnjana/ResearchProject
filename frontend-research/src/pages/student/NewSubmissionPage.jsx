@@ -44,6 +44,7 @@ const NewSubmissionPage = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [pages, setPages] = useState('');
   const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [showPagesHelper, setShowPagesHelper] = useState(false);
 
   // ---- Feedback/UI State ----
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -219,13 +220,22 @@ const NewSubmissionPage = () => {
       setLoading(false);
     }
   };
+  const isFormDirty = !!(title.trim() || abstractText.trim() || researchGap.trim() || keywords.trim() || subcategory || comments.trim() || selectedFile);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isFormDirty) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        return e.returnValue;
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isFormDirty]);
+
   const confirmLeave = () => {
-    const isFormDirty = title.trim() || abstractText.trim() || researchGap.trim() || keywords.trim() || subcategory || comments.trim() || selectedFile;
-    if (isFormDirty) {
-      setShowLeaveModal(true);
-    } else {
-      navigate('/student/dashboard');
-    }
+    navigate('/student/dashboard');
   };
 
   return (
@@ -319,12 +329,14 @@ const NewSubmissionPage = () => {
                     onChange={(e) => setResearchGap(e.target.value)}
                   />
                 </div>
-
                 {/* Subcategory (Optional, custom placeholder based on user's category) */}
                 <div className={styles.formField}>
                   <label htmlFor="submission-subcategory" className={styles.label}>
                     Research Subcategory <span className={styles.labelOptional}>(Optional)</span>
                   </label>
+                  <span style={{ color: '#ef4444', fontSize: '0.8rem', marginBottom: '0.5rem', display: 'block' }}>
+                    * Available selections are filtered according to your registered research category and specialization.
+                  </span>
                   <select
                     id="submission-subcategory"
                     className={styles.select}
@@ -340,9 +352,6 @@ const NewSubmissionPage = () => {
                       </option>
                     ))}
                   </select>
-                  <span style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.25rem', display: 'block' }}>
-                    * Available selections are filtered according to your registered research category and specialization.
-                  </span>
                 </div>
 
                 {/* Keywords (Optional) */}
@@ -365,6 +374,11 @@ const NewSubmissionPage = () => {
                    <label htmlFor="submission-supervisor" className={styles.label}>
                      Choose You Prefered Expert <span className={styles.labelOptional}>(Optional)</span>
                    </label>
+                   <span style={{ color: '#ef4444', fontSize: '0.8rem', marginBottom: '0.5rem', display: 'block', lineHeight: '1.4' }}>
+                     * Choose Preferred Expert
+                     <br />
+                     * Available selections are filtered according to your registered research category and specialization.
+                   </span>
                    <select
                      id="submission-supervisor"
                      className={styles.select}
@@ -378,11 +392,6 @@ const NewSubmissionPage = () => {
                        </option>
                      ))}
                    </select>
-                    <span style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.25rem', display: 'block', lineHeight: '1.4' }}>
-                      * Choose Preferred Expert
-                      <br />
-                      * Available selections are filtered according to your registered research category and specialization.
-                    </span>
                  </div>
 
                 {/* Additional comments */}
@@ -405,15 +414,27 @@ const NewSubmissionPage = () => {
                     Number of Pages of Manuscript <span className={styles.labelRequired}>*</span>
                   </label>
                   <input
-                    type="number"
+                    type="text"
                     id="submission-pages"
-                    min="1"
                     className={styles.input}
                     placeholder="Enter the total number of pages"
                     value={pages}
-                    onChange={(e) => setPages(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setPages(val);
+                      if (val && !/^\d+$/.test(val)) {
+                        setShowPagesHelper(true);
+                      } else {
+                        setShowPagesHelper(false);
+                      }
+                    }}
                     required
                   />
+                  {showPagesHelper && (
+                    <span style={{ color: '#eab308', fontSize: '0.8rem', marginTop: '0.25rem', display: 'block', fontWeight: 600 }}>
+                      ⚠️ Number of Pages must be a valid integer. Letters or symbols are not allowed.
+                    </span>
+                  )}
                 </div>
 
                 {/* PDF Manuscript Drag-and-drop Card */}
@@ -522,7 +543,10 @@ const NewSubmissionPage = () => {
           }}>
             {/* Close cross btn */}
             <button
-              onClick={() => setShowLeaveModal(false)}
+              onClick={() => {
+                if (blocker.state === 'blocked') blocker.reset();
+                setShowLeaveModal(false);
+              }}
               style={{
                 position: 'absolute',
                 top: '1rem',
@@ -549,7 +573,11 @@ const NewSubmissionPage = () => {
               <button
                 onClick={() => {
                   setShowLeaveModal(false);
-                  navigate('/student/dashboard');
+                  if (blocker.state === 'blocked') {
+                    blocker.proceed();
+                  } else {
+                    navigate('/student/dashboard');
+                  }
                 }}
                 style={{
                   padding: '0.5rem 1.25rem',
@@ -566,7 +594,10 @@ const NewSubmissionPage = () => {
                 Discard
               </button>
               <button
-                onClick={() => setShowLeaveModal(false)}
+                onClick={() => {
+                  if (blocker.state === 'blocked') blocker.reset();
+                  setShowLeaveModal(false);
+                }}
                 autoFocus
                 style={{
                   padding: '0.5rem 1.25rem',

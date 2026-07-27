@@ -10,7 +10,9 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
-  ExternalLink
+  ExternalLink,
+  Search,
+  RefreshCw
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
@@ -33,37 +35,129 @@ const SubmissionStatusPage = () => {
   const [publishConfirmPaper, setPublishConfirmPaper] = useState(null);
   const [deleteConfirmPaper, setDeleteConfirmPaper] = useState(null);
   const [alertPopup, setAlertPopup] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedSubcategory, setSelectedSubcategory] = useState('');
+  const [sortBy, setSortBy] = useState('Newest');
+  const [studentCategory, setStudentCategory] = useState(user?.researchCategory || 'Computer Science');
 
-  // ---- Fetch student papers ----
+  const getSubcategories = (category) => {
+    switch (category) {
+      case 'Computer Science':
+        return [
+          'Artificial Intelligence',
+          'Machine Learning',
+          'Cyber Security',
+          'Data Science',
+          'Software Engineering',
+          'Human-Computer Interaction',
+          'Internet of Things',
+          'Cloud Computing',
+        ];
+      case 'Medicine':
+        return [
+          'Cardiovascular Medicine',
+          'Radiology & Imaging',
+          'Pathology',
+          'Neurology',
+          'Oncology',
+          'Pediatrics',
+        ];
+      case 'Engineering':
+        return [
+          'Robotics & Automation',
+          'Electrical Engineering',
+          'Civil Engineering',
+          'Mechanical Engineering',
+          'Renewable Energy Systems',
+        ];
+      default:
+        return [
+          'General Research',
+          'Interdisciplinary Study',
+          'Methodological Framework',
+        ];
+    }
+  };
+
+  const relevantSubcategories = getSubcategories(studentCategory);
+
+  // fetch student profile to get researchCategory
   useEffect(() => {
-    const fetchPapers = async () => {
-      setLoading(true);
+    const fetchProfile = async () => {
       try {
-        const email = user?.email || 'student@researchsphere.edu';
-        const data = await api.get(`/papers/student?email=${encodeURIComponent(email)}`);
-        setPapers(data || []);
+        const email = user?.email;
+        if (email) {
+          const profile = await api.get(`/student-profile?email=${encodeURIComponent(email)}`);
+          if (profile && profile.researchCategory) {
+            setStudentCategory(profile.researchCategory);
+          }
+        }
       } catch (err) {
-        console.warn('Failed to fetch student papers:', err);
-      } finally {
-        setLoading(false);
+        console.warn('Failed to fetch student profile:', err);
       }
     };
+    fetchProfile();
+  }, [user]);
+
+  // ---- Fetch student papers ----
+  const fetchPapers = async () => {
+    setLoading(true);
+    try {
+      const email = user?.email || 'student@researchsphere.edu';
+      const data = await api.get(`/papers/student?email=${encodeURIComponent(email)}`);
+      setPapers(data || []);
+    } catch (err) {
+      console.warn('Failed to fetch student papers:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     if (user?.email) {
       fetchPapers();
     }
   }, [user]);
 
-  // ---- Filter papers based on status query parameter ----
+  // ---- Filter papers based on status query parameter, search, and subcategory ----
   const filteredPapers = papers.filter((paper) => {
     const status = (paper.status || 'PENDING').toUpperCase();
+    let statusMatch = true;
     if (tab === 'approved') {
-      return status === 'APPROVED';
+      statusMatch = status === 'APPROVED';
     } else if (tab === 'pending') {
-      return status === 'PENDING' || status === 'UNDER REVIEW';
+      statusMatch = status === 'PENDING' || status === 'UNDER REVIEW';
     } else if (tab === 'rejected') {
-      return status === 'REJECTED';
+      statusMatch = status === 'REJECTED';
+    }
+    if (!statusMatch) return false;
+
+    // Subcategory filter
+    if (selectedSubcategory && paper.subcategory !== selectedSubcategory) {
+      return false;
+    }
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const match =
+        (paper.title || '').toLowerCase().includes(q) ||
+        (paper.studentName || '').toLowerCase().includes(q) ||
+        (paper.publicationId ? String(paper.publicationId) : '').includes(q) ||
+        (paper.formattedPublicationId || '').toLowerCase().includes(q) ||
+        (paper.subcategory || '').toLowerCase().includes(q) ||
+        (paper.keywords || '').toLowerCase().includes(q);
+      if (!match) return false;
     }
     return true;
+  });
+
+  // ---- Sort papers ----
+  const sortedPapers = [...filteredPapers].sort((a, b) => {
+    if (sortBy === 'Newest') return new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0);
+    if (sortBy === 'Oldest') return new Date(a.submittedAt || 0) - new Date(b.submittedAt || 0);
+    if (sortBy === 'A-Z') return (a.title || '').localeCompare(b.title || '');
+    return 0;
   });
 
   const getStatusBadge = (status) => {
@@ -164,15 +258,123 @@ ${paper.keywords || ''}
             <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.25rem' }}>
               {displayTabName} Submissions
             </h1>
-            <p style={{ color: '#64748b', fontSize: '1rem', lineHeight: '1.5', marginBottom: '2rem' }}>
+            <p style={{ color: '#64748b', fontSize: '1rem', lineHeight: '1.5', marginBottom: '1.5rem' }}>
               Every paper you've authored — drafts, submissions, and approvals.
             </p>
+
+            {/* Search Filter Card */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem',
+              backgroundColor: '#ffffff',
+              padding: '1.25rem',
+              borderRadius: '16px',
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+              marginBottom: '1.5rem',
+              width: '100%'
+            }}>
+              {/* Top Row with Refresh */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+                <button
+                  onClick={fetchPapers}
+                  title="Refresh submissions"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '32px',
+                    height: '32px',
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    color: '#64748b',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseOver={(e) => { e.currentTarget.style.color = '#0f172a'; e.currentTarget.style.backgroundColor = '#f1f5f9'; }}
+                  onMouseOut={(e) => { e.currentTarget.style.color = '#64748b'; e.currentTarget.style.backgroundColor = '#ffffff'; }}
+                >
+                  <RefreshCw size={14} />
+                </button>
+              </div>
+              {/* Controls Row */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '12px',
+                  padding: '0.5rem 1rem',
+                  flex: 4,
+                  minWidth: '280px',
+                  backgroundColor: '#f8fafc'
+                }}>
+                  <Search size={18} style={{ color: '#64748b' }} />
+                  <input
+                    type="text"
+                    placeholder="Search title, publication id, keyword..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{
+                      border: 'none',
+                      outline: 'none',
+                      backgroundColor: 'transparent',
+                      width: '100%',
+                      fontSize: '0.875rem',
+                      color: '#0f172a'
+                    }}
+                  />
+                </div>
+                <select
+                  value={selectedSubcategory}
+                  onChange={(e) => setSelectedSubcategory(e.target.value)}
+                  style={{
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '12px',
+                    padding: '0.625rem 1rem',
+                    backgroundColor: '#ffffff',
+                    fontSize: '0.875rem',
+                    color: '#0f172a',
+                    minWidth: '165px',
+                    outline: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="">All Sub Categories</option>
+                  {relevantSubcategories.map((sub) => (
+                    <option key={sub} value={sub}>{sub}</option>
+                  ))}
+                </select>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  style={{
+                    border: '1px solid #2563eb',
+                    borderRadius: '12px',
+                    padding: '0.625rem 1rem',
+                    backgroundColor: '#ffffff',
+                    fontSize: '0.875rem',
+                    color: '#0f172a',
+                    minWidth: '140px',
+                    outline: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="Newest">Newest</option>
+                  <option value="Oldest">Oldest</option>
+                  <option value="A-Z">A-Z</option>
+                </select>
+              </div>
+            </div>
 
             {loading ? (
               <div style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>
                 Loading submissions…
               </div>
-            ) : filteredPapers.length === 0 ? (
+            ) : sortedPapers.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '4rem 2rem', border: '1px dashed #cbd5e1', borderRadius: '8px', color: '#64748b' }}>
                 <FileText size={48} style={{ margin: '0 auto 1rem auto', color: '#94a3b8' }} />
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#1e293b', marginBottom: '0.25rem' }}>No Submissions Found</h3>
@@ -180,7 +382,7 @@ ${paper.keywords || ''}
               </div>
             ) : (
               <div className={pubCardStyles.publicationsGrid}>
-                {filteredPapers.map((paper) => {
+                {sortedPapers.map((paper) => {
                   const isApproved = paper.status === 'APPROVED';
                   return (
                     <div key={paper.id} className={pubCardStyles.pubCard}>

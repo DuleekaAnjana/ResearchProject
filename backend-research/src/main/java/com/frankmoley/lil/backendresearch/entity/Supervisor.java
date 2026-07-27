@@ -68,4 +68,7 @@ public class Supervisor {
 
     @Column(name = "is_available", nullable = false, columnDefinition = "boolean default true")
     private Boolean available = true;
+
+    @Column(name = "registered_date")
+    private java.time.LocalDateTime registeredDate = java.time.LocalDateTime.now();
 }

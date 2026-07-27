@@ -1,8 +1,10 @@
 package com.frankmoley.lil.backendresearch.controller;
 
 import com.frankmoley.lil.backendresearch.entity.Paper;
+import com.frankmoley.lil.backendresearch.entity.Student;
 import com.frankmoley.lil.backendresearch.entity.Supervisor;
 import com.frankmoley.lil.backendresearch.repository.PaperRepository;
+import com.frankmoley.lil.backendresearch.repository.StudentRepository;
 import com.frankmoley.lil.backendresearch.repository.SupervisorRepository;
 import com.frankmoley.lil.backendresearch.service.NotificationService;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ import java.util.*;
 public class AdminController {
 
     private final PaperRepository paperRepository;
+    private final StudentRepository studentRepository;
     private final SupervisorRepository supervisorRepository;
     private final NotificationService notificationService;
 
@@ -61,11 +64,9 @@ public class AdminController {
                 .limit(10)
                 .toList();
 
-        // Populate student names
+        // Populate student names from student table
         for (Paper p : latestSubmissions) {
-            if (p.getStudentName() == null || p.getStudentName().isBlank()) {
-                p.setStudentName("Registered Student");
-            }
+            populateStudentNameFromTable(p);
         }
 
         populateFormattedPublicationIds(latestSubmissions);
@@ -264,5 +265,51 @@ public class AdminController {
         );
 
         return ResponseEntity.ok(saved);
+    }
+
+    @GetMapping("/papers")
+    public ResponseEntity<List<Paper>> getAllPapers(@RequestParam(required = false) String status) {
+        List<Paper> allPapers = paperRepository.findAll();
+        populateFormattedPublicationIds(allPapers);
+        for (Paper p : allPapers) {
+            populateStudentNameFromTable(p);
+        }
+        
+        if (status == null || status.isBlank()) {
+            return ResponseEntity.ok(allPapers);
+        }
+        
+        List<Paper> filtered = allPapers.stream()
+                .filter(p -> {
+                    String appStatus = p.getAdminApprovalStatus();
+                    if ("UNDER_ADMIN_APPROVAL".equalsIgnoreCase(status) || "UNDER ADMIN APPROVAL".equalsIgnoreCase(status) || "PENDING".equalsIgnoreCase(status)) {
+                        return appStatus == null || 
+                               "PENDING".equalsIgnoreCase(appStatus) || 
+                               "UNDER ADMIN APPROVAL".equalsIgnoreCase(appStatus) || 
+                               "UNDER_ADMIN_APPROVAL".equalsIgnoreCase(appStatus);
+                    } else if ("VERIFIED".equalsIgnoreCase(status)) {
+                        return "VERIFIED".equalsIgnoreCase(appStatus) || "APPROVED".equalsIgnoreCase(appStatus);
+                    } else if ("DUPLICATE_DETECTED".equalsIgnoreCase(status) || "DUPLICATE DETECTED".equalsIgnoreCase(status)) {
+                        return "DUPLICATE DETECTED".equalsIgnoreCase(appStatus) || "DUPLICATE_DETECTED".equalsIgnoreCase(appStatus);
+                    } else if ("SUPERVISOR_UNAVAILABLE".equalsIgnoreCase(status) || "SUPERVISOR UNAVAILABLE".equalsIgnoreCase(status)) {
+                        return "SUPERVISOR UNAVAILABLE".equalsIgnoreCase(appStatus) || 
+                               "SUPERVISOR_UNAVAILABLE".equalsIgnoreCase(appStatus) || 
+                               "SUPERVISOR NOT AVAILABLE".equalsIgnoreCase(appStatus) || 
+                               "SUPERVISOR_NOT_AVAILABLE".equalsIgnoreCase(appStatus);
+                    }
+                    return status.equalsIgnoreCase(appStatus);
+                })
+                .toList();
+        return ResponseEntity.ok(filtered);
+    }
+
+    private void populateStudentNameFromTable(Paper paper) {
+        if (paper.getStudentEmail() != null && !paper.getStudentEmail().isBlank()) {
+            studentRepository.findByEmail(paper.getStudentEmail())
+                    .ifPresent(student -> paper.setStudentName(student.getFullName()));
+        }
+        if (paper.getStudentName() == null || paper.getStudentName().isBlank()) {
+            paper.setStudentName("Registered Student");
+        }
     }
 }
